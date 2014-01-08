@@ -1,0 +1,246 @@
+#!/usr/bin/perl -w
+
+#################################################################
+#
+# specification:
+#   return success if the requested version is already in the path
+#   return success if we can build the requested version
+#   return fail otherwise
+#
+#################################################################
+
+use strict;
+use Sys::CPU;
+
+#################################################################
+
+# shouldn't be a network disk
+my $TOPDIR = $ENV{"HOME"}."/z";
+
+my $NICE = "nice -5";
+
+#my $EXPENSIVE = "--enable-expensive-checks";
+my $EXPENSIVE = "";
+
+#my $LLVM_CHECKS = "$EXPENSIVE --enable-debug-runtime --disable-optimized";
+my $LLVM_CHECKS = "--enable-checking=release --enable-optimized --disable-bindings";
+
+my $CLEANUP = 1;
+
+#################################################################
+
+my $SOURCE_HOME = "$TOPDIR/compiler-source";
+my $BUILD_HOME = "$TOPDIR/compiler-build";
+my $INSTALL_HOME = "$TOPDIR/compiler-install";
+
+die unless (-d $SOURCE_HOME);
+die unless (-d $BUILD_HOME);
+die unless (-d $INSTALL_HOME);
+
+my $FAIL_FILE_LLVM = "${SOURCE_HOME}/unbuildable_llvm.txt";
+my $FAIL_FILE_GCC = "${SOURCE_HOME}/unbuildable_gcc.txt";
+
+my $CPUS = Sys::CPU::cpu_count();
+print "looks like we have $CPUS cpus\n";
+
+my $SRC_DIR;
+my $BUILD_DIR;
+my $INSTALL_DIR;
+
+my $C_EXE;
+my $CPP_EXE;
+my $REV;
+my $OREV;
+my $COMPILER;
+my $FAIL_FILE;
+my @dirs_to_delete = ();
+my $FORCE = 1;
+
+# properly parse the return value from system()
+sub runit ($) {
+    my $cmd = shift;
+    if ((system "$NICE $cmd") == -1) {
+	print "build_compiler FAILING: system '$cmd': $?";
+	return -1;
+    }
+    my $exit_value  = $? >> 8;
+    return $exit_value;
+}
+
+sub abort_if_fail ($) {
+    my $cmd = shift;
+    my $res = runit ($cmd);
+    if ($res != 0) {
+	print "build $COMPILER FAILING and recording this version as unbuildable\n";
+	open OUTF, ">>$FAIL_FILE" or die "cannot open fail file $FAIL_FILE for appending";
+	print OUTF "${REV}\n";
+	close OUTF;
+	# NOTE-- this leaves trash sitting around
+	#foreach my $d (@dirs_to_delete) {
+	#    system ("rm -rf $d");
+	#}
+	exit (-1);
+    }
+}
+
+sub usage() {
+    die "usage: build_compiler llvm|gcc rev|LATEST";	
+}
+
+sub build_gcc() {
+    push @dirs_to_delete, $BUILD_DIR;
+    push @dirs_to_delete, $INSTALL_DIR;
+
+    chdir $SRC_DIR or die;
+    abort_if_fail ("svn update -r $REV");
+    
+    abort_if_fail ("rm -rf $BUILD_DIR");
+    mkdir $BUILD_DIR or die;
+    chdir $BUILD_DIR or die;
+
+    abort_if_fail ("${SRC_DIR}/configure --prefix=$INSTALL_DIR --enable-languages=c,c++ --enable-multilib");
+    abort_if_fail ("make -j${CPUS}");
+    abort_if_fail ("make install");
+    
+    if ($CLEANUP) {
+	print "cleaning up...";
+	system ("$NICE rm -rf $BUILD_DIR");
+    }
+}
+
+sub build_llvm() {
+    push @dirs_to_delete, $BUILD_DIR;
+    push @dirs_to_delete, $INSTALL_DIR;
+    
+    chdir $SRC_DIR or die;
+    abort_if_fail ("svn update -r $REV");
+    chdir "$SRC_DIR/tools/clang" or die;
+    abort_if_fail ("svn update -r $REV");
+    chdir "$SRC_DIR/projects/compiler-rt" or die;
+    abort_if_fail ("svn update -r $REV");
+    chdir "$SRC_DIR/tools/clang/tools/extra" or die;
+    abort_if_fail ("svn update -r $REV");
+
+    abort_if_fail ("rm -rf $BUILD_DIR");
+    mkdir $BUILD_DIR or die;
+    chdir $BUILD_DIR or die;
+
+    abort_if_fail ("${SRC_DIR}/configure $LLVM_CHECKS --prefix=$INSTALL_DIR");
+    abort_if_fail ("make -j${CPUS}");
+    abort_if_fail ("make install");
+    
+    if ($CLEANUP) {
+	print "cleaning up...";
+	system ("$NICE rm -rf $BUILD_DIR");
+    }
+}
+
+sub find_rev() {
+    my $r;
+    chdir $SOURCE_HOME or die;
+    runit ("rm -rf trunk");
+    my $TRUNKDIR;
+    if ($COMPILER eq "llvm") {	
+	$TRUNKDIR = "trunk-llvm";
+	open INF, "svn co -N http://llvm.org/svn/llvm-project/llvm/trunk $TRUNKDIR |" or die;
+    } else {
+	$TRUNKDIR = "trunk-gcc";
+	open INF, "svn co -N svn://gcc.gnu.org/svn/gcc/trunk $TRUNKDIR |" or die;
+    }
+    while (<INF>) {
+	if (/Checked out revision ([0-9]+)\./) {
+	    $r = $1;
+	}
+    }
+    close INF;
+    die if (!defined($r));
+    $REV = $r;
+    runit ("rm -rf $TRUNKDIR");
+    print "latest rev of $COMPILER id $REV\n";
+}
+
+########################### main ################################
+
+if ($ARGV[0] eq "-f") {
+    shift @ARGV;
+    $FORCE = 1;
+}
+
+$COMPILER = shift @ARGV;
+$OREV = shift @ARGV;
+my $last = shift @ARGV;
+usage() unless (defined($COMPILER) && defined($OREV) && !defined($last));
+
+usage() unless ($OREV =~ /^\d+$/) || ($OREV eq "LATEST");
+
+if ($OREV eq "LATEST") {
+    find_rev();
+} else {
+    $REV = $OREV;
+}
+
+if ($COMPILER eq "llvm") {
+    $SRC_DIR = "$SOURCE_HOME/llvm";
+    $BUILD_DIR="$BUILD_HOME/llvm-r$REV";
+    $INSTALL_DIR="$INSTALL_HOME/llvm-r$REV-install";
+    $FAIL_FILE = $FAIL_FILE_LLVM;
+    $C_EXE = "clang";
+    $CPP_EXE = "clang++";
+} elsif ($COMPILER eq "gcc") {
+    $SRC_DIR = "$SOURCE_HOME/gcc";
+    $BUILD_DIR = "$BUILD_HOME/gcc-r$REV";
+    $INSTALL_DIR = "$INSTALL_HOME/gcc-r$REV-install";
+    $FAIL_FILE = $FAIL_FILE_GCC;
+    $C_EXE = "gcc";
+    $CPP_EXE = "g++";
+} else {
+    usage();
+}
+
+if (!$FORCE) {
+    open INF, "<$FAIL_FILE" or die "oops-- fail file $FAIL_FILE does not exist";
+    while (my $line = <INF>) {
+	chomp $line;
+	if ($line eq $REV) {
+	    print "build_compiler FAILING: this version previously determined to be unbuildable\n";
+	    exit (-1);
+	}
+    }
+    close INF;
+}
+
+my $worked = 0;
+if (open(CMD,"| ${INSTALL_DIR}/bin/${C_EXE} -O -x c - -S -o /dev/null")) {
+    print CMD<<"END";
+\#include <stdio.h>
+int main (void)
+{
+    printf (\"hello\\n\");
+    return 0;
+}
+END
+    close(CMD);
+    my $ret = $? >> 8;
+    if ($ret == 0) {
+        $worked = 1;
+    }
+}
+
+if ($worked) {
+    print "build_compiler SUCCESS -- runnable ${C_EXE} already exists\n";
+    exit 0;
+}
+
+if ($COMPILER eq "llvm") {
+    build_llvm();
+} elsif ($COMPILER eq "gcc") {
+    build_gcc();
+} else {
+    die;
+}
+
+print "build $COMPILER SUCCESS -- compiled and installed $C_EXE and $CPP_EXE\n";
+
+exit 0;
+
+#################################################################

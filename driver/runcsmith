@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+
+# add options to backup or delete existing data
+
+use strict;
+use warnings;
+use Sys::CPU;
+
+my $NICE = "";
+my $ULIMIT = "ulimit -m 80000000; ulimit -v 80000000;";
+
+sub usage () {
+    die "usage: runcsmith [number] [seedfile]\n";
+}
+
+my $SEEDFILE = "";
+my $CPUS;
+my $argc = scalar (@ARGV);
+
+my $CSMITH_HOME = $ENV{"CSMITH_HOME"};
+if (!defined($CSMITH_HOME)) {
+    die "OOPS: please export CSMITH_HOME before running this script";
+}
+if (!(-d $CSMITH_HOME)) {
+    die "OOPS: CSMITH_HOME directory '${CSMITH_HOME}' does not seem to exist";
+}
+
+if ($argc == 0) {
+    $CPUS = Sys::CPU::cpu_count();    
+    print "looks like we have $CPUS cpus\n";
+} elsif ($argc >= 1) {
+    $CPUS = $ARGV[0];
+    usage() if (!($CPUS =~ /^[0-9]+$/));
+    if ($argc == 2) {
+	$SEEDFILE = $ARGV[1];
+    }
+} else {
+    usage();
+}
+
+open INF, "ps axu |" or die;
+while (<INF>) {
+    if (/random\_test/) {
+	print "oops-- kill existing random_test processes first!\n";
+	exit;
+    }
+}
+close INF;
+
+system "rm -rf work*";
+
+system "nohup random_test_tmp_cleaner &";
+system "nohup random_test_hung_process_killer > hung_process_killer.log 2>&1 &";
+
+for (my $i=0; $i<$CPUS; $i++) {
+    my $dir = "work$i";
+    mkdir $dir or die;
+    system "$ULIMIT $NICE nohup random_test $dir $SEEDFILE > $dir/output.txt 2>&1 &";
+}

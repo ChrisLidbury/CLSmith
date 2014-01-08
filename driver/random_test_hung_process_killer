@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+while (1) {
+    sleep (60);
+
+    my $now;
+    open INF, "date |" or next;
+    my $d = <INF>;
+    chomp $d;
+    close INF;
+    if ($d =~ /([0-9]+):([0-9]+):([0-9]+)/) {
+	my $h = $1;
+	my $m = $2;
+	$now = ($h*60)+$m;
+    } else {
+	next;
+    }
+
+    print "now = $now\n";
+
+    open INF, "ps x -o comm=,pid=,bsdstart= |" or next;
+    while (my $line = <INF>) {
+	chomp $line;
+	next unless (
+	    $line =~ /^cc1/ ||
+	    $line =~ /opencc/ ||
+	    $line =~ /clang/
+	    );
+	next unless ($line =~ /\s+([0-9]+)\s+(.*)$/);
+	my $pid = $1;
+	my $stime = $2;
+	my $age = 999;
+	if ($stime =~ /([0-9]+):([0-9]+)/) {
+	    my $h = $1;
+	    my $m = $2;
+	    my $t = ($h*60)+$m;
+	    $age = $now - $t;
+	}
+	next unless ($age >= 3 || $age < 0);
+	print "$line age=$age\n";
+	print "pid=$pid start time=$stime age=$age\n";
+	my $cmd = "kill -9 $pid";
+	print "executing: $cmd\n";
+	system $cmd;
+    }
+    close INF;
+}

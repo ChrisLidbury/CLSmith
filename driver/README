@@ -1,0 +1,54 @@
+------------------------------------------------------------------
+
+This directory contains a collection of scripts that serve as a
+reasonably general-purpose driver for Csmith.
+
+------------------------------------------------------------------
+Overview:
+
+To use all features of this driver, the user must provide:
+
+- a script that turns C source code into an executable
+
+- a script that executes (or interprets, emulates, or even sends to an
+  attached embedded processor) a compiledprogram, returning a status
+  code, a checksum, and perhaps other information
+
+- a script that heuristically disambiguates different ways in which
+  the compiler under test can crash
+
+- a script that builds a specified version of the compiler(s) under
+  test
+
+All of these are quite straightforward for the case where a native
+compiler is being tested, and we provide examples for GCC and LLVM.
+Scripts can be more elaborate when an embedded compiler is being
+tested.
+
+The driver then builds the latest version of the compiler once per
+day. The remaining time is used to test this compiler. When anomalous
+results are discovered (e.g. the compiler crashes) a reduced test case
+is created and a binary search is used to find the first broken
+version of the compiler.
+
+Features of this driver can be selectively disabled. So, for example,
+you can disable the compiler version search, the building of new
+compilers, and even the running of compiler output -- if all you want
+to do is look for crashes in a specific version of a compiler that you
+don't have source code or an emulator for.
+
+------------------------------------------------------------------
+Requirements:
+
+You want a fast machine. At first this won't matter but as compiler
+quality improves, throughput becomes important. This driver does not
+support distribution across machines but it can take advantage of as
+many processors are available on a shared memory multiprocessor.
+
+The compiler should be deterministic. It would be a good idea to turn
+off address space layout randomization before running this driver.
+
+------------------------------------------------------------------
+Detailed instructions:
+
+------------------------------------------------------------------

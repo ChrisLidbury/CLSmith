@@ -1,0 +1,61 @@
+users need to provide scripts to
+  compile a program
+    arguments: 0..N-1; anything else prints a file containing N
+      ordered from least to strongest optimzing
+    input: c program
+    output: 
+      preprocessed file for reduction
+      executable or
+      crash output
+    one script per compiler?
+  run a program
+    input: an executable
+    output: text file including
+      checksum
+      volatile info, format TBD
+      timing info
+      exit status
+        success
+        timeout
+        non-zero exit code
+  create a crash string from compiler output
+  build a specified version of the compiler
+
+make canned reduction scripts use these user-provided scripts
+
+probably need a way to make sure existing processes, reductions,
+  compiler builds etc. are either stopped fully, or else won't get in
+  the way of whatever we do next
+
+some of these interfaces want to be implemented by perl modules
+  instead of executing separate scripts
+
+make a centralized file for config information
+
+make automatic reduction work again
+
+make compiler version search work again
+  do this after reduction
+
+write some docs
+
+make log format easier to parse
+
+when a new bug is found
+  if known to be duplicate, drop it
+  otherwise, reduce and version search
+
+daily or so
+  update and rebuild the compiler under test
+  check all known test cases including fixed ones
+  prioritize the broken ones and report them
+  high priority
+    seems new, for wrong-code bugs
+    has a different string, for crash bugs
+  report on progress to web, email, RSS feed
+  if compiler can't be built, report this and sleep for a day
+
+relevance estimation: does fault localization place the bug in 
+  a part of the code that gets executed by our test suite?
+
+make a VM image for the cloud, or a local machine

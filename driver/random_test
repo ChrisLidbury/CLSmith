@@ -1,0 +1,255 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Digest::MD5 qw(md5 md5_hex md5_base64);
+use File::stat;
+use Cwd;
+use Sys::CPU;
+
+# when errors are detected, fork off reduction scripts
+
+##################################################################
+
+my $CCG = 0;
+my $number;
+
+my @ALL_SWARM_OPTS = (
+    #"argc",
+    "arrays",
+    "bitfields",
+    "checksum",
+    "comma-operators",
+    "compound-assignment",
+    "consts",
+    "divs",
+    "embedded-assigns",
+    "jumps",
+    "longlong",
+    "force-non-uniform-arrays",
+    "math64",
+    #"builtins",
+    "muls",
+    "packed-struct",
+    "paranoid",
+    "pointers",
+    "structs",
+    #"unions",
+    "volatiles",
+    "volatile-pointers",
+    "inline-function",
+    "return-structs",
+    "arg-structs",
+    #"return-unions",
+    #"arg-unions",
+    "dangling-global-pointers",
+    "return-dead-pointer",
+    #"union-read-type-sensitive",
+    "safe-math",
+    );
+
+my $SAVE_BADS = 0;
+
+my $MIN_PROGRAM_SIZE = 30000;
+my $MAX_PROGRAM_SIZE = 5*1024*1024;
+
+my $CSMITH_TIMEOUT = 180;
+
+my $PROVIDE_SEED = 1;
+
+my $XTRA = "--no-unions";
+
+my $PACK = "";
+
+my $QUIET = "--quiet";
+#my $QUIET = "";
+
+my $notmp = "-DUSE_MATH_MACROS_NOTMP";
+#my $notmp = "";
+
+# my $platform = "x86";
+my $platform = "x86_64";
+
+##################################################################
+
+my $CSMITH_HOME = $ENV{"CSMITH_HOME"};
+
+my $good = 0;
+
+my $TIMED_TEST;
+
+# properly parse the return value from system()
+sub runit ($) {
+    my $cmd = shift;
+    my $res = (system "$cmd");
+    my $exit_value  = $? >> 8;
+    return $exit_value;
+}
+
+sub doit ($$) {
+    (my $n, my $work) = @_;
+    print "------ RANDOM PROGRAM $n ------\n";
+    print "timestamp: ";
+    system "date";
+
+    my $nstr = sprintf "%06d", $n;
+    my $dir = "${work}/$nstr";
+
+    if (!(mkdir $dir)) {
+	my $cwd = getcwd;
+	die "can't make dir from $cwd";
+    }
+    chdir $dir or die;
+
+    my $fn = "rand$nstr";
+    my $cfile = "${fn}.c";
+
+    my $SEED = "";
+    if ($PROVIDE_SEED) {
+	my $n = int (rand (2147483647));
+	if ($CCG) {
+	    $SEED = "--seed $n";
+	} else {
+	    $SEED = "-s $n";
+	}
+	print "seed = $n\n";
+    }
+    if ($TIMED_TEST) {
+	die if ($PROVIDE_SEED);
+	my $line = <SEEDFILE>;
+	if (!$line) {
+	    print "input exhausted, exiting.\n";
+	    exit (0);
+	}
+	chomp $line;
+	printf "seedfile line: $line\n";
+	die if (!($line =~ /\(([0-9]+)\,([0-9]+)\,([0-9]+)\)/));
+	$SEED = "-s $1 --max-block-size $2 --max-funcs $3";
+    }
+
+    my $SWARM_OPTS = "";
+    my $p = rand();
+    foreach my $opt (@ALL_SWARM_OPTS) {
+	if (rand() < $p) {
+	    $SWARM_OPTS .= " --$opt ";
+	} else {
+	    $SWARM_OPTS .= " --no-$opt ";
+	}
+    }
+
+    my $cmd;
+    if ($CCG) {
+
+	my $swarm="";
+	my $CPUS = Sys::CPU::cpu_count();    
+	if ($number >= ($CPUS/2)) {
+	    $swarm = "--swarm";
+	}
+
+	$cmd = "ccg $SEED $swarm --output $cfile";
+    } else {
+	my $CPUS = Sys::CPU::cpu_count();    
+	if ($number >= ($CPUS/2)) {
+	    $cmd = "$CSMITH_HOME/src/csmith $SEED $SWARM_OPTS $PACK $XTRA --output $cfile";
+	} else {
+	    $cmd = "$CSMITH_HOME/src/csmith $SEED $PACK $XTRA --output $cfile";
+	}
+    }
+
+    if ($PROVIDE_SEED) {
+	print "$cmd\n";
+    }
+    my $res = runit ("RunSafely $CSMITH_TIMEOUT 1 /dev/zero csmith_output.txt $cmd");
+
+    if ($res != 0 || !(-e "$cfile")) {
+	print "GENERATOR FAILED\n";
+	system "cat csmith_output.txt";
+	chdir "../..";
+	system "rm -rf $dir";
+	return;
+    }
+
+    my $filesize = stat("$cfile")->size;
+    print "$cfile is $filesize bytes\n";    
+    if (($filesize < $MIN_PROGRAM_SIZE) && !$TIMED_TEST) {
+	print "FILE TOO SMALL\n";
+	chdir "../..";
+	system "rm -rf $dir";
+	return;
+    }
+    if (($filesize > $MAX_PROGRAM_SIZE) && !$TIMED_TEST) {
+	print "FILE TOO LARGE\n";
+	chdir "../..";
+	system "rm -rf $dir";
+	return;
+    }
+
+    my $seed;
+    my $prog = "";
+    my $vcount = 0;
+
+    open INF, "<$cfile" or die;
+    while (my $line = <INF>) {
+	if ($line =~ /Seed:\s+([0-9]+)$/) {
+	    $seed = $1;
+	}
+	chomp $line;
+	$prog .= "$line ";
+    }
+    close INF;
+    # FIXME: die unless defined($seed);
+    if (!$PROVIDE_SEED) {
+	print "regenerate with: '$cmd -s $seed'\n";
+    }
+    if ($CCG) {
+	system "grep Options $cfile";
+    }
+
+    my $ret = system "evaluate_program $fn";
+    my $rc = ($ret>>8) & 0xff;
+
+    chdir "../..";
+
+    if ($rc == 0 || $rc == 1) {
+	print "GOOD PROGRAM: number $good\n";
+	$good++;
+    } else {
+	print "BAD PROGRAM: doesn't count towards goal.\n";
+    }
+
+    system "rm -rf $dir";
+}
+
+if (scalar(@ARGV) != 1 &&
+    scalar(@ARGV) != 2) {
+    die "usage: random_test work_dir [seedfile]";
+}
+
+my $work = $ARGV[0];
+
+if (!(-d $work)) {
+    die "error: create work dir '$work' first";
+}
+
+die unless ($work =~ /work([0-9]+)$/);
+$number = $1;
+
+system "touch $work/crash_strings.txt";
+mkdir "$work/bonus_crashes" or die;
+
+if (scalar(@ARGV)==2) {
+    my $seedfile = $ARGV[1];
+    open SEEDFILE, "<$seedfile" or die "error: cannot open seed file $seedfile";
+    $TIMED_TEST = 1;
+    $PROVIDE_SEED = 0;
+} else {
+    $TIMED_TEST = 0;
+}
+
+my $i = 0;
+while (1) {
+    doit ($i, $work);
+    $i++;
+    print "\n";
+} 
+
+##################################################################

@@ -1,0 +1,173 @@
+## -*- mode: Text -*-
+
+This file is not expected to be interseting/useful for people other
+than Csmith's developers.  It's not particularly up to date either.
+
+-------------------------------------------------------------------------------
+
+- optionally (turned on by default) fail to take the address of union
+  fields
+
+- optionally generate GCC attributes: stdcall, may_alias, ...
+
+- generate openmp pragmas 
+
+- optionally put all globals into a (packed) struct
+
+- optionally put all globals into a char array
+
+- generate code that manipulates strings
+  - concatenate, copy, take length, compare
+
+- incrementally add C++ features; which ones have high value but are
+  easy to generate?
+  - exceptions
+  - limited use of objects
+  - atomics
+
+- support "swarm testing" (see our ICSE submission on my papers
+  page). This is already done in my (old) drivers, but a few things
+  need to be redone.  If someone wants to do this for the new Csmith
+  drivers, that would be good.
+
+- make swarm use all options that make sense
+
+- print platform information at the top of each generated random test
+
+- add command line flags to disable generation of: loops,
+  conditionals, shifts, arithmetic (outside of loops and checksum)
+
+- add a flag that switches between initializing all / none / random
+  global variables
+
+- generate (limited) type casts
+
+- generate ternary conditional operator
+
+- add a flag to avoid copy-by-value of structs
+
+- generate floating point math
+
+- generate switch statments with random fallthroughs
+
+- generate "register" and "inline" -- trivial!
+
+- generate memset, memcpy, bzero, sizeof, etc.
+
+- generate simple uses of malloc/free
+  - should span parts of structs, arrays, scalars, etc.
+
+- generate C++11 memory model operations
+  - first, just atomics
+
+- make output compile as C++
+
+- Carlos Scheiddeger says:
+
+"Most graphics cards support some form of OpenGL acceleration, and
+these days this means supporting GLSL, which is a simple C
+derivative. The reason this is at all interesting is that with WebGL,
+(a subset of) GLSL is part of the attack surface for web
+browsers. Break graphics drivers sufficiently bad and you can kernel
+panic a computer from an HTML page."
+
+- also, we should generate OpenCL / CUDA code
+
+-------------------------------------------------------------------------------
+
++ Come up with a better naming convention for "platform" files for csmith
+  itself, versus "platform" files that make up the runtime of generated
+  programs.  It is confusing to have both named "platform*'.
+
++ Fix the conditional CPU macros in "src/platform.{cpp,h}".  These should
+  apparently refer to the *host* CPU type, not the *target* CPU type, because
+  the conditionally compiled functions are invoked by csmith itself, not by
+  the generated programs.  (See how confusing it is to call everything
+  "platform*"?)
+
+-------------------------------------------------------------------------------
+add a command line option where random programs report on their branch
+coverage.  this amounts to:
+
+- numbering the branches in the random program
+- creating a global array of bools, with two bools for each branch (taken
+  and not taken) initialized to false
+- add code following each branch that sets the appropriat flag to true
+- print coverage information at the end
+  - for each branch: was it taken? not-taken?
+  - overall amount of branch coverage 
+
+-------------------------------------------------------------------------------
+GENERATING TYPE CASTS
+
+Main reference is the C standard, in particular the C99 aliasing
+rules, explained intuitively here:
+
+  http://codingrelic.geekhold.com/2008/10/aliasing-by-any-other-name.html
+  http://cellperformance.beyond3d.com/articles/2006/06/understanding-strict-aliasing.html
+
+Very useful paper:
+
+  http://www.cs.wisc.edu/wpis/papers/fse99.pdf
+
+Probably also useful:
+
+  http://www.cs.ru.nl/~tews/cv07-slides/union_and_cast.pdf
+  http://www.cs.washington.edu/homes/marius/papers/tpd/tpd-popl08.pdf
+  http://users.encs.concordia.ca/~debbabi/pdf/Interprocedural%20and%20flow-sensitive%20type%20analysis%20for%20memory%20and%20type%20safety%20of%20C%20code.pdf
+  http://portal2.acm.org/citation.cfm?id=316183&dl=guide&coll=GUIDE
+
+Can generate "restrict" qualifiers
+
+  http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
+  http://www.cs.pitt.edu/~mock/papers/clei2004.pdf
+
+-------------------------------------------------------------------------------
+Repair the effect sanity-checking in CGContext.  Basically, check that
+the thing you are doing doesn't interfere with the context.  Note that
+this is too broad:
+
+void
+CGContext::sanity_check(void)
+{
+	if (effect_accum && !effect_context.is_side_effect_free()) {
+		assert(effect_accum->is_side_effect_free());
+	}
+}
+
+Checking for side-effects only is no good in general.  We can usually
+have side-effects in both the context and accum, as long as they do
+not overlap.
+
+-------------------------------------------------------------------------------
+Fix what "side_effect_free" means.  It should either mean side-effect
+free, or it should be renamed to "volatile-free" or similar.  See:
+
+void
+Effect::write_var(const Variable *v)
+{
+	write_vars.push_back(v);
+	// pure = pure;
+	// TODO: not quite correct below ---
+	// --- but I think we want "side_effect_free" to mean "volatile_free".
+	side_effect_free &= !v->isVolatile;
+	// side_effect_free = false;
+}
+
+-------------------------------------------------------------------------------
+ENE, Sun Jul 7 2009: Fix the handling of the generated `.h' files in `src'.
+
+In distributions, we include both the `.m4' files and the generated `.h' files.
+But we require (?) users to have `m4' at distribution build-time.  Also,
+running `make clean' in an unpacked distribution will remove the generated `.h'
+files --- which came with the distribution.
+
+We should either:
+
+  + Treat the generated files more like "regular" source files in dists.
+
+  + Just distribute the `.m4' files, and not the generated `.h' files.
+
+-------------------------------------------------------------------------------
+
+## End of file.

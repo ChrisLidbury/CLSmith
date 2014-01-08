@@ -1,0 +1,568 @@
+#!/usr/bin/perl 
+
+use strict;
+use warnings;
+use Benchmark;
+use English;
+use LockFile::Simple;
+use File::Temp qw/ tempfile tempdir /;
+use File::Copy;
+use Cwd;
+
+# TODO: check for program crash (vs. timeout)
+
+# properly propagate run_program failures upwards
+
+# distinguish between programs that compile and those that run inside
+# the timeout
+
+####################################################################
+
+my $xxtra = "-DCSMITH_MINIMAL";
+
+#my $notmp = "-DUSE_MATH_MACROS_NOTMP";
+my $notmp = "";
+
+my $COMPILER_TIMEOUT = 30;
+
+my $COMPILER_TIMEOUT_RES = 137;
+
+my $RUN_PROGRAM = 0;
+
+my $DO_REDUCE = 0;
+
+####################################################################
+
+my $CSMITH_HOME=$ENV{"CSMITH_HOME"};
+die "oops: CSMITH_HOME environment variable needs to be set" 
+    unless defined($CSMITH_HOME);
+
+my $LOCKFN = "/var/tmp/version_search_lockfile";
+
+####################################################################
+
+my @gcc_opts = (
+    "-c -w -O0", 
+    "-c -w -O1", 
+    "-c -w -Os", 
+    "-c -w -O2", 
+    "-c -w -O3");
+
+my @o0only = (
+    "-O0", 
+    );
+
+my @occomp = ("-fall");
+# my @occomp = (" -fbitfields -fstruct-return ");
+
+my @gcccurrent = ("gcc",
+		  "/home/regehr/z/compiler-install/gcc-r205951-install/bin/gcc",
+		  \@gcc_opts);
+
+my @clang = ("clang",
+	     "/home/regehr/z/compiler-install/llvm-r197202-install/bin/clang",
+	     \@gcc_opts);
+
+my @ccomp = ("ccomp",
+	     "ccomp",
+	     \@occomp);
+
+my @gcc320 = ("gcc320",
+	     "/mnt/local/randomtest/compilers/gcc-320/bin/gcc-320",
+	     \@gcc_opts);
+
+my @gcc330 = ("gcc330",
+	     "/mnt/local/randomtest/compilers/gcc-330/bin/gcc-330",
+	     \@gcc_opts);
+
+my @gcc340 = ("gcc340",
+	     "/mnt/local/randomtest/compilers/gcc-340/bin/gcc-340",
+	     \@gcc_opts);
+
+my @gcc400 = ("gcc400",
+	     "/mnt/local/randomtest/compilers/gcc-400/bin/gcc-400",
+	     \@gcc_opts);
+
+my @gcc410 = ("gcc410",
+	     "/mnt/local/randomtest/compilers/gcc-410/bin/gcc-410",
+	     \@gcc_opts);
+
+my @gcc420 = ("gcc420",
+	     "/mnt/local/randomtest/compilers/gcc-420/bin/gcc-420",
+	     \@gcc_opts);
+
+my @gcc430 = ("gcc430",
+	     "/mnt/local/randomtest/compilers/gcc-430/bin/gcc-430",
+	     \@gcc_opts);
+
+my @gcc440 = ("gcc440",
+	     "/mnt/local/randomtest/compilers/gcc-440/bin/gcc-440",
+	     \@gcc_opts);
+
+my @gcc450 = ("gcc450",
+	     "/mnt/local/randomtest/compilers/gcc-450/bin/gcc-450",
+	     \@gcc_opts);
+
+my @gcc460 = ("gcc460",
+	     "/mnt/local/randomtest/compilers/gcc-460/bin/gcc-460",
+	     \@gcc_opts);
+
+my @gcc470 = ("gcc470",
+	     "/mnt/local/randomtest/compilers/gcc-470/bin/gcc",
+	     \@gcc_opts);
+
+my @gcc480 = ("gcc480",
+	     "/mnt/local/randomtest/compilers/gcc-480/bin/gcc",
+	     \@gcc_opts);
+
+my @opencc40 = ("open64-40",
+	      "/users/regehr/z/compilers/open64-4.0/bin/opencc",
+	      \@gcc_opts);
+
+my @opencc50 = ("open64-50",
+	      "/users/regehr/z/compilers/open64-5.0/bin/opencc",
+	      \@gcc_opts);
+
+my @clang26 = ("clang26",
+	       "/mnt/local/randomtest/compilers/clang-2.6/bin/clang",
+	       \@gcc_opts);
+
+my @clang27 = ("clang27",
+	       "/mnt/local/randomtest/compilers/clang-2.7/bin/clang",
+	       \@gcc_opts);
+
+my @clang28 = ("clang28",
+	       "/mnt/local/randomtest/compilers/clang-2.8/bin/clang",
+	       \@gcc_opts);
+
+my @clang29 = ("clang29",
+	       "/mnt/local/randomtest/compilers/clang-2.9/bin/clang",
+	       \@gcc_opts);
+
+my @clang30 = ("clang30",
+	       "/mnt/local/randomtest/compilers/clang-3.0/bin/clang",
+	       \@gcc_opts);
+
+my @clang31 = ("clang31",
+	       "/mnt/local/randomtest/compilers/clang-3.1/bin/clang",
+	       \@gcc_opts);
+
+my @clang32 = ("clang32",
+	       "/mnt/local/randomtest/compilers/clang-3.2/bin/clang",
+	       \@gcc_opts);
+
+my @clang33 = ("clang33",
+	       "/mnt/local/randomtest/compilers/clang+llvm-3.3-amd64-Ubuntu-12.04.2/bin/clang",
+	       \@gcc_opts);
+
+my @compilers_to_test = (
+
+    #\@clang,
+    #\@gcccurrent,
+    #\@ccomp,
+    
+    \@gcc320,
+    \@gcc330,
+    \@gcc340,
+
+    \@gcc400,
+    \@gcc410,
+    \@gcc420,
+    \@gcc430,
+    \@gcc440,
+    \@gcc450,
+    \@gcc460,
+    \@gcc470,
+    \@gcc480,
+
+    \@opencc40,
+    \@opencc50,
+
+    \@clang26,
+    \@clang27,
+    \@clang28,
+    \@clang29,
+    \@clang30,
+    \@clang31,
+    \@clang32,
+    \@clang33,
+
+    );
+
+####################################################################
+
+# properly parse the return value from system()
+sub runit ($) {
+    my $cmd = shift;
+
+    my $start = new Benchmark;
+    my $res = (system "$cmd");
+    my $end = new Benchmark;
+    my $dur = timediff($end, $start);
+    my $exit_value  = $? >> 8;
+    return ($exit_value, $dur);
+}
+
+# build and run the app, with timeouts for both the compiler and the program
+sub compile_and_run ($$$$) {
+    (my $root, my $compiler, 
+     my $opt, my $custom_options) = @_;
+
+    print "$compiler $opt : ";
+
+    my $opt_str = $opt;
+    ($opt_str =~ s/\ //g);
+    ($opt_str =~ s/\://g);
+    ($opt_str =~ s/\-//g);
+    ($opt_str =~ s/\///g);
+    if (length($opt_str)>40) {
+	$opt_str = substr ($opt_str, 0, 40);
+    }
+    
+    my $exe = "${root}${compiler}${opt_str}_exe";
+    ($exe =~ s/\.//g);
+    ($exe =~ s/\///g);
+
+    my $srcfile = "$root.c";
+
+    my $out = "${exe}.out";
+    my $compilerout = "${exe}_compiler.out";
+
+    my $command = "RunSafely $COMPILER_TIMEOUT 1 /dev/null $compilerout $compiler $opt $xxtra $notmp -I${CSMITH_HOME}/runtime $srcfile -o $exe $custom_options $notmp ";
+
+    print "$command\n";
+    
+    (my $res, my $dur) = runit ($command);
+
+    if (($res != 0) || (!(-e $exe))) {
+	my $crashout = "";
+	if ($res == $COMPILER_TIMEOUT_RES) {
+	    print STDERR "COMPILER FAILURE: TIMEOUT\n";
+	} else {
+	    print STDERR "COMPILER FAILURE with return code $res; output is:\n";
+	    open INF, "<$compilerout" or die;
+	    while (my $line = <INF>) { print "  $line"; $crashout .= $line }
+	    close INF;
+	}
+	return (-2,$crashout,-1);
+    }
+    
+    if (!$RUN_PROGRAM) {
+	return (0,"");
+    }
+
+    ($res, $dur) = runit ("run_program $exe $srcfile $compiler > $out");
+
+    if ($res != 0) {
+	print "couldn't compute access summary\n";
+	return (-1,"");
+    }
+    
+    my $result = "";
+
+    open INF, "<$out" or die;
+    while (my $line = <INF>) {
+	$result .= $line;
+    }
+    close INF;
+
+    return (0,$result);
+}
+
+my $lockmgr;
+
+sub lockit() {
+    $lockmgr = LockFile::Simple->make (
+	-autoclean => 1,
+	-max => 10, 
+	-nfs => 1,
+	-hold => 15000,			    
+	-stale => 1,
+	);
+    my $res = $lockmgr->lock($LOCKFN);
+    return $res;
+}
+
+sub unlockit() {
+    $lockmgr->unlock($LOCKFN);
+}
+
+sub bug_count ($) {
+    (my $err) = @_;
+    my $lines = "";
+    my $found = 0;
+    my $cnt;
+    open INF,"../crash_strings.txt" or die;
+    while (my $line = <INF>) {
+	die unless ($line =~ /^([0-9]+) <<< (.*) >>>$/);
+	if ($2 eq $err) {
+	    $found = 1;
+	    $cnt = 1 + $1;
+	    $lines .= "$cnt <<< $err >>>\n";
+	} else {
+	    $lines .= $line;
+	}
+    }
+    close INF;
+    if (!$found) {
+	$cnt = 1;
+	$lines .= "$cnt <<< $err >>>\n";    
+    }
+    open OUTF, ">../crash_strings.txt" or die;
+    print OUTF $lines;
+    close OUTF;
+    return $cnt;
+}
+
+sub reduce_program ($$$$$$$) {
+    (my $crash, my $compiler, my $fail_opt, my $good_opt, my $root, my $base_compiler, my $fail_out) = @_;
+
+    my $err;
+    if ($crash) {
+	if ($fail_out =~ /internal compiler error: (.*)$/m) {
+	    $err = $1;
+	} elsif ($fail_out =~ /Assertion(.*)failed./m) {
+	    $err = $1;
+	} else {
+	    print "FAILURE to reduce: no ICE message\n";
+	    return;
+	}
+	if ($err =~ /killed/i) {
+	    print "FAILURE to reduce compiler that was killed\n";
+	    return;
+	}
+	# escape the string so we can use it in a shell command
+	$err =~ s/[.*+?|\"\`\[\]\{\}\\]/\\$&/g;
+	$err =~ s/'/'\\''/g;
+	
+	my $cnt = bug_count ($err);
+	print "this bug has been seen $cnt time(s)\n";
+	my $prob = 5.0 / $cnt;
+	if (rand() > $prob) {
+	    print "we'll skip reducing this time\n";
+	    return;
+	}
+    } else {
+	$err = "OOPS";
+    }
+
+    my $tempdir = tempdir ("reduce_XXXXXX", DIR => "../", CLEANUP => 0 );
+    print "ok: reducing ".($crash ? "crash" : "wrong code")." bug for $compiler at $fail_opt in $tempdir with '$err'\n";
+    File::Copy::cp ("$root.c", $tempdir);
+    runit "gcc -E -I${CSMITH_HOME}/runtime -DCSMITH_MINIMAL ${root}.c > $tempdir/small.c";
+    if ($crash) {
+	open INF, "<${CSMITH_HOME}/driver/test1_crash.sh" or die;
+    } else {
+	open INF, "<${CSMITH_HOME}/driver/test1_wrong_code.sh" or die;
+    }
+    open OUTF, ">$tempdir/test1.sh" or die;
+    my $origdir = getcwd;
+    my $updir = "${origdir}/../bonus_crashes";
+    my $str = "${origdir}/../crash_strings.txt";
+    while (my $line = <INF>) {
+	$line =~ s/XX_COMMAND/$compiler/;
+	$line =~ s/XX_STRING/'$err'/;
+	$line =~ s/XX_CRASHFILE/$str/;
+	$line =~ s/XX_DIR/$updir/;
+	$line =~ s/XX_COMPILER/${base_compiler}/;
+	$line =~ s/XX_OPT/${fail_opt}/;
+	$line =~ s/XX_GOOD/${good_opt}/;
+	print OUTF $line;
+    }
+    close INF;
+    close OUTF;
+    runit "chmod a+rx $tempdir/test1.sh";
+    chdir $tempdir or die;
+    print "timestamp for creduce start: ";
+    system "date";
+    runit "creduce -n 1 --slow ./test1.sh small.c";
+    print "timestamp for creduce stop: ";
+    system "date";
+    my $ofn = ($crash?"CRASH":"WRONG_CODE")."_REDUCTION_FINISHED";
+    open OF, ">$ofn" or die;
+    print OF "${base_compiler}\n";
+    close OF;
+    chdir $origdir or die;
+}
+
+sub test_compiler ($$$) {
+    (my $root, my $compiler_ref, my $custom_options) = @_;
+
+    (my $base_compiler, my $compiler, my $optref) = @{$compiler_ref};
+    my @OPTS = @{$optref};
+
+    my $undef;
+
+    my %results;
+    my %csums;
+    my $success = 0;
+    my $compiler_fail = 0;
+
+    my %var_reads;
+    my %var_writes;
+    my %num_reads;
+    my %num_writes;
+    my $first = 1;
+    my $fail_opt;
+    my $fail_out;
+
+    foreach my $opt (@OPTS) {
+	
+	print "-------------------- start testing $base_compiler\n";	
+	(my $res, my $res_str) = 
+	    compile_and_run ($root, $compiler, 
+			     $opt, $custom_options);
+        $num_reads{$opt} = 0;
+        $num_writes{$opt} = 0;
+	if ($res == 0) {
+	    $success++;
+	    if ($RUN_PROGRAM) {
+		my $checksum_regex = "checksum = (TIMEOUT|[0-9a-fA-F]+)\\s*";
+		die if ((!($res_str =~ s/$checksum_regex//)) &&
+		        (!($res_str =~ "TIMEOUT")));
+		my $csum = $1;
+		print "$res_str";
+		print "checksum = $csum\n";
+		$results{$opt} = $res_str;
+		$csums{$opt} = $csum;
+
+		my $tot_reads = 0;
+		my $tot_writes = 0;
+		
+		while ($res_str =~ /([0-9a-zA-Z\_]+): ([0-9]+) reads, ([0-9]+) writes/g) {
+		    $var_reads{$opt}{$1} = $2;
+		    $var_writes{$opt}{$1} = $3;
+		    $num_reads{$opt} += $2;
+		    $num_writes{$opt} += $3;
+		    $tot_reads += $2;
+		    $tot_writes += $3;
+		}
+
+		$first = 0;
+
+	    }
+	} elsif ($res == -2) {
+	    $compiler_fail++;
+	    if (!defined($fail_opt) || rand() < 0.5) {
+		$fail_opt = $opt;
+		$fail_out = $res_str;
+	    }
+	} else {
+	    die if ($res != -1);
+	    return (1, 0, $undef, $undef);
+	}
+	print "-------------------- stop\n";	
+    }
+
+    my $result;
+    my $csum;
+    my $writes;
+    my $interesting = 0;
+
+    if ($compiler_fail > 0) {
+	print "COMPILER FAILED $compiler\n";
+	$interesting = 1;
+	if ($DO_REDUCE) {
+	    reduce_program (1, $compiler, $fail_opt, "", $root, $base_compiler, $fail_out);
+	}
+    }
+
+    if ($success > 0) {
+	
+	my $consistent = 1;
+	my $opt1;
+	
+	foreach my $opt (keys %results) {
+
+	    if (defined($result)) {
+		if (($csum ne $csums{$opt}) &&
+		    ($csum ne "TIMEOUT" && $csums{$opt} ne "TIMEOUT")) {
+		    print "INTERNAL CHECKSUM FAILURE $compiler\n";
+		    $interesting = 1;
+		    if ($DO_REDUCE) {
+			reduce_program (0, $compiler, $opt, $opt1, $root, $base_compiler, "");
+		    }
+		    $consistent = 0;
+		    last;
+		}
+	    } else {
+		$writes = $num_writes{$opt};
+		$opt1 = $opt;
+		$result = $results{$opt};
+		$csum = $csums{$opt};				
+	    }
+	}
+
+	return (0, $consistent, $result, $csum, $interesting);
+
+    } else {
+	return (0, 0, $result, $csum, $interesting);
+    }
+}
+
+sub test_program ($$) {
+    (my $root, my $custom_options) = @_;
+
+    my $vcount;
+    my %mt;
+
+    my $result;
+    my $csum;
+
+    my $interesting = 0;
+
+    foreach my $compiler_ref (@compilers_to_test) {
+
+	(my $base_compiler, my $compiler, my $optref) = @{$compiler_ref};
+
+	(my $abort_test, my $consistent, my $tmp_result, my $tmp_csum, my $tmp_interesting) = 
+	    test_compiler ($root, $compiler_ref, $custom_options);
+
+	return -1 if ($abort_test != 0);
+	
+	if ($tmp_interesting) {
+	    $interesting = 1;
+	}
+	
+	print "COMPLETED TEST $compiler\n";
+	
+	# ignore internally inconsistent results
+	if ($consistent) {
+	    if (defined ($result) &&
+		defined ($csum)) {
+		if (($csum ne $tmp_csum) &&
+		    ($csum ne "TIMEOUT") &&
+		    ($tmp_csum ne "TIMEOUT")) {
+		    print "EXTERNAL CHECKSUM FAILURE\n";
+		    $interesting = 1;
+		}
+	    } else {
+		$result = $tmp_result;
+		$csum = $tmp_csum;
+	    }
+	}
+    }
+
+    if ($interesting) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+####################################################################
+
+die "expecting filename" if scalar(@ARGV < 1);
+
+my $fn = $ARGV[0];
+
+my $custom_options = "";
+if (scalar(@ARGV)==2) {
+    $custom_options = $ARGV[1];
+}
+
+my $res = test_program ($fn, $custom_options);
+exit ($res);
+
+####################################################################
+

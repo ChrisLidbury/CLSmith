@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use English;
+
+####################################################################
+
+my $TIMEOUT = 5;
+
+my $COMPILER_TIMEOUT_RES = 137;
+
+# ugh
+if ($OSNAME =~ /darwin/) {
+    $COMPILER_TIMEOUT_RES = 152;
+}
+
+####################################################################
+
+my %name_to_addr;
+my %addr_to_name;
+
+my $exe;
+
+my $print_sizep = 1;
+
+# properly parse the return value from system()
+sub runit ($) {
+    my $cmd = shift;
+
+    my $res = (system "$cmd");
+    my $exit_value  = $? >> 8;
+    return $exit_value;
+}
+
+sub parse_output ($) {
+    (my $out) = @_;
+    my $csum;
+    open INF, "<$out" or die;
+    while (my $line = <INF>) {
+	chomp $line;	
+	if ($line =~ /checksum = ([0-9a-fA-F]+)/) {
+	    $csum = $1;
+	    next;
+	}
+    }
+    if (!defined($csum)) {
+	print STDERR "BAILING -- no checksum\n";
+	exit (-1);
+    }
+    my $results = "checksum = $csum\n";
+    return $results;
+}
+
+############################## main ###########################
+
+my $nargs = scalar(@ARGV);
+
+die "FAIL expecting exe-filename c-filename compiler" if 
+    ($nargs != 3);
+$exe = $ARGV[0];
+my $cfile = $ARGV[1];
+my $compiler = $ARGV[2];
+
+my $out = "${exe}.raw-out";
+
+my $res = runit ("RunSafely $TIMEOUT 1 /dev/null $out ./$exe");
+
+if ($res == $COMPILER_TIMEOUT_RES) {
+    print STDERR "BAILING -- timeout\n";
+    exit (-1);
+} elsif ($res != 0) {
+    print STDERR "BAILING -- unexpected $compiler PROGRAM FAIL, retval = ${res}\n";
+    exit (-1);
+}
+
+my $result = parse_output ($out);
+print "$result";
+
+exit 0;
+
