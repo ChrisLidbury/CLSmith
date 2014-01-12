@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+//#include "CLSmith/CLFunction.h"
+#include "CLSmith/Globals.h"
 #include "Function.h"
 #include "Type.h"
 
@@ -18,6 +20,11 @@ void CLProgramGenerator::goGenerator() {
   // This creates the random program, the rest handles outputting the program.
   GenerateAllTypes();
   GenerateFunctions();
+
+  // csmith has now built the program, so we modify as required.
+  //ConvertAllFunctions();
+  Globals globals = Globals::CreateGlobals();
+  //globals.OutputStructDefinition(output_mgr_->get_main_out());
 
   output_mgr_->Output();
 }

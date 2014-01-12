@@ -32,9 +32,9 @@ class CLProgramGenerator : public AbsProgramGenerator {
   // Inherited from AbsProgramGenerator. ?
   std::string get_count_prefix(const std::string& name);
 
-  // Initialise the generator. This one doesn't generally do much, as we assume
-  // that the initialise method of the csmith program generators has been
-  // called.
+  // Inherited from AbsProgramGenerator.This one doesn't generally do much, as
+  // we assume that the initialise method of the csmith program generators has
+  // been called.
   void initialize();
 
  private:

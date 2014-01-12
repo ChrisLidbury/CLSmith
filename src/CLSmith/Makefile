@@ -5,7 +5,7 @@
 CC=g++
 CFLAGS=-c -Wall -I../ -std=c++0x -g
 LFLAGS=../*.o -std=c++0x
-SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp CLRandomProgramGenerator.cpp
+SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp
 OBJS=$(SOURCES:.cpp=.o)
 BIN=CLSmith
 

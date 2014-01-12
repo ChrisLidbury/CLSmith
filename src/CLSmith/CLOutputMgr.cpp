@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "CLSmith/Globals.h"
 #include "Function.h"
 #include "OutputMgr.h"
 #include "Type.h"
@@ -58,9 +59,10 @@ void CLOutputMgr::Output() {
   OutputStructUnionDeclarations(out);
   
   // Only print the variable declarations, not the defs. Wrap them in a struct.
-  out << "typedef struct globals {" << std::endl;
+  out << "struct globals {" << std::endl;
   OutputGlobalVariablesDecls(out);
-  out << "} g;" << std::endl;
+  out << "};" << std::endl;
+  Globals::CreateGlobals().OutputStructDefinition(out);
 
   OutputForwardDeclarations(out);
   OutputFunctions(out);
