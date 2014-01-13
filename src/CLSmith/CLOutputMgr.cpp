@@ -62,7 +62,7 @@ void CLOutputMgr::Output() {
   out << "struct globals {" << std::endl;
   OutputGlobalVariablesDecls(out);
   out << "};" << std::endl;
-  Globals::CreateGlobals().OutputStructDefinition(out);
+  //Globals::CreateGlobals().OutputStructDefinition(out);
 
   OutputForwardDeclarations(out);
   OutputFunctions(out);

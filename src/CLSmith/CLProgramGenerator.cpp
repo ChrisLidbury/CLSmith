@@ -24,6 +24,7 @@ void CLProgramGenerator::goGenerator() {
   // csmith has now built the program, so we modify as required.
   //ConvertAllFunctions();
   Globals globals = Globals::CreateGlobals();
+  globals.AddGlobalStructToAllFunctions();
   //globals.OutputStructDefinition(output_mgr_->get_main_out());
 
   output_mgr_->Output();

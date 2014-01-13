@@ -29,11 +29,14 @@
 #define _CLSMITH_GLOBALS_H_
 
 #include <algorithm>
+#include <memory>
 #include <ostream>
 #include <vector>
 
 #include "CommonMacros.h"
 
+class Function;
+class Type;
 class Variable;
 
 namespace CLSmith {
@@ -42,20 +45,18 @@ namespace CLSmith {
 // the data that the pointers point to.
 class Globals {
  public:
-  Globals() {};
+  Globals() {}
   explicit Globals(const std::vector<Variable *>& vars) : global_vars_(vars) {}
 
-  // Move constructors.
-  Globals(Globals&& other) { std::swap(global_vars_, other.global_vars_); }
-  void operator=(Globals&& other) {
-    std::swap(global_vars_, other.global_vars_);
-  }
+  // Move constructor/assignment.
+  Globals(Globals&& other);
+  Globals& operator=(Globals&& other);
 
   ~Globals() {}
 
   // Adds the global variables specified in the parameter.
   void AddGlobalVariable(Variable *var) { global_vars_.push_back(var); }
-  void AddGlobalVariables(const std::vector<Variable *> vars) {
+  void AddGlobalVariables(const std::vector<Variable *>& vars) {
     global_vars_.insert(global_vars_.end(), vars.begin(), vars.end());
   }
 
@@ -67,12 +68,36 @@ class Globals {
   // element of the struct.
   void OutputStructInit(std::ostream& out);
 
+  // Modifies the function such that it no longer refers to global variables,
+  // instead, it will refer to members of a local struct. Just adds the name of
+  // the local struct to the parameter list of the function.
+  void AddGlobalStructToFunction(Function *function, Variable *var);
+
+  // Modifies all functions that have been generated to refer to the local
+  // struct instead of global variables.
+  //
+  // Unfortunately, there is no easy way to change how the variables are
+  // referenced. We have to make the local struct we pass around have the same
+  // name, as we have to change the name field of the variable directly to add
+  // "local_struct->" to the start of every global variable.
+  void AddGlobalStructToAllFunctions();
+
   // Must be called after csmith has generated the program. Collects all the
   // global variables in the program.
   static Globals CreateGlobals();
 
  private:
+  // Constructs the Type object using all the variables that have currently been
+  // added. It is assumed that all the global variables in the program have
+  // already been created and added.
+  void CreateType();
+
+ private:
   std::vector<Variable *> global_vars_;
+  // Type class generated lazily, needs all the global variables to have been
+  // added before creation.
+  std::unique_ptr<Type> struct_type_;
+  std::unique_ptr<Type> struct_type_ptr_;
 
   DISALLOW_COPY_AND_ASSIGN(Globals);
 };
