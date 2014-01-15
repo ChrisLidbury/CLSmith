@@ -10,26 +10,33 @@
 #include <fstream>
 #include <string>
 
-//#include "CLSmith/Util.h"
 #include "CommonMacros.h"
 #include "OutputMgr.h"
 
 namespace CLSmith {
+
+class Globals;
 
 class CLOutputMgr : public OutputMgr {
  public:
   CLOutputMgr();
   explicit CLOutputMgr(const std::string& filename) : out_(filename.c_str()) {}
   explicit CLOutputMgr(const char *filename) : out_(filename) {}
+  ~CLOutputMgr() { out_.close(); }
 
   // Inherited from OutputMgr. Outputs comments, #defines and forward
   // declarations.
   void OutputHeader(int argc, char *argv[], unsigned long seed);
+
   // Inherited from OutputMgr. Outputs all the definitions.
   void Output();
 
   // Inherited from OutputMgr. Gets the stream used for printing the output.
   std::ostream &get_main_out();
+
+  // Outputs the kernel entry function. OutputMain in OutputMgr isn't virtual,
+  // so we can't override it.
+  void OutputEntryFunction(Globals& globals);
 
  private:
   std::ofstream out_;

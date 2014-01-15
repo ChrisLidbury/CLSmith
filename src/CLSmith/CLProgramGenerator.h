@@ -25,10 +25,12 @@ class CLProgramGenerator : public AbsProgramGenerator {
 
   // Inherited from AbsProgramGenerator. Creates the random program.
   void goGenerator();
+
   // Inherited from AbsProgramGenerator. Would ideally return const OutputMgr&,
   // but this is inherited from a pure virtual function, we also wnat to accept
   // other managers as a parameter.
   OutputMgr *getOutputMgr();
+
   // Inherited from AbsProgramGenerator. ?
   std::string get_count_prefix(const std::string& name);
 

@@ -50,7 +50,8 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "#define UINT16_MIN USHRT_MIN\n"
       "#define UINT16_MAX USHRT_MAX\n"
       "#define UINT8_MIN UCHAR_MIN\n"
-      "#define UINT8_MAX UCHAR_MAX\n";
+      "#define UINT8_MAX UCHAR_MAX\n"
+      << std::endl;
   OutputMgr::OutputHeader(argc, argv, seed);
 }
 
@@ -60,16 +61,32 @@ void CLOutputMgr::Output() {
   
   // Only print the variable declarations, not the defs. Wrap them in a struct.
   out << "struct globals {" << std::endl;
-  OutputGlobalVariablesDecls(out);
+  OutputGlobalVariables/*Decls*/(out);
   out << "};" << std::endl;
-  //Globals::CreateGlobals().OutputStructDefinition(out);
+
+  Globals globals = Globals::CreateGlobals();
+  globals.OutputStructDefinition(out);
+  globals.ModifyGlobalVariableReferences();
+  globals.AddGlobalStructToAllFunctions();
 
   OutputForwardDeclarations(out);
   OutputFunctions(out);
+  OutputEntryFunction(globals);
 }
 
 std::ostream& CLOutputMgr::get_main_out() {
   return out_;
+}
+
+void CLOutputMgr::OutputEntryFunction(Globals& globals) {
+  // Would ideally use the ExtensionMgr, but there is no way to set it to our
+  // own custom made one (without modifying the code).
+  std::ostream& out = get_main_out();
+  out << "__kernel void entry(__global int *result) {" << std::endl;
+  globals.OutputStructInit(out);
+  
+  out << "  return 0;" << std::endl;
+  out << "}" << std::endl;
 }
 
 }  // namespace CLSmith

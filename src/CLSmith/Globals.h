@@ -62,10 +62,12 @@ class Globals {
 
   // Output the definition of the global struct, including the types of all the
   // variables that have need added.
+  // Must be called before ModifyGlobalVariableReferences().
   void OutputStructDefinition(std::ostream& out);
 
   // Output an initialisation of the global struct. Assigning the value of each
   // element of the struct.
+  // Must be called after ModifyGlobalVariableReferences().
   void OutputStructInit(std::ostream& out);
 
   // Modifies the function such that it no longer refers to global variables,
@@ -75,22 +77,35 @@ class Globals {
 
   // Modifies all functions that have been generated to refer to the local
   // struct instead of global variables.
+  void AddGlobalStructToAllFunctions();
+
+  // Modifies all the global variables such that they refer to our global struct
+  // varialble. Any methods that make use of the names of the globals before
+  // they are modified must be called before this.
   //
   // Unfortunately, there is no easy way to change how the variables are
   // referenced. We have to make the local struct we pass around have the same
   // name, as we have to change the name field of the variable directly to add
   // "local_struct->" to the start of every global variable.
-  void AddGlobalStructToAllFunctions();
+  void ModifyGlobalVariableReferences();
+
+  // Gets the type of the global struct, as a ptr type. The actual type can be
+  // retrieved by calling:
+  //   const Type *type = GetGlobalStructPtrType().ptr_type;
+  const Type& GetGlobalStructPtrType();
+
+  // Gets the Variable object that all the global variables are a part of.
+  const Variable& GetGlobalStructVar();
 
   // Must be called after csmith has generated the program. Collects all the
   // global variables in the program.
   static Globals CreateGlobals();
 
  private:
-  // Constructs the Type object using all the variables that have currently been
-  // added. It is assumed that all the global variables in the program have
-  // already been created and added.
-  void CreateType();
+  // Constructs the Type and Variable objects using all the variables that have
+  // currently been added. It is assumed that all the global variables in the
+  // program have already been created and added.
+  void CreateGlobalStruct();
 
  private:
   std::vector<Variable *> global_vars_;
@@ -98,6 +113,9 @@ class Globals {
   // added before creation.
   std::unique_ptr<Type> struct_type_;
   std::unique_ptr<Type> struct_type_ptr_;
+  // Also created lazily, does not own the data. Want a single variable for the
+  // globals, as we modify all the globals to refer to the same struct variable.
+  Variable *struct_var_;
 
   DISALLOW_COPY_AND_ASSIGN(Globals);
 };
