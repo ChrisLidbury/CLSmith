@@ -61,7 +61,7 @@ void CLOutputMgr::Output() {
   
   // Only print the variable declarations, not the defs. Wrap them in a struct.
   out << "struct globals {" << std::endl;
-  OutputGlobalVariables/*Decls*/(out);
+ // OutputGlobalVariables/*Decls*/(out);
   out << "};" << std::endl;
 
   Globals globals = Globals::CreateGlobals();
@@ -84,6 +84,10 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   std::ostream& out = get_main_out();
   out << "__kernel void entry(__global int *result) {" << std::endl;
   globals.OutputStructInit(out);
+
+  out << "  func1(";
+  globals.GetGlobalStructVar().Output(out);
+  out << ");" << std::endl;
   
   out << "  return 0;" << std::endl;
   out << "}" << std::endl;

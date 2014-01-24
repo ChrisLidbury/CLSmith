@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ArrayVariable.h"
+#include "util.h"
 #include "CVQualifiers.h"
 #include "Expression.h"
 #include "Function.h"
@@ -45,18 +46,30 @@ void Globals::OutputStructDefinition(std::ostream& out) {
 }
 
 void Globals::OutputStructInit(std::ostream& out) {
+  // Two local copies of the global struct. The first will be default
+  // initialised, so we can set a pointer to it, allowing our second
+  // copy to be brace initialised.
+  std::string local_name1 = gensym("c_");
+  std::string local_name2 = gensym("c_");
   struct_type_->Output(out);
+  out << " " << local_name1 << ";" << std::endl;
+
+  struct_type_ptr_->Output(out);
   out << " ";
   struct_var_->Output(out);
-  out << " = {" << std::endl;
+  out << " = &" << local_name1 << ";" << std::endl;
+
+  struct_type_->Output(out);
+  out << " " << local_name2 << " = {" << std::endl;
   for (Variable *var : global_vars_) {
     if (var->isArray) {
       ArrayVariable *var_array = dynamic_cast<ArrayVariable *>(var);
       if (!var_array->collective) continue;
       vector<std::string> init_strings;
       init_strings.push_back(var_array->init->to_string());
-      for (const Expression *init : var_array->get_more_init_values()) init_strings.push_back(init->to_string());
-      out << var_array->build_initializer_str(init_strings);
+      for (const Expression *init : var_array->get_more_init_values())
+        init_strings.push_back(init->to_string());
+      out << var_array->build_init_recursive(0, init_strings);
     } else {
       var->init->Output(out);
     }
@@ -65,6 +78,8 @@ void Globals::OutputStructInit(std::ostream& out) {
     out << "*/" << std::endl;
   }
   out << "};" << std::endl;
+
+  out << local_name1 << " = " << local_name2 << ";" << std::endl;
 }
 
 void Globals::AddGlobalStructToFunction(Function *function, Variable *var) {
@@ -82,9 +97,24 @@ void Globals::ModifyGlobalVariableReferences() {
   if (!struct_type_) CreateGlobalStruct();
   // Append the name of our newly created struct to the front of every global
   // variable (eugghhh).
-  for (Variable *var : global_vars_)
+  std::vector<std::string> names;
+  for (Variable *var : global_vars_) {
+    names.push_back(var->name);
     *const_cast<std::string *>(&var->name) =
         struct_var_->name + "->" + var->name;
+  }
+
+  // Possible bug where array variables are being itemised (and so copied) but
+  // not put in the global vars list. Have to trawl through all vars.
+  // This is a temporary fix, as it can also screw up stuff later.
+  for (const std::string& name : names) {
+    const Variable *all_var = VariableSelector::find_var_by_name(name);
+    while (all_var != NULL) {
+      *const_cast<std::string *>(&all_var->name) =
+          struct_var_->name + "->" + all_var->name;
+      all_var = VariableSelector::find_var_by_name(name);
+    }
+  }
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
