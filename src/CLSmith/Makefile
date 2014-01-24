@@ -9,7 +9,12 @@ SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenera
 OBJS=$(SOURCES:.cpp=.o)
 BIN=CLSmith
 
-all: $(SOURCES) $(BIN)
+all: generator launcher
+
+generator: $(SOURCES) $(BIN)
+
+launcher:
+	gcc -I/homes/$(USER)/OpenCL/ cl_launcher.c -o launcher -lOpenCL
 
 $(BIN): $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o $@
