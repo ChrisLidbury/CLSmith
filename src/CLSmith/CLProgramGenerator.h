@@ -27,7 +27,7 @@ class CLProgramGenerator : public AbsProgramGenerator {
   void goGenerator();
 
   // Inherited from AbsProgramGenerator. Would ideally return const OutputMgr&,
-  // but this is inherited from a pure virtual function, we also wnat to accept
+  // but this is inherited from a pure virtual function, we also want to accept
   // other managers as a parameter.
   OutputMgr *getOutputMgr();
 

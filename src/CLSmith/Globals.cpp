@@ -8,7 +8,9 @@
 #include "util.h"
 #include "CVQualifiers.h"
 #include "Expression.h"
+#include "ExpressionVariable.h"
 #include "Function.h"
+#include "FunctionInvocationUser.h"
 #include "Type.h"
 #include "Variable.h"
 #include "VariableSelector.h"
@@ -37,7 +39,7 @@ void Globals::OutputStructDefinition(std::ostream& out) {
   out << " {" << std::endl;
   for (Variable *var : global_vars_) {
     // Need this check, or we will output arrays twice.
-    if (var->isArray && !dynamic_cast<ArrayVariable *>(var)->collective)
+    if (var->isArray && dynamic_cast<ArrayVariable *>(var)->collective)
       continue;
     var->OutputDecl(out);
     out << ";" << std::endl;
@@ -64,7 +66,7 @@ void Globals::OutputStructInit(std::ostream& out) {
   for (Variable *var : global_vars_) {
     if (var->isArray) {
       ArrayVariable *var_array = dynamic_cast<ArrayVariable *>(var);
-      if (!var_array->collective) continue;
+      if (var_array->collective) continue;
       vector<std::string> init_strings;
       init_strings.push_back(var_array->init->to_string());
       for (const Expression *init : var_array->get_more_init_values())
@@ -91,6 +93,11 @@ void Globals::AddGlobalStructToAllFunctions() {
   const std::vector<Function *>& functions = get_all_functions();
   for (Function *function : functions)
     AddGlobalStructToFunction(function, struct_var_);
+
+  // Also need to add the parameter to all invocations of the functions.
+  for (FunctionInvocationUser *invocation :
+      *FunctionInvocationUser::GetAllFunctionInvocations())
+    invocation->param_value.push_back(new ExpressionVariable(*struct_var_));
 }
 
 void Globals::ModifyGlobalVariableReferences() {
@@ -104,17 +111,15 @@ void Globals::ModifyGlobalVariableReferences() {
         struct_var_->name + "->" + var->name;
   }
 
-  // Possible bug where array variables are being itemised (and so copied) but
-  // not put in the global vars list. Have to trawl through all vars.
-  // This is a temporary fix, as it can also screw up stuff later.
-  for (const std::string& name : names) {
-    const Variable *all_var = VariableSelector::find_var_by_name(name);
-    while (all_var != NULL) {
-      *const_cast<std::string *>(&all_var->name) =
-          struct_var_->name + "->" + all_var->name;
-      all_var = VariableSelector::find_var_by_name(name);
-    }
-  }
+  // At some points during generation, a global array variable will be
+  // 'itemized'. It will not be put in the list of global variables, so as a
+  // fix, we add a method in the VariableSelector that give us the list of all
+  // variables.
+  // Variable::is_global() is unreliable.
+  for (Variable *var : *VariableSelector::GetAllVariables())
+    if (var->name.find("g_") == 0)
+      *const_cast<std::string *>(&var->name) =
+          struct_var_->name + "->" + var->name;
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
