@@ -95,6 +95,7 @@ public:
 	static void GenerateParameterVariable(Function &curFunc);
 	static Variable* GenerateParameterVariable(const Type *type, const CVQualifiers *qfer);
 	static std::vector<Variable *>* GetGlobalVariables(void) {return &GlobalList;}
+	static std::vector<Variable *>* GetAllVariables(void) {return &AllVars;}
 	static void doFinalization(void); 
 	static void expand_struct_union_vars(vector<const Variable *>& vars, const Type* type);
 

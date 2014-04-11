@@ -68,6 +68,7 @@ static vector<bool> needcomma;  // Flag to track output of commas
 
 static vector<const FunctionInvocationUser*> invocations;   // list of function calls
 static vector<const Fact*> return_facts;              // list of return facts
+vector<FunctionInvocationUser*> FunctionInvocationUser::AllFunctionInvocations;    // All function invocations
 
 const Fact*
 get_return_fact_for_invocation(const FunctionInvocationUser* fiu, const Variable* var, enum eFactCategory cat) 
@@ -243,6 +244,7 @@ FunctionInvocationUser::build_invocation_and_function(CGContext &cg_context, con
 	}
 
 	func->visited_cnt = 1;
+	AllFunctionInvocations.push_back(fiu);
 	return fiu; 
 }
 
@@ -296,6 +298,7 @@ FunctionInvocationUser::build_invocation(Function *target, CGContext &cg_context
 			cg_context.add_visible_effect(*new_context.get_effect_accum(), cg_context.get_current_block());
 			Effect& func_effect = func->feffect;
 			func_effect.add_external_effect(*new_context.get_effect_accum(), cg_context.call_chain);
+			AllFunctionInvocations.push_back(this);
 		}
 	}
 	else {
