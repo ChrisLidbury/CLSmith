@@ -85,9 +85,14 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << "__kernel void entry(__global int *result) {" << std::endl;
   globals.OutputStructInit(out);
 
-  out << "  func1(";
+  out << "  func_1(";
   globals.GetGlobalStructVar().Output(out);
   out << ");" << std::endl;
+
+  // Handle hashing and outputting.
+  out << "  crc32_gentab();" << std::endl;
+  HashGlobalVariables(out);
+  out << "  result[get_global_id(0)] = crc32_context ^ 0xFFFFFFFFUL;" << std::endl;
   
   out << "  return 0;" << std::endl;
   out << "}" << std::endl;

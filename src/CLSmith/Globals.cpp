@@ -71,17 +71,21 @@ void Globals::OutputStructInit(std::ostream& out) {
       init_strings.push_back(var_array->init->to_string());
       for (const Expression *init : var_array->get_more_init_values())
         init_strings.push_back(init->to_string());
-      out << var_array->build_init_recursive(0, init_strings);
+      out << "    " << var_array->build_init_recursive(0, init_strings);
     } else {
+      out << "    ";
       var->init->Output(out);
     }
     out << ", /*";
     var->Output(out);
     out << "*/" << std::endl;
   }
-  out << "};" << std::endl;
+  out << "  };" << std::endl;
 
-  out << local_name1 << " = " << local_name2 << ";" << std::endl;
+  // out << local_name1 << " = " << local_name2 << ";" << std::endl;
+  out << "  ";
+  struct_var_->Output(out);
+  out << " = &" << local_name2 << ";" << std::endl;
 }
 
 void Globals::AddGlobalStructToFunction(Function *function, Variable *var) {

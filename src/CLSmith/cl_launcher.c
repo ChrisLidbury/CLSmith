@@ -6,6 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define WORK_ITEMS 1024
+#define WORK_GROUP_SIZE WORK_ITEMS
+
+// User input.
+const char *file;
+cl_platform_id *platform;
+cl_device_id device;
+
 // Data to free.
 char *source_text = NULL;
 
@@ -15,16 +23,28 @@ void compiler_callback(cl_program, void *);
 int cl_error_check(cl_int, const char *);
 
 int main(int argc, char **argv) {
-  // Parse the input. Expect one parameter, which is the index into the
-  // platform_id array.
-  if (argc < 2) {
-    printf("Expected one argument \"./test <platform_id>\"\n");
+  // Parse the input. Expect three parameters.
+  if (argc < 3) {
+    printf("Expected one argument \"./test <cl_program> <platform_id> <device_id> [flags...]\"\n");
     return 1;
   }
+
+  // Source file.
+  file = argv[1];
+
+  // Platform ID, the index in the array of platforms.
   int platform_index = -1;
-  sscanf(argv[1], "%d", &platform_index);
+  sscanf(argv[2], "%d", &platform_index);
   if (platform_index < 0) {
-    printf("Could not parse platform id \"%s\"\n", argv[1]);
+    printf("Could not parse platform id \"%s\"\n", argv[2]);
+    return 1;
+  }
+
+  // Device ID, not used atm.
+  int device_index = -1;
+  sscanf(argv[3], "%d", &device_index);
+  if (device_index < 0) {
+    printf("Could not parse device id \"%s\"\n", argv[3]);
     return 1;
   }
 
@@ -39,11 +59,10 @@ int main(int argc, char **argv) {
     printf("No platform for id %d\n", platform_index);
     return 1;
   }
-  cl_platform_id *platform = &platforms[platform_index];
+  platform = &platforms[platform_index];
 
   // Find all the GPU devices for the platform.
   cl_int gpu_device_count;
-  cl_device_id device;
   err = clGetDeviceIDs(
       *platform, CL_DEVICE_TYPE_GPU, 1, &device, &gpu_device_count);
   if (cl_error_check(err, "clGetDeviceIDs error"))
@@ -61,9 +80,9 @@ int main(int argc, char **argv) {
 
 int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
   // Try to read source file into a string.
-  FILE *source = fopen("../src/CLSmith/CLProg.c", "rb");
+  FILE *source = fopen(file, "rb");
   if (source == NULL) {
-    printf("Could not open a.c\n");
+    printf("Could not open %s\n", file);
     return 1;
   }
 
@@ -106,7 +125,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Add optimisation to options later.
-  err = clBuildProgram(program, 0, NULL, "-w -I../runtime/", compiler_callback, NULL);
+  err = clBuildProgram(program, 0, NULL, "-w -I../../runtime/", compiler_callback, NULL);
   if (cl_error_check(err, "Error building program")) {
     size_t err_size;
     err = clGetProgramBuildInfo(
