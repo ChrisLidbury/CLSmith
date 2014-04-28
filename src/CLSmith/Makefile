@@ -5,7 +5,7 @@
 CC=g++
 CFLAGS=-c -Wall -I../ -std=c++0x -g
 LFLAGS=../*.o -std=c++0x
-SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp
+SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp Walker.cpp
 OBJS=$(SOURCES:.cpp=.o)
 BIN=CLSmith
 
@@ -14,7 +14,7 @@ all: generator launcher
 generator: $(SOURCES) $(BIN)
 
 launcher: cl_launcher.c
-	gcc -I/homes/$(USER)/OpenCL/ cl_launcher.c -o launcher -lOpenCL
+	gcc -I/homes/$(USER)/OpenCL/ cl_launcher.c -g -o launcher -lOpenCL
 
 $(BIN): $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o $@
