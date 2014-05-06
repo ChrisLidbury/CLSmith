@@ -29,7 +29,10 @@ BlockWalker *CreateBlockWalkerAtStatement(Block *block, Statement *statement) {
 
 bool WalkerBase::AdvanceOne() {
   if (!statement_) block_it_ = block_->stms.begin();
-  if (block_it_ == block_->stms.end()) return false;
+  if (block_it_ == block_->stms.end()) {
+    statement_ = NULL;
+    return false;
+  }
   statement_ = *block_it_;
   ++block_it_;
   return true;
@@ -134,16 +137,17 @@ FunctionWalker *FunctionWalker::CreateFunctionWalkerAtStatement(
     if (!nested_blocks_rev.empty()) {
       BlockWalker *branch = nested_blocks_rev.top();
       if (statement->get_type() == eFor) {
-        branch->WalkerImpl<eFor>::for_body_.reset();
+        block_walker->WalkerImpl<eFor>::for_body_.reset();
       } else if (statement->get_type() == eIfElse) {
-        branch->WalkerImpl<eIfElse>::if_body_.reset();
-        if (block == dynamic_cast<StatementIf *>(statement)->get_false_branch())
-          branch->WalkerImpl<eIfElse>::else_body_.reset();
+        block_walker->WalkerImpl<eIfElse>::if_body_.reset();
+        if (branch->WalkerBase::block_ ==
+            dynamic_cast<StatementIf *>(statement)->get_false_branch())
+          block_walker->WalkerImpl<eIfElse>::else_body_.reset();
       }
     }
     // Setup for next iteration.
     block = block->parent;
-    // TODO Does this work?? lol const
+    // lol const
     statement = const_cast<Statement *>(statement->find_container_stm());
     nested_blocks_rev.push(block_walker);
   }
