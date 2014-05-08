@@ -12,7 +12,7 @@
 // User input.
 const char *file;
 cl_platform_id *platform;
-cl_device_id device;
+cl_device_id *device;
 
 // Data to free.
 char *source_text = NULL;
@@ -62,17 +62,19 @@ int main(int argc, char **argv) {
   platform = &platforms[platform_index];
 
   // Find all the GPU devices for the platform.
-  cl_int gpu_device_count;
+  cl_device_id devices[device_index + 1];
+  cl_int device_count;
   err = clGetDeviceIDs(
-      *platform, CL_DEVICE_TYPE_ALL, 1, &device, &gpu_device_count);
+      *platform, CL_DEVICE_TYPE_ALL, device_index + 1, devices, &device_count);
   if (cl_error_check(err, "clGetDeviceIDs error"))
     return 1;
-  if (gpu_device_count < 1) {
-    printf("No GPU devices found\n");
+  if (device_count <= device_index) {
+    printf("No device for id %d\n", device_index);
     return 1;
   }
+  device = &devices[device_index];
 
-  int run_err = run_on_platform_device(platform, &device);
+  int run_err = run_on_platform_device(platform, device);
   free(source_text);
 
   return run_err;
