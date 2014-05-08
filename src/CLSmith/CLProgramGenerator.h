@@ -18,10 +18,13 @@ namespace CLSmith {
 
 class CLProgramGenerator : public AbsProgramGenerator {
  public:
-  CLProgramGenerator() : output_mgr_(new CLOutputMgr()) {};
+  explicit CLProgramGenerator(unsigned long seed)
+      : output_mgr_(new CLOutputMgr()), seed_(seed) {
+  }
   // Transfer pointer ownership.
-  explicit CLProgramGenerator(OutputMgr *output_mgr)
-      : output_mgr_(output_mgr) {};
+  CLProgramGenerator(unsigned long seed, OutputMgr *output_mgr)
+      : output_mgr_(output_mgr), seed_(seed) {
+  }
 
   // Inherited from AbsProgramGenerator. Creates the random program.
   void goGenerator();
@@ -41,6 +44,7 @@ class CLProgramGenerator : public AbsProgramGenerator {
 
  private:
   std::unique_ptr<OutputMgr> output_mgr_;
+  unsigned long seed_;
 
   DISALLOW_COPY_AND_ASSIGN(CLProgramGenerator);
 };

@@ -49,8 +49,8 @@ class Globals {
   explicit Globals(const std::vector<Variable *>& vars) : global_vars_(vars) {}
 
   // Move constructor/assignment.
-  Globals(Globals&& other);
-  Globals& operator=(Globals&& other);
+  Globals(Globals&& other) = default;
+  Globals& operator=(Globals&& other) = default;
 
   ~Globals() {}
 

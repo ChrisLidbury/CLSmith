@@ -51,18 +51,21 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "#define UINT16_MAX USHRT_MAX\n"
       "#define UINT8_MIN UCHAR_MIN\n"
       "#define UINT8_MAX UCHAR_MAX\n"
+      "\n"
+      "#define transparent_crc(X, Y, Z) "
+      "transparent_crc_(&crc64_context, X, Y, Z)\n"
       << std::endl;
-  OutputMgr::OutputHeader(argc, argv, seed);
+
+  out << std::endl;
+  out << "// Seed: " << seed << std::endl;
+  out << std::endl;
+  out << "#include \"CLSmith.h\"" << std::endl;
+  out << std::endl;
 }
 
 void CLOutputMgr::Output() {
   std::ostream &out = get_main_out();
   OutputStructUnionDeclarations(out);
-  
-  // Only print the variable declarations, not the defs. Wrap them in a struct.
-  out << "struct globals {" << std::endl;
- // OutputGlobalVariables/*Decls*/(out);
-  out << "};" << std::endl;
 
   Globals globals = Globals::CreateGlobals();
   globals.OutputStructDefinition(out);
@@ -82,19 +85,26 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   // Would ideally use the ExtensionMgr, but there is no way to set it to our
   // own custom made one (without modifying the code).
   std::ostream& out = get_main_out();
-  out << "__kernel void entry(__global int *result) {" << std::endl;
+  out << "__kernel void entry(__global ulong *result) {" << std::endl;
   globals.OutputStructInit(out);
 
-  out << "  func_1(";
+  output_tab(out, 1);
+  out << "func_1(";
   globals.GetGlobalStructVar().Output(out);
   out << ");" << std::endl;
 
   // Handle hashing and outputting.
-  out << "  crc32_gentab();" << std::endl;
+  output_tab(out, 1);
+  out << "uint64_t crc64_context = 0xFFFFFFFFFFFFFFFFUL;" << std::endl;
+  output_tab(out, 1);
+  out << "int print_hash_value = 0;" << std::endl;
   HashGlobalVariables(out);
-  out << "  result[get_global_id(0)] = crc32_context ^ 0xFFFFFFFFUL;" << std::endl;
+  output_tab(out, 1);
+  out << "result[get_global_id(0)] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
+      << std::endl;
   
-  out << "  return 0;" << std::endl;
+  output_tab(out, 1);
+  out << "return 0;" << std::endl;
   out << "}" << std::endl;
 }
 

@@ -3,9 +3,11 @@
 #include <cassert>
 #include <memory>
 #include <string>
+#include <iostream>
 
-//#include "CLSmith/CLFunction.h"
+#include "CLSmith/Divergence.h"
 #include "CLSmith/Globals.h"
+#include "CLSmith/Walker.h"
 #include "Function.h"
 #include "Type.h"
 
@@ -15,11 +17,14 @@ namespace CLSmith {
 
 void CLProgramGenerator::goGenerator() {
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
-  output_mgr_->OutputHeader(0, NULL, 0);
+  output_mgr_->OutputHeader(0, NULL, seed_);
 
   // This creates the random program, the rest handles outputting the program.
   GenerateAllTypes();
   GenerateFunctions();
+
+  //Divergence div;
+  //div.ProcessEntryFunction(GetFirstFunction());
 
   output_mgr_->Output();
 }

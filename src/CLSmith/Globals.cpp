@@ -17,22 +17,6 @@
 
 namespace CLSmith {
 
-Globals::Globals(Globals&& other) {
-  std::swap(global_vars_, other.global_vars_);
-  std::swap(struct_type_, other.struct_type_);
-  std::swap(struct_type_ptr_, other.struct_type_ptr_);
-  std::swap(struct_var_, other.struct_var_);
-}
-
-Globals& Globals::operator=(Globals&& other) {
-  assert(this != &other);
-  std::swap(global_vars_, other.global_vars_);
-  std::swap(struct_type_, other.struct_type_);
-  std::swap(struct_type_ptr_, other.struct_type_ptr_);
-  std::swap(struct_var_, other.struct_var_);
-  return *this;
-}
-
 void Globals::OutputStructDefinition(std::ostream& out) {
   if (!struct_type_) CreateGlobalStruct();
   struct_type_->Output(out);
@@ -41,6 +25,7 @@ void Globals::OutputStructDefinition(std::ostream& out) {
     // Need this check, or we will output arrays twice.
     if (var->isArray && dynamic_cast<ArrayVariable *>(var)->collective)
       continue;
+    output_tab(out, 1);
     var->OutputDecl(out);
     out << ";" << std::endl;
   }
@@ -48,44 +33,33 @@ void Globals::OutputStructDefinition(std::ostream& out) {
 }
 
 void Globals::OutputStructInit(std::ostream& out) {
-  // Two local copies of the global struct. The first will be default
-  // initialised, so we can set a pointer to it, allowing our second
-  // copy to be brace initialised.
-  std::string local_name1 = gensym("c_");
-  std::string local_name2 = gensym("c_");
+  output_tab(out, 1);
+  std::string local_name = gensym("c_");
   struct_type_->Output(out);
-  out << " " << local_name1 << ";" << std::endl;
+  out << " " << local_name << ";" << std::endl;
 
+  output_tab(out, 1);
   struct_type_ptr_->Output(out);
   out << " ";
   struct_var_->Output(out);
-  out << " = &" << local_name1 << ";" << std::endl;
+  out << " = &" << local_name << ";" << std::endl;
 
-  struct_type_->Output(out);
-  out << " " << local_name2 << " = {" << std::endl;
+  size_t max_dimen = Variable::GetMaxArrayDimension(global_vars_);
+  std::vector<const Variable *>&ctrl_vars = Variable::get_new_ctrl_vars();
+  OutputArrayCtrlVars(ctrl_vars, out, max_dimen, 1);
   for (Variable *var : global_vars_) {
     if (var->isArray) {
       ArrayVariable *var_array = dynamic_cast<ArrayVariable *>(var);
-      if (var_array->collective) continue;
-      vector<std::string> init_strings;
-      init_strings.push_back(var_array->init->to_string());
-      for (const Expression *init : var_array->get_more_init_values())
-        init_strings.push_back(init->to_string());
-      out << "    " << var_array->build_init_recursive(0, init_strings);
+      assert(var_array != NULL);
+      var_array->output_init(out, var_array->init, ctrl_vars, 1);
     } else {
-      out << "    ";
+      output_tab(out, 1);
+      var->Output(out);
+      out << " = ";
       var->init->Output(out);
+      out << ";" << std::endl;
     }
-    out << ", /*";
-    var->Output(out);
-    out << "*/" << std::endl;
   }
-  out << "  };" << std::endl;
-
-  // out << local_name1 << " = " << local_name2 << ";" << std::endl;
-  out << "  ";
-  struct_var_->Output(out);
-  out << " = &" << local_name2 << ";" << std::endl;
 }
 
 void Globals::AddGlobalStructToFunction(Function *function, Variable *var) {
