@@ -165,6 +165,11 @@ FunctionInvocationUser::FunctionInvocationUser(const FunctionInvocationUser &fiu
 FunctionInvocationUser::~FunctionInvocationUser(void)
 {
 	// Nothing to do.  This object does not own `*func'.
+	for (size_t i = 0; i < AllFunctionInvocations.size(); ++i)
+		if (AllFunctionInvocations[i] == this) {
+			AllFunctionInvocations.erase(AllFunctionInvocations.begin() + i);
+			break;
+		}
 }
 
 FunctionInvocation *
