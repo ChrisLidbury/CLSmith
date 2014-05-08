@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
   // Find all the GPU devices for the platform.
   cl_int gpu_device_count;
   err = clGetDeviceIDs(
-      *platform, CL_DEVICE_TYPE_GPU, 1, &device, &gpu_device_count);
+      *platform, CL_DEVICE_TYPE_ALL, 1, &device, &gpu_device_count);
   if (cl_error_check(err, "clGetDeviceIDs error"))
     return 1;
   if (gpu_device_count < 1) {
@@ -72,10 +72,10 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  run_on_platform_device(platform, &device);
+  int run_err = run_on_platform_device(platform, &device);
   free(source_text);
 
-  return 0;
+  return run_err;
 }
 
 int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
@@ -125,7 +125,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Add optimisation to options later.
-  err = clBuildProgram(program, 0, NULL, "-w -I../../runtime/", compiler_callback, NULL);
+  err = clBuildProgram(program, 0, NULL, "-w -I../../runtime/ -g", compiler_callback, NULL);
   if (cl_error_check(err, "Error building program")) {
     size_t err_size;
     err = clGetProgramBuildInfo(
@@ -151,7 +151,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
 
   // Create the buffer that will have the results.
   cl_mem result = clCreateBuffer(
-      context, CL_MEM_WRITE_ONLY, 1024 * sizeof(cl_int), NULL, &err);
+      context, CL_MEM_WRITE_ONLY, 1024 * sizeof(cl_ulong), NULL, &err);
   if (cl_error_check(err, "Error creating output buffer"))
     return 1;
   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &result);
@@ -173,15 +173,15 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Read back the reults of each thread.
-  int c[1024];
+  cl_ulong c[1024];
   err = clEnqueueReadBuffer(
-      com_queue, result, CL_TRUE, 0, 1024 * sizeof(cl_int), c, 0, NULL, NULL);
+      com_queue, result, CL_TRUE, 0, 1024 * sizeof(cl_ulong), c, 0, NULL, NULL);
   if (cl_error_check(err, "Error reading output buffer"))
     return 1;
 
   ////
   int i;
-  for (i = 0; i < 1024; ++i) printf("%d,", c[i]);
+  for (i = 0; i < 1024; ++i) printf("%#lx,", c[i]);
   ////
   
   return 0;
