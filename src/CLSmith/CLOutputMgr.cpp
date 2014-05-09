@@ -102,9 +102,6 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   output_tab(out, 1);
   out << "result[get_global_id(0)] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;
-  
-  output_tab(out, 1);
-  out << "return 0;" << std::endl;
   out << "}" << std::endl;
 }
 
