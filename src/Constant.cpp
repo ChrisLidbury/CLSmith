@@ -146,7 +146,7 @@ static string
 GenerateRandomLongLongConstant(void)
 {
 	// Long constant - Max 8 Hex digits on 32-bit platforms
-	string val = "0x" + RandomHexDigits( 16 ) + "LL";
+	string val = "0x" + RandomHexDigits( 16 ) + "L";
 	return val;
 }
 
