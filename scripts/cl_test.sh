@@ -40,12 +40,12 @@ for seed in `seq $seed_min $seed_step $seed_max` ; do
   if [[ -f ${cl_filename} ]] ; then
     rm ${cl_filename}
   fi
-  eval "${gen_exe} ${seed}"
+  eval "timeout 20 ${gen_exe} ${seed}"
   if [[ ! -f ${cl_filename} || $? != 0 ]] ; then
     echo "gen_error" >> ${output}
     continue
   fi
-  res=$(${cl_launcher} ${cl_filename} ${cl_platform_idx} ${cl_device_idx})
+  res=$(timeout 20 ${cl_launcher} ${cl_filename} ${cl_platform_idx} ${cl_device_idx})
   if [[ $? != 0 ]] ; then
     echo "run_error" >> ${output}
     continue

@@ -127,7 +127,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Add optimisation to options later.
-  err = clBuildProgram(program, 0, NULL, "-w -I../../runtime/ -g", compiler_callback, NULL);
+  err = clBuildProgram(program, 0, NULL, "-w -I.", compiler_callback, NULL);
   if (cl_error_check(err, "Error building program")) {
     size_t err_size;
     err = clGetProgramBuildInfo(
