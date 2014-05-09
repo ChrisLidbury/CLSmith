@@ -94,6 +94,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << ");" << std::endl;
 
   // Handle hashing and outputting.
+  globals.OutputArrayControlVars(out);
   output_tab(out, 1);
   out << "uint64_t crc64_context = 0xFFFFFFFFFFFFFFFFUL;" << std::endl;
   output_tab(out, 1);

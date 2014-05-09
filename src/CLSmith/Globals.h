@@ -89,6 +89,10 @@ class Globals {
   // "local_struct->" to the start of every global variable.
   void ModifyGlobalVariableReferences();
 
+  // Output index variables that will cover all of the indexes for all of the
+  // arrays in the global struct.
+  void OutputArrayControlVars(std::ostream& out);
+
   // Gets the type of the global struct, as a ptr type. The actual type can be
   // retrieved by calling:
   //   const Type *type = GetGlobalStructPtrType().ptr_type;
@@ -106,6 +110,10 @@ class Globals {
   // currently been added. It is assumed that all the global variables in the
   // program have already been created and added.
   void CreateGlobalStruct();
+
+  // Helper for modifying global variable references. Recursively adds the
+  // global struct to the members of struct and union variables.
+  void ModifyGlobalAggregateVariableReferences(Variable *var);
 
  private:
   std::vector<Variable *> global_vars_;

@@ -1,8 +1,10 @@
 #include "CLSmith/Globals.h"
 
+#include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "ArrayVariable.h"
 #include "util.h"
@@ -34,32 +36,43 @@ void Globals::OutputStructDefinition(std::ostream& out) {
 
 void Globals::OutputStructInit(std::ostream& out) {
   output_tab(out, 1);
-  std::string local_name = gensym("c_");
+  std::string local_name1 = gensym("c_");
+  std::string local_name2 = gensym("c_");
   struct_type_->Output(out);
-  out << " " << local_name << ";" << std::endl;
-
+  out << " " << local_name1 << ";" << std::endl;
   output_tab(out, 1);
   struct_type_ptr_->Output(out);
   out << " ";
   struct_var_->Output(out);
-  out << " = &" << local_name << ";" << std::endl;
+  out << " = &" << local_name1 << ";" << std::endl;
 
-  size_t max_dimen = Variable::GetMaxArrayDimension(global_vars_);
-  std::vector<const Variable *>&ctrl_vars = Variable::get_new_ctrl_vars();
-  OutputArrayCtrlVars(ctrl_vars, out, max_dimen, 1);
+  output_tab(out, 1);
+  struct_type_->Output(out);
+  out << " " << local_name2 << " = {" << std::endl;
+
   for (Variable *var : global_vars_) {
     if (var->isArray) {
       ArrayVariable *var_array = dynamic_cast<ArrayVariable *>(var);
-      assert(var_array != NULL);
-      var_array->output_init(out, var_array->init, ctrl_vars, 1);
+      if (var_array->collective) continue;
+      output_tab(out, 2);
+      vector<std::string> init_strings;
+      init_strings.push_back(var_array->init->to_string());
+      for (const Expression *init : var_array->get_more_init_values())
+        init_strings.push_back(init->to_string());
+      out << var_array->build_initializer_str(init_strings);
     } else {
-      output_tab(out, 1);
-      var->Output(out);
-      out << " = ";
+      output_tab(out, 2);
       var->init->Output(out);
-      out << ";" << std::endl;
     }
+    out << ", // ";
+    var->Output(out);
+    out << std::endl;
   }
+
+  output_tab(out, 1);
+  out << "};" << std::endl;
+  output_tab(out, 1);
+  out << local_name1 << " = " << local_name2 << ";" << std::endl;
 }
 
 void Globals::AddGlobalStructToFunction(Function *function, Variable *var) {
@@ -87,6 +100,7 @@ void Globals::ModifyGlobalVariableReferences() {
     names.push_back(var->name);
     *const_cast<std::string *>(&var->name) =
         struct_var_->name + "->" + var->name;
+    if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
   }
 
   // At some points during generation, a global array variable will be
@@ -95,9 +109,17 @@ void Globals::ModifyGlobalVariableReferences() {
   // variables.
   // Variable::is_global() is unreliable.
   for (Variable *var : *VariableSelector::GetAllVariables())
-    if (var->name.find("g_") == 0)
+    if (var->name.find("g_") == 0) {
       *const_cast<std::string *>(&var->name) =
           struct_var_->name + "->" + var->name;
+      if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
+    }
+}
+
+void Globals::OutputArrayControlVars(std::ostream& out) {
+  size_t max_dimen = Variable::GetMaxArrayDimension(global_vars_);
+  std::vector<const Variable *>&ctrl_vars = Variable::get_new_ctrl_vars();
+  OutputArrayCtrlVars(ctrl_vars, out, max_dimen, 1);
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
@@ -134,6 +156,16 @@ void Globals::CreateGlobalStruct() {
   struct_var_ = VariableSelector::GenerateParameterVariable(
       struct_type_ptr_.get(), &qfer);
   assert(struct_var_);
+}
+
+void Globals::ModifyGlobalAggregateVariableReferences(Variable *var) {
+  assert(var->is_aggregate());
+  for (Variable *field_var : var->field_vars) {
+    *const_cast<std::string *>(&field_var->name) =
+        struct_var_->name + "->" + field_var->name;
+    if (field_var->is_aggregate())
+      ModifyGlobalAggregateVariableReferences(field_var);
+  }
 }
 
 }  // namespace CLSmith
