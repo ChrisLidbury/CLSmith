@@ -147,6 +147,7 @@ FunctionInvocationUser::FunctionInvocationUser(Function *target,
 	  isBackLink(isBackLink)
 {
 	// Nothing else to do.  Caller must build useful params.
+	AllFunctionInvocations.push_back(this);
 }
 
 /*
@@ -157,6 +158,7 @@ FunctionInvocationUser::FunctionInvocationUser(const FunctionInvocationUser &fiu
 	  func(fiu.func),
 	  isBackLink(fiu.isBackLink)
 {
+	AllFunctionInvocations.push_back(this);
 }
 
 /*
@@ -165,7 +167,7 @@ FunctionInvocationUser::FunctionInvocationUser(const FunctionInvocationUser &fiu
 FunctionInvocationUser::~FunctionInvocationUser(void)
 {
 	// Nothing to do.  This object does not own `*func'.
-	for (size_t i = 0; i < AllFunctionInvocations.size(); ++i)
+	for (int i = AllFunctionInvocations.size() - 1; i >= 0; --i)
 		if (AllFunctionInvocations[i] == this) {
 			AllFunctionInvocations.erase(AllFunctionInvocations.begin() + i);
 			break;
@@ -249,7 +251,6 @@ FunctionInvocationUser::build_invocation_and_function(CGContext &cg_context, con
 	}
 
 	func->visited_cnt = 1;
-	AllFunctionInvocations.push_back(fiu);
 	return fiu; 
 }
 
@@ -303,7 +304,6 @@ FunctionInvocationUser::build_invocation(Function *target, CGContext &cg_context
 			cg_context.add_visible_effect(*new_context.get_effect_accum(), cg_context.get_current_block());
 			Effect& func_effect = func->feffect;
 			func_effect.add_external_effect(*new_context.get_effect_accum(), cg_context.call_chain);
-			AllFunctionInvocations.push_back(this);
 		}
 	}
 	else {
