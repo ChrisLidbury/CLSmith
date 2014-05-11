@@ -3,6 +3,7 @@
 
 #include <CL/cl.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,8 +25,8 @@ int cl_error_check(cl_int, const char *);
 
 int main(int argc, char **argv) {
   // Parse the input. Expect three parameters.
-  if (argc < 3) {
-    printf("Expected one argument \"./test <cl_program> <platform_id> <device_id> [flags...]\"\n");
+  if (argc < 4) {
+    printf("Expected three arguments \"./cl_launcher <cl_program> <platform_idx> <device_idx> [flags...]\"\n");
     return 1;
   }
 
@@ -183,7 +184,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
 
   ////
   int i;
-  for (i = 0; i < 1024; ++i) printf("%#lx,", c[i]);
+  for (i = 0; i < 1024; ++i) printf("%#"PRIx64",", c[i]);
   ////
   
   return 0;

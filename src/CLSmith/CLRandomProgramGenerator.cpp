@@ -20,6 +20,7 @@ int main(int argc, char **argv) {
   CGOptions::force_globals_static(false);
   CGOptions::bitfields(false);
   CGOptions::packed_struct(false);
+  CGOptions::hash_value_printf(false);
   // The way we currently handle globals means we need to disable consts.
   CGOptions::consts(false);
   // Must disable arrays for barrier stuff.
