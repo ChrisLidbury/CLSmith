@@ -283,8 +283,8 @@ GenerateRandomConstant(const Type* type)
 			switch (type->simple_type) {
 				case eUChar:     oss << (unsigned int)(unsigned char)num;		break;
 				case eUShort:    oss << (unsigned short)num;	break;
-				case eUInt:      oss << (unsigned int)num;		break;
-				case eULong: 
+				case eUInt:
+				case eULong:     oss << (unsigned int)num;		break;
 				case eULongLong:  
 					if (!CGOptions::longlong()) {
 						oss << (unsigned int)num;

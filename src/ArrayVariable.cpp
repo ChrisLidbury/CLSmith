@@ -460,14 +460,16 @@ string
 ArrayVariable::build_init_recursive(size_t dimen, const vector<string>& init_strings) const
 {
 	assert (dimen < get_dimension());
-	static unsigned seed = 0xABCDEF; 
+	static unsigned long seed = 0xABC; 
 	string ret = "{";
 	for (size_t i=0; i<sizes[dimen]; i++) {
 		if (dimen == sizes.size() - 1) {
 			// use magic number to choose an initial value 
-			size_t rnd_index = ((seed * seed + (i+7) * (i+13)) * 52369) % (init_strings.size()); 
+			unsigned long rnd_index = ((seed * seed + (i+7) * (i+13)) * 9403) % (init_strings.size()); 
 			ret += init_strings[rnd_index];
 			seed++;
+			if (seed >= 0xABCD)
+				seed = 0xABC;
 		 } else {
 			ret += build_init_recursive(dimen + 1, init_strings);
 		 }
