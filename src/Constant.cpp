@@ -35,6 +35,7 @@
 #include <sstream>
 #include <cmath>
 #include <climits>
+#include <cctype>
 
 #include "CGContext.h"
 #include "Type.h"
@@ -90,6 +91,14 @@ Expression *
 Constant::clone() const
 {
 	return new Constant(*this);
+}
+
+// --------------------------------------------------------------
+static void
+PutRandomSignedConstantInRange(string *ch) {
+	int first_digit = StringUtils::str2int(ch->substr(0, 3));
+	if (first_digit >= 8)
+		(*ch)[2] = '0' + (first_digit - 8);
 }
 
 // --------------------------------------------------------------
@@ -298,23 +307,25 @@ GenerateRandomConstant(const Type* type)
 				v = oss.str() + (type->is_signed() ? "" : "U");
 			else
 				v = oss.str() + (type->is_signed() ? "L" : "UL");
-	    } else {
-		    switch (st) {
-		    case eVoid:      v = "/* void */";						break;
-		    case eChar:      v = GenerateRandomCharConstant();		break;
-		    case eInt:       v = GenerateRandomIntConstant();		break;
-		    case eShort:     v = GenerateRandomShortConstant();		break;
-		    case eLong:      v = GenerateRandomLongConstant();		break;
-	        case eLongLong:  v = GenerateRandomLongLongConstant();	break;
-		    case eUChar:     v = GenerateRandomCharConstant();		break;
-		    case eUInt:      v = GenerateRandomIntConstant();		break;
-		    case eUShort:    v = GenerateRandomShortConstant();		break;
-		    case eULong:     v = GenerateRandomLongConstant();		break;
-	        case eULongLong: v = GenerateRandomLongLongConstant();	break;
-    //	    case eFloat:     v = GenerateRandomFloatConstant();		break;
-    //	    case eDouble:    v = GenerateRandomFloatConstant();		break;
-		    }
-        }
+		} else {
+			switch (st) {
+			case eVoid:      v = "/* void */";			break;
+			case eChar:      v = GenerateRandomCharConstant();	break;
+			case eInt:       v = GenerateRandomIntConstant();	break;
+			case eShort:     v = GenerateRandomShortConstant();	break;
+			case eLong:      v = GenerateRandomLongConstant();	break;
+			case eLongLong:  v = GenerateRandomLongLongConstant();	break;
+			case eUChar:     v = GenerateRandomCharConstant();	break;
+			case eUInt:      v = GenerateRandomIntConstant();	break;
+			case eUShort:    v = GenerateRandomShortConstant();	break;
+			case eULong:     v = GenerateRandomLongConstant();	break;
+			case eULongLong: v = GenerateRandomLongLongConstant();	break;
+			//case eFloat:     v = GenerateRandomFloatConstant();	break;
+			//case eDouble:    v = GenerateRandomFloatConstant();	break;
+			}
+			if (type->is_signed())
+				PutRandomSignedConstantInRange(&v);
+		}
     } else {
         assert(0);  // no support for types other than integers and structs for now
     }
