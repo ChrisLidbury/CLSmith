@@ -12,18 +12,33 @@
 int main(int argc, char **argv) {
   // Temporary, check first param for seed.
   unsigned long g_seed;
-  if (argc > 1) { g_seed = strtoul(argv[1], NULL, 0); assert(g_seed); }
-  else g_seed = platform_gen_seed();
+  if (argc > 1) {
+    g_seed = strtoul(argv[1], NULL, 0);
+    assert(g_seed);
+  }
+  else {
+    g_seed = platform_gen_seed();
+  }
 
   // Force options that would otherwise produce an invalid OpenCL program.
   CGOptions::set_default_settings();
+
+  // General settings for normal OpenCL programs.
+  // No static in OpenCL.
   CGOptions::force_globals_static(false);
+  // No bit fields in OpenCL.
   CGOptions::bitfields(false);
+  // Maybe enable in future. Has a different syntax.
   CGOptions::packed_struct(false);
+  // No printf in OpenCL.
   CGOptions::hash_value_printf(false);
   // The way we currently handle globals means we need to disable consts.
   CGOptions::consts(false);
-  // Must disable arrays for barrier stuff.
+  // Reading smaller fields than the actual field is implementation-defined.
+  CGOptions::union_read_type_sensitive(false);
+
+  // Barrier specific stuff.
+  // Must disable arrays for barrier stuff, as value is produced when printed.
   //CGOptions::arrays(false);
 
   // AbsProgramGenerator does other initialisation stuff, besides itself. So we
