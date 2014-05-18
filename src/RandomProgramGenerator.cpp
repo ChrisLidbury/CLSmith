@@ -170,6 +170,7 @@ static void print_help()
 	cout << "  --math64 | --no-math64: enable | disable 64-bit math ops (enabled by default)." << endl << endl;
 	cout << "  --inline-function | --no-inline-function: enable | disable inline attributes on generated functions." << endl << endl;
 	cout << "  --inline-function-prob <num>: set the probability of each function being marked as inline (default is 50)." << endl << endl;
+	cout << "  --empty-blocks | --no-empty-blocks: enable | disable blocks with no statements by adding noops (enabled by default)." << endl << endl;
 
 	// numbered controls	
 	cout << "  --max-array-dim <num>: limit array dimensions to <num>. (default 3)" << endl << endl;
@@ -783,6 +784,16 @@ main(int argc, char **argv)
 
 		if (strcmp (argv[i], "--no-pointers") == 0) {
 			CGOptions::pointers(false);
+			continue;
+		}
+
+		if (strcmp (argv[i], "--empty_blocks") == 0) {
+			CGOptions::empty_blocks(true);
+			continue;
+		}
+
+		if (strcmp (argv[i], "--no-empty_blocks") == 0) {
+			CGOptions::empty_blocks(false);
 			continue;
 		}
 

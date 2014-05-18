@@ -47,12 +47,14 @@
 
 #include "CGContext.h"
 #include "CGOptions.h"
+#include "Constant.h"
 #include "Function.h"
 #include "Expression.h"
 #include "ExpressionFuncall.h"
 #include "FunctionInvocation.h"
 #include "FunctionInvocationUser.h"
 #include "FactPointTo.h"
+#include "SafeOpFlags.h"
 
 #include "Block.h" // temporary; don't want to depend on subclases!
 #include "StatementAssign.h" // temporary; don't want to depend on subclases!
@@ -310,6 +312,14 @@ Statement::make_random(CGContext &cg_context,
 	s->post_creation_analysis(pre_facts, pre_effect, cg_context);
 	return s;
 } 
+
+Statement *
+Statement::make_noop(CGContext &cg_context) {
+	// Memory leaked because nothing owns this pointer.
+	FunctionInvocation *fi = new FunctionInvocationBinary(
+		eAdd, Constant::make_int(1), Constant::make_int(1), NULL);
+	return new StatementExpr(cg_context.get_current_block(), *fi);
+}
 
 std::vector<const ExpressionVariable*> 
 Statement::get_dereferenced_ptrs(void) const

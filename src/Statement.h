@@ -90,9 +90,10 @@ enum eStatementType
 class Statement
 {
 public:
-	// Factory method.
-	static Statement *make_random(CGContext &cg_context,
-								  eStatementType t = MAX_STATEMENT_TYPE);
+	// Factory methods.
+	static Statement *make_random(CGContext &cg_context, eStatementType t = MAX_STATEMENT_TYPE);
+	static Statement *make_noop(CGContext &cg_context);
+
 	static eStatementType number_to_type(unsigned int value);
 
 	virtual ~Statement(void);

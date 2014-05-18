@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
   CGOptions::consts(false);
   // Reading smaller fields than the actual field is implementation-defined.
   CGOptions::union_read_type_sensitive(false);
+  // Empty blocks ruin my FunctionWalker, embarassing.
+  CGOptions::empty_blocks(false);
 
   // Barrier specific stuff.
   // Must disable arrays for barrier stuff, as value is produced when printed.

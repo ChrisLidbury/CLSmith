@@ -181,6 +181,10 @@ Block::make_random(CGContext &cg_context, bool looping)
 		return NULL;
 	}
 
+	if (!CGOptions::empty_blocks() && b->stms.empty()) {
+		b->stms.push_back(Statement::make_noop(cg_context));
+	}
+
 	curr_func->stack.pop_back();
 	if (Error::get_error() != SUCCESS) {
 		//curr_func->stack.pop_back();
