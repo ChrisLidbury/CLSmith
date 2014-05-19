@@ -155,7 +155,7 @@ class FunctionDivergence {
   // Takes a vector of parameters, that should match the function signature,
   // each param is paired with a bool indicating if it is divergent.
   void Process(const std::vector<bool>& parameters) {
-    ProcessWithContext(parameters, {}, {});
+    ProcessWithContext(parameters, {}, {}, false);
   }
   // Same as Process(), but with a large amount of extra context information as
   // baggage. param_deref_to contains pairs of pointers and the variables they
@@ -164,7 +164,7 @@ class FunctionDivergence {
   void ProcessWithContext(const std::vector<bool>& parameters,
       const std::map<const Variable *, std::set<const Variable *> *>&
           param_derefs_to,
-      const std::map<const Variable *, bool>& param_ref_div);
+      const std::map<const Variable *, bool>& param_ref_div, bool divergent);
 
   Function *GetFunction() const { return function_; }
   ProcessStatus GetProcessStatus() const { return status_; }
@@ -216,15 +216,12 @@ class FunctionDivergence {
   bool IsAssignmentDivergent(const Lhs& lhs, const Expression& expr);
 
   // Dereferences the passed pointer the specified number of levels. The result
-  // is put in deref_vars. single_chain is set to false if at some point, we had
-  // to dereference multiple vars, meaning we cannot know exactly which vars we
-  // dereference.
+  // is put in deref_vars.
   // Returns true if any of the vars we dereference are divergent:
   // i.e. int *l1 = expr ? &l2 : &l3; (With l2 divergent).
-  //      res = DereferencePointerVariable(l1, 1, &sc, &derefs);
-  //   res is false (l1 is not divergent), sc is true, derefs = {l2, l3}.
-  bool DereferencePointerVariable(
-      const Variable& var, int deref_level, bool *single_chain,
+  //      div = DereferencePointerVariable(l1, 1, &derefs);
+  //   div is false (l1 is not divergent), derefs = {l2, l3}.
+  bool DereferencePointerVariable(const Variable& var, int deref_level,
       std::set<const Variable *> *deref_vars);
   // Gets the variables referenced in an expression.
   // Relies on the expression being a constant, variable or funcCall type.
@@ -234,7 +231,7 @@ class FunctionDivergence {
   // Returns true if the references are divergent (i.e. we could be referencing
   // different vars in different threads).
   bool GetExpressionVariableReferences(const Expression& expr,
-      bool *single_chain, std::set<const Variable *> *var_refs);
+      std::set<const Variable *> *var_refs);
 
   // Sets the passed sub block as divergent, then 'infects' all of the branched
   // sub blocks recursively.
@@ -266,7 +263,7 @@ class FunctionDivergence {
   template<typename T>
   bool SearchMap(const std::map<T *, bool>& mapping,
       std::map<T *, bool> Internal::SavedState:: *SaveMapPtr,
-      T *item, bool is_global);
+      T *item, bool is_global, bool *found_entry);
 
   // Data for each time we process. It is cleared at the start.
   // Which sub blocks we have marked as divergent.

@@ -63,13 +63,14 @@ using Internal::SavedState;
 void FunctionDivergence::ProcessWithContext(const std::vector<bool>& parameters,
     const std::map<const Variable *, std::set<const Variable *> *>&
         param_derefs_to,
-    const std::map<const Variable *, bool>& param_ref_div) {
+    const std::map<const Variable *, bool>& param_ref_div, bool divergent) {
   assert(status_ != kMidProcess && "Loopy program.");
   status_ = kMidProcess;
 
   // Reset the object state.
   sub_block_div_.clear();
   variable_div_.clear();
+  divergent_value_ = false;
   var_derefs_to_.clear();
   return_derefs_to_.clear();
 
@@ -90,7 +91,8 @@ void FunctionDivergence::ProcessWithContext(const std::vector<bool>& parameters,
   }
   function_walker_.reset(new Walker::FunctionWalker(function_));
   ProcessBlockStart(function_->body);
-  divergent_ = false;
+  divergent_ = divergent;
+  sub_block_div_[sub_block_] = divergent;
 
   // Main processing loop.
   while (function_walker_->Advance()) ProcessStep();
@@ -215,6 +217,7 @@ void FunctionDivergence::ProcessStatementInvoke(Statement *statement) {
   StatementExpr *statement_expr = dynamic_cast<StatementExpr *>(statement);
   assert(statement_expr != NULL);
   const FunctionInvocation& invoke = *statement_expr->get_invoke();
+  if (invoke.invoke_type == eBinaryPrim) return; // Assume noop.
   assert(invoke.invoke_type == eFuncCall);
   const FunctionInvocationUser& invoke_user =
       dynamic_cast<const FunctionInvocationUser&>(invoke);
@@ -224,13 +227,22 @@ void FunctionDivergence::ProcessStatementInvoke(Statement *statement) {
 void FunctionDivergence::ProcessStatementReturn(Statement *statement) {
   StatementReturn *statement_ret = dynamic_cast<StatementReturn *>(statement);
   assert(statement_ret != NULL);
-  divergent_value_ |=
-    IsExpressionDivergent(*statement_ret->get_var()) || divergent_;
 
-  // If the return statement is in a divergent block, then this unfortunately
-  // means that everything beyond must be divergent.
-  // TODO
-  // TODO return refs
+  if (divergent_) MarkSubBlockDivergentViral(sub_block_);
+
+  if (function_->return_type->get_indirect_level() == 0) {
+    divergent_value_ |=
+        IsExpressionDivergent(*statement_ret->get_var()) || divergent_;
+    return;
+  }
+
+  // TODO split at branch point if divergent.
+
+  std::set<const Variable *> var_refs;
+  divergent_value_ |= GetExpressionVariableReferences(
+      *statement_ret->get_var(), &var_refs);
+  divergent_value_ |= divergent_;
+  return_derefs_to_.insert(var_refs.begin(), var_refs.end());    
 }
 
 void FunctionDivergence::ProcessStatementJump(Statement *statement) {
@@ -261,6 +273,7 @@ void FunctionDivergence::ProcessStatementJump(Statement *statement) {
 
 void FunctionDivergence::ProcessStatementGoto(Statement *statement) {
   // TODO
+  assert(false && "Gotos not yet implemented.");
 }
 
 void FunctionDivergence::ProcessStatementArray(Statement *statement) {
@@ -388,15 +401,23 @@ void FunctionDivergence::ProcessFinalise() {
 bool FunctionDivergence::IsExpressionDivergent(const Expression& expression) {
   eTermType type = expression.term_type;
   if (type == eConstant) return false;
-  if (type == eVariable)
-    return IsVariableDivergent(
-        *dynamic_cast<const ExpressionVariable&>(expression).get_var());
   if (type == eAssignment)
     return IsAssignmentDivergent(
         *dynamic_cast<const ExpressionAssign&>(expression).get_stm_assign());
 
+  if (type == eVariable) {
+    const ExpressionVariable& expr_var =
+        dynamic_cast<const ExpressionVariable&>(expression);
+    std::set<const Variable *> rhs_var_derefs;
+    bool div = DereferencePointerVariable(
+        *expr_var.get_var(), expr_var.get_indirect_level(), &rhs_var_derefs);
+    // Ewwww lambda (because of *var).
+    return div || std::any_of(rhs_var_derefs.begin(), rhs_var_derefs.end(),
+        [this](const Variable *var){return IsVariableDivergent(*var);});
+  }
+
   if (type == eFunction) {
-    const ExpressionFuncall &expr_fun =
+    const ExpressionFuncall& expr_fun =
         dynamic_cast<const ExpressionFuncall&>(expression);
     const FunctionInvocation *invoke = expr_fun.get_invoke();
     if (invoke->invoke_type == eFuncCall) {
@@ -430,18 +451,39 @@ bool FunctionDivergence::IsExpressionDivergent(const Expression& expression) {
   return false;
 }
 
-// TODO arrays
 bool FunctionDivergence::IsVariableDivergent(const Variable& variable) {
-  if (variable.is_global()) {
-    return SearchMap(
-        div_->global_var_div_, &SavedState::global_var_div_, &variable, true);
+  bool global = variable.is_global();
+  std::map<const Variable *, bool>& div_map =
+      global ? div_->global_var_div_ : variable_div_;
+  std::map<const Variable *, bool> SavedState:: *SaveMapPtr =
+      global ? &SavedState::global_var_div_ : &SavedState::variable_div_;
+
+  // Special case for arrays. For an itemised array member, only process its
+  // initialisation when necessary.
+  if (variable.isArray) {
+    bool found_entry;
+    bool div;
+    div = SearchMap(div_map, SaveMapPtr, &variable, global, &found_entry);
+    if (found_entry) return div;
+    const ArrayVariable& var_arr = dynamic_cast<const ArrayVariable&>(variable);
+    const Variable *coll = var_arr.get_collective();
+    assert(&variable != coll);
+    // We would prefer to call IsAssignmentDivergent, but we are not in the same
+    // context as when it was initialised. Array initialiser are simple though
+    // (either a constant or taking the address of a var), so we just repeat what
+    // is necessary.
+    // TODO can't do atm because of how arrays are done.
+    assert(false);
   }
-  return SearchMap(variable_div_, &SavedState::variable_div_, &variable, false);
+
+  bool unused_b;
+  return SearchMap(div_map, SaveMapPtr, &variable, global, &unused_b);
 }
 
 bool FunctionDivergence::IsSubBlockDivergent(SubBlock *sub_block) {
+  bool unused_b;
   return SearchMap(
-      sub_block_div_, &SavedState::sub_block_div_, sub_block, false);
+      sub_block_div_, &SavedState::sub_block_div_, sub_block, false, &unused_b);
 }
 
 bool FunctionDivergence::IsFunctionCallDivergent(
@@ -458,6 +500,7 @@ bool FunctionDivergence::IsFunctionCallDivergent(
 
   // For parameters that are pointers, the dereferencing information must be
   // passed into the function. Must also inform it which of them are divergent.
+  // We do it manually, instead of using DereferencePointerVaribale.
   std::map<const Variable *, std::set<const Variable *> *> param_derefs_to;
   std::map<const Variable *, bool> param_ref_div;
   for (Variable *param_var : callee->param) {
@@ -466,11 +509,14 @@ bool FunctionDivergence::IsFunctionCallDivergent(
         --deref_lvl) {
       std::set<const Variable *> new_vars_to_deref;
       for (const Variable *deref_var : vars_to_deref) {
+        // Don't bother dereferencing global.
         if (deref_var->is_global()) continue;
         auto map_it = var_derefs_to_.find(deref_var);
-        assert(map_it != var_derefs_to_.end());
+        if(map_it == var_derefs_to_.end()) continue;
         param_derefs_to[map_it->first] = &map_it->second;
-        new_vars_to_deref.insert(map_it->second.begin(), map_it->second.end());
+        // csmith will not pass pointers to other parameters, so ignore them.
+        for (const Variable *var : map_it->second)
+          if (!var->is_argument()) new_vars_to_deref.insert(var);
       }
       for (const Variable *new_deref_var : new_vars_to_deref) {
         if (new_deref_var->is_global()) continue;
@@ -484,10 +530,25 @@ bool FunctionDivergence::IsFunctionCallDivergent(
   std::unique_ptr<FunctionDivergence> *func_div = &div_->function_div_[callee];
   if (func_div->get() == NULL)
     func_div->reset(new FunctionDivergence(div_, callee));
-  (*func_div)->ProcessWithContext(param_div, param_derefs_to, param_ref_div);
+  (*func_div)->ProcessWithContext(
+    param_div, param_derefs_to, param_ref_div, divergent_);
+
+  // Retrieve any information relevant to the calling context. For local
+  // pointers passed by pointers, check whether they may point to extra global
+  // vars.
   bool div = (*func_div)->divergent_value_final_;
   if (return_refs != NULL)
     *return_refs = std::move((*func_div)->return_derefs_to_);
+  for (auto& it_pair : param_derefs_to) {
+    const Variable *passed_var = it_pair.first;
+    if (passed_var->is_global() || passed_var->is_argument()) continue;
+    const std::set<const Variable *>& passed_var_derefs =
+        (*func_div)->var_derefs_to_[passed_var];
+    std::set<const Variable *> *our_var_derefs = &var_derefs_to_[passed_var];
+    for (const Variable *var_deref : passed_var_derefs)
+      if (var_deref->is_global()) our_var_derefs->insert(var_deref);
+    SetVariableDivergence(passed_var, (*func_div)->variable_div_[passed_var]);
+  }
 
   // Clean up.
   for (Variable *param_var : callee->param) {
@@ -505,27 +566,26 @@ bool FunctionDivergence::IsAssignmentDivergent(
   // Pointers may be reseated, so if the dereferenced type is still a pointer,
   // we have to update accordingly.
   std::set<const Variable *> lhs_derefs_to;
-  bool single_chain;
   bool deref_div = DereferencePointerVariable(*lhs.get_var(),
-      lhs.get_indirect_level(), &single_chain, &lhs_derefs_to);
+      lhs.get_indirect_level(), &lhs_derefs_to);
   
   // At this point, we have a set of vars that could all be updated (or just one
   // if we didn't have a pointer). We do one of two different things depending
   // on whether the expr type is a pointer or not.
   //assert(lhs.get_type().is_equivalent(&expr.get_type()));
   if (lhs.get_type().get_indirect_level() > 0) {
-    bool rhs_single_chain;
     std::set<const Variable *> rhs_var_derefs;
-    bool rhs_div = GetExpressionVariableReferences(
-        expr, &rhs_single_chain, &rhs_var_derefs);
+    bool rhs_div = GetExpressionVariableReferences(expr, &rhs_var_derefs);
 
     // Update pointer dereference maps.
     for (const Variable *lhs_var : lhs_derefs_to) {
       std::set<const Variable *> *lhs_var_derefs;
       lhs_var_derefs = lhs_var->is_global() ?
           &div_->global_var_derefs_to_[lhs_var] : &var_derefs_to_[lhs_var];
-      if (!deref_div && lhs_derefs_to.size() == 1 && !divergent_)
-        lhs_var_derefs->clear();
+      // For now, do not clear lhs. As we do not properly save pointers.
+      // TODO uncomment when pointers properly saved.
+      //if (!deref_div && lhs_derefs_to.size() == 1 && !divergent_)
+      //  lhs_var_derefs->clear();
       lhs_var_derefs->insert(rhs_var_derefs.begin(), rhs_var_derefs.end());
       SetVariableDivergence(lhs_var, rhs_div || deref_div || divergent_);
     }
@@ -541,24 +601,21 @@ bool FunctionDivergence::IsAssignmentDivergent(
 }
 
 bool FunctionDivergence::DereferencePointerVariable(
-    const Variable& var, int deref_level, bool *single_chain,
+    const Variable& var, int deref_level,
     std::set<const Variable *> *deref_vars) {
-  assert(single_chain != NULL);
   assert(deref_vars != NULL);
   deref_vars->clear();
   assert(var.type->get_indirect_level() >= deref_level);
-  *single_chain = true;
   deref_vars->insert(&var);
   bool deref_div = false;
 
   for(; deref_level > 0; --deref_level) {
-    if (deref_vars->size() > 1) *single_chain = false;
+    assert(!deref_vars->empty() && "Dereferencing NULL.");
     std::set<const Variable *> next_deref_level;
     for (const Variable *deref_var : *deref_vars) {
       deref_div |= IsVariableDivergent(*deref_var);
       std::set<const Variable *> *derefs = deref_var->is_global() ?
           &div_->global_var_derefs_to_[deref_var] : &var_derefs_to_[deref_var];
-      assert(!derefs->empty() && "Dereferencing NULL.");
       next_deref_level.insert(derefs->begin(), derefs->end());
     }
     *deref_vars = std::move(next_deref_level);
@@ -567,10 +624,8 @@ bool FunctionDivergence::DereferencePointerVariable(
 }
 
 bool FunctionDivergence::GetExpressionVariableReferences(const Expression& expr,
-    bool *single_chain, std::set<const Variable *> *var_refs) {
-  assert(single_chain != NULL);
+    std::set<const Variable *> *var_refs) {
   assert(var_refs != NULL);
-  *single_chain = true;
   var_refs->clear();
   bool div = false;
 
@@ -582,19 +637,18 @@ bool FunctionDivergence::GetExpressionVariableReferences(const Expression& expr,
     const ExpressionComma& expr_comma =
         dynamic_cast<const ExpressionComma&>(expr);
     IsExpressionDivergent(*expr_comma.get_lhs());
-    return GetExpressionVariableReferences(
-        *expr_comma.get_rhs(), single_chain, var_refs);
+    return GetExpressionVariableReferences(*expr_comma.get_rhs(), var_refs);
   }
 
-  // Nested assigns, just forward the params
+  // Nested assigns, just forward the params. Would be better to return rhs refs
+  // instead of lhs ver refs.
   if (expr.term_type == eAssignment) {
     const ExpressionAssign& expr_ass =
         dynamic_cast<const ExpressionAssign&>(expr);
     const StatementAssign& stm_ass = *expr_ass.get_stm_assign();
     IsAssignmentDivergent(stm_ass);
     return GetExpressionVariableReferences(
-        ExpressionVariable(*stm_ass.get_lhs()->get_var()),
-        single_chain, var_refs);
+        ExpressionVariable(*stm_ass.get_lhs()->get_var()), var_refs);
   }
   
   // Calling function, that returns pointer type.
@@ -616,28 +670,12 @@ bool FunctionDivergence::GetExpressionVariableReferences(const Expression& expr,
   const Variable *rhs_var = expr_var.get_var();
   int expr_deref_level = expr_var.get_indirect_level();
 
-  if (expr_deref_level == -1) {
+  if (expr_deref_level == -1)
     // Are we taking the address of another variable.
     var_refs->insert(rhs_var);
-  } else if (expr_deref_level == 0) {
-    // Assigning directly to another pointer.
-    std::set<const Variable *> *rhs_var_derefs_ptr = &var_derefs_to_[rhs_var];
-    var_refs->insert(rhs_var_derefs_ptr->begin(), rhs_var_derefs_ptr->end());
-    div = IsVariableDivergent(*rhs_var);
-  } else {
-    // Assigning after dereferencing another pointer.
-    std::set<const Variable *> rhs_var_derefs_ptr;
-    div = DereferencePointerVariable(
-        *rhs_var, expr_deref_level, single_chain, &rhs_var_derefs_ptr);
-    // Lambda euuueueeughgghhhh (because of *var).
-    div = div || std::any_of(
-        rhs_var_derefs_ptr.begin(), rhs_var_derefs_ptr.end(),
-        [this](const Variable *var){return IsVariableDivergent(*var);});
-    for (const Variable *var_ptr : rhs_var_derefs_ptr) {
-      std::set<const Variable *> *rhs_var_deref = &var_derefs_to_[var_ptr];
-      var_refs->insert(rhs_var_deref->begin(), rhs_var_deref->end());
-    }
-  }
+  else
+    div = DereferencePointerVariable(*rhs_var, expr_deref_level + 1, var_refs);
+
   return div;
 }
 
@@ -678,6 +716,7 @@ SubBlock *FunctionDivergence::GetSubBlockForBranch(
   return branch_block->get();
 }
 
+// TODO Save pointer state.
 SavedState *FunctionDivergence::SaveState(Statement *statement) {
   SavedState *saved_state = new SavedState(this, statement);
 
@@ -755,7 +794,8 @@ bool FunctionDivergence::MergeMap(
 template<typename T>
 bool FunctionDivergence::SearchMap(const std::map<T *, bool>& mapping,
     std::map<T *, bool> Internal::SavedState:: *SaveMapPtr,
-    T *item, bool is_global) {
+    T *item, bool is_global, bool *found_entry) {
+  *found_entry = true;
   auto it = mapping.find(item);
   if (it != mapping.end()) return it->second;
   // Search saved states.
@@ -766,6 +806,7 @@ bool FunctionDivergence::SearchMap(const std::map<T *, bool>& mapping,
     if (save_map_it != ((*save_it)->*SaveMapPtr).end())
       return save_map_it->second;
   }
+  *found_entry = false;
   return false;
 }
 
@@ -778,9 +819,7 @@ void Divergence::ProcessEntryFunction(Function *function) {
     assert(var->init != NULL);
     function_div->IsAssignmentDivergent(Lhs(*var), *var->init);
   }
-//
-for (auto& i : global_var_derefs_to_) {i.first->Output(std::cout); std::cout << "   ->    {"; for (const Variable *v : i.second) {v->Output(std::cout);std::cout<<", ";} std::cout << "}" << std::endl;}
-//
+
   function_div->Process({});
 }
 
