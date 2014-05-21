@@ -157,6 +157,7 @@ static void print_help()
 	cout << "  --consts | --no-consts: enable | disable const qualifier (enabled by default)." << endl << endl;
 	cout << "  --divs | --no-divs: enable | disable divisions (enabled by default)." << endl << endl;
 	cout << "  --embedded-assigns | --no-embedded-assigns: enable | disable embedded assignments as sub-expressions (enabled by default)." << endl << endl;
+	cout << "  --gotos | --no-gotos: enable | disable goto statements (enabled by default)." << endl << endl;
 	cout << "  --pre-incr-operator | --no-pre-incr-operator: enable | disable pre ++ operator (enabled by default)." << endl << endl;
 	cout << "  --pre-decr-operator | --no-pre-decr-operator: enable | disable pre -- operator (enabled by default)." << endl << endl;
 	cout << "  --post-incr-operator | --no-post-incr-operator: enable | disable post ++ operator (enabled by default)." << endl << endl;
@@ -974,6 +975,16 @@ main(int argc, char **argv)
 
 		if (strcmp (argv[i], "--no-muls") == 0) {
 			CGOptions::muls(false);
+			continue;
+		}
+
+		if (strcmp (argv[i], "--gotos") == 0) {
+			CGOptions::gotos(true);
+			continue;
+		}
+
+		if (strcmp (argv[i], "--no-gotos") == 0) {
+			CGOptions::gotos(false);
 			continue;
 		}
 

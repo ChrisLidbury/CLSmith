@@ -316,6 +316,9 @@ public:
 	static bool muls(void);
 	static bool muls(bool p);
 
+	static bool gotos(void);
+	static bool gotos(bool p);
+
 	static bool accept_argc(void);
 	static bool accept_argc(bool p);
 
@@ -557,6 +560,7 @@ private:
 	static bool dangling_global_ptrs_;
 	static bool divs_;
 	static bool muls_;
+	static bool gotos_;
 	static bool accept_argc_;
 	static bool random_random_;
 	static bool const_as_condition_;

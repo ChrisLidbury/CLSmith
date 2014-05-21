@@ -155,6 +155,9 @@ bool StatementFilter::filter(int value) const
 	if ((type == eReturn) && no_return) {	
 		return true;
 	}
+	if ((type == eGoto) && !CGOptions::gotos()) {
+		return true;
+	}
 
 	if ( (type == eBreak || type == eContinue) && !(cg_context_.flags & IN_LOOP) ) {
 		return true;
