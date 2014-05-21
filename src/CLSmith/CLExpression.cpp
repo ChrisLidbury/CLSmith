@@ -18,4 +18,8 @@ CLExpression *CLExpression::make_random(
   return expr_id_prob > rnd_number ? ExpressionID::make_random(type) : NULL;
 }
 
+Expression *make_random(CGContext &cg_context, const Type *type) { 
+  return CLExpression::make_random(cg_context, type);
+}
+
 }  // namespace CLSmith

@@ -40,9 +40,7 @@ class CLExpression : public Expression {
 };
 
 // Hook method for csmith.
-Expression *make_random(CGContext &cg_context, const Type *type) { 
-  return CLExpression::make_random(cg_context, type);
-}
+Expression *make_random(CGContext &cg_context, const Type *type);
 
 }  // namespace CLSmith
 

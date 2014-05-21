@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "ArrayVariable.h"
+#include "CLSmith/CLExpression.h"
 #include "CLSmith/Walker.h"
 #include "Expression.h"
 #include "ExpressionAssign.h"
@@ -461,6 +462,9 @@ bool FunctionDivergence::IsExpressionDivergent(const Expression& expression) {
     IsExpressionDivergent(*expr_comma.get_lhs());
     return IsExpressionDivergent(*expr_comma.get_rhs());
   }
+
+  if (type == eCLExpression)
+      return dynamic_cast<const CLExpression&>(expression).IsDivergent();
 
   assert(type == eLhs);
   assert(false && "Expression should not be an Lhs.");
