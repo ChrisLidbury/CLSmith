@@ -58,6 +58,11 @@
 #include "CVQualifiers.h"
 #include "DepthSpec.h"
 
+// TODO Add ability to disable CLSmith, and prevent link failing on this function.
+namespace CLSmith {
+Expression *make_random(CGContext &cg_context, const Type *type); // Hook
+}
+
 int eid = 0;
 
 DistributionTable Expression::exprTable_;
@@ -72,6 +77,7 @@ Expression::InitExprProbabilityTable()
 	if (CGOptions::use_embedded_assigns()) {
 		exprTable_.add_entry((int)eAssignment, 10);
 	}
+	exprTable_.add_entry((int)eCLExpression, 5);
 	if (CGOptions::use_comma_exprs()) {
 		exprTable_.add_entry((int)eCommaExpr, 10);
 	}
@@ -186,9 +192,17 @@ Expression::make_random(CGContext &cg_context, const Type* type, const CVQualifi
 		if (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()) {
 			filter.add(eFunction).add(eAssignment).add(eCommaExpr);
 		}
-		tt = ExpressionTypeProbability(&filter); 
+		tt = ExpressionTypeProbability(&filter);
+		ERROR_GUARD(NULL);
+
+		// Do the check here so if it fails, we can easily select something else.
+		if (tt == eCLExpression) e = CLSmith::make_random(cg_context, type);
+		if (e == NULL) {
+			filter.add(eCLExpression);
+			tt = ExpressionTypeProbability(&filter);
+		}
 	}
-	    
+
 	ERROR_GUARD(NULL);
 
 	switch (tt) {

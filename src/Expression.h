@@ -79,6 +79,7 @@ enum eTermType
 	// eBinaryExpr,
 	eFunction,
 	eAssignment,
+	eCLExpression,
 	eCommaExpr,
 	eLhs
 };
