@@ -7,7 +7,6 @@
 #include <stack>
 #include <utility>
 #include <vector>
-#include<iostream>
 
 #include "ArrayVariable.h"
 #include "CLSmith/Walker.h"
@@ -59,6 +58,23 @@ SubBlock *SubBlock::SplitAt(Statement *statement) {
 
 using Internal::SubBlock;
 using Internal::SavedState;
+
+void FunctionDivergence::GetDivergentCodeSectionsForBlock(Block *block,
+    std::vector<std::pair<Statement *, Statement *>> *divergent_sections) {
+  assert(divergent_sections != NULL);
+  if (status_ != kDone) return;
+  SubBlock *sub_block = block_to_sub_block_final_[block].get();
+
+  for (; sub_block != NULL; sub_block = sub_block->next_sub_block_.get()) {
+    if (sub_block_div_final_[sub_block])
+      divergent_sections->push_back(std::make_pair(
+          sub_block->begin_statement_, sub_block->end_statement_));
+    else
+      for (const std::pair<Statement *, Block*>& branch :
+          scope_levels_final_[sub_block])
+        GetDivergentCodeSectionsForBlock(branch.second, divergent_sections);
+  }
+}
 
 void FunctionDivergence::ProcessWithContext(const std::vector<bool>& parameters,
     const std::map<const Variable *, std::set<const Variable *> *>&
@@ -308,7 +324,7 @@ void FunctionDivergence::ProcessEndStatementFor(Statement *statement) {
 
   // Process for inc and test again.
   ProcessStatementAssign(const_cast<StatementAssign *>(statement_for->get_incr())); //const again.
-  sub_block_ = GetSubBlockForBranch(
+  sub_block_ = GetSubBlockForBranchFromBlock(nested_blocks_.back().first,
        statement, const_cast<Block *>(statement_for->get_body())); //const again, will todo later.
   bool *branch_block_div = &sub_block_div_[sub_block_];
   *branch_block_div |=
@@ -341,7 +357,7 @@ void FunctionDivergence::ProcessEndStatementFor(Statement *statement) {
 
     // Process for inc and test again.
     ProcessStatementAssign(const_cast<StatementAssign *>(statement_for->get_incr())); //const again.
-    sub_block_ = GetSubBlockForBranch(
+    sub_block_ = GetSubBlockForBranchFromBlock(nested_blocks_.back().first,
         statement, const_cast<Block *>(statement_for->get_body())); //const again, will todo later.
     branch_block_div = &sub_block_div_[sub_block_];
     *branch_block_div |=
@@ -369,7 +385,7 @@ void FunctionDivergence::ProcessEndStatementIf(Statement *statement) {
     if (saved_if_.empty() || saved_if_.top().first != statement) {
       saved_if_.emplace(std::make_pair(
           statement, std::unique_ptr<SavedState>(SaveState(statement))));
-      sub_block_ = GetSubBlockForBranch(
+      sub_block_ = GetSubBlockForBranchFromBlock(nested_blocks_.back().first,
           statement, const_cast<Block *>(statement_if->get_false_branch())); // lol const
       divergent_ = sub_block_div_[sub_block_];
       return;
@@ -701,11 +717,11 @@ void FunctionDivergence::SetVariableDivergence(
     variable_div_[var] = divergent;
 }
 
-SubBlock *FunctionDivergence::GetSubBlockForBranch(
-    Statement *statement, Block *block) {
+SubBlock *FunctionDivergence::GetSubBlockForBranchFromBlock(
+    SubBlock *sub_block, Statement *statement, Block *block) {
   // Make sure the branch is tracked in the scope levels.
   std::vector<std::pair<Statement *, Block *>> *scope_level =
-      &scope_levels_final_[sub_block_];
+      &scope_levels_final_[sub_block];
   std::pair<Statement *, Block *> branch = std::make_pair(statement, block);
   auto it = std::find(scope_level->begin(), scope_level->end(), branch);
   if (it == scope_level->end()) scope_level->push_back(branch);
@@ -821,6 +837,16 @@ void Divergence::ProcessEntryFunction(Function *function) {
   }
 
   function_div->Process({});
+}
+
+void Divergence::GetDivergentCodeSectionsForFunction(Function *function,
+    std::vector<std::pair<Statement *, Statement *>> *divergent_sections) {
+  assert(divergent_sections != NULL);
+  divergent_sections->clear();
+
+  auto map_it = function_div_.find(function);
+  if (map_it != function_div_.end())
+    map_it->second->GetDivergentCodeSections(divergent_sections);
 }
 
 }  // namespace CLSmith

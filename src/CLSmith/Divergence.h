@@ -29,14 +29,15 @@
 #include <memory>
 #include <set>
 #include <stack>
+#include <utility>
 #include <vector>
 
 #include "Block.h"
+#include "Function.h"
 #include "StatementAssign.h"
 #include "CommonMacros.h"
 
 class Expression;
-class Function;
 class Statement;
 class Variable;
 namespace CLSmith { namespace Walker { class FunctionWalker; } }
@@ -157,6 +158,17 @@ class FunctionDivergence {
   void Process(const std::vector<bool>& parameters) {
     ProcessWithContext(parameters, {}, {}, false);
   }
+
+  // Fills the passed vector with ranges of divergent code. We assume that if a
+  // block is divergent, then all branches in the block are also divergent, and
+  // so are not visited.
+  void GetDivergentCodeSections(
+      std::vector<std::pair<Statement *, Statement *>> *divergent_sections) {
+    GetDivergentCodeSectionsForBlock(function_->body, divergent_sections);
+  }
+  void GetDivergentCodeSectionsForBlock(Block *block,
+      std::vector<std::pair<Statement *, Statement *>> *divergent_sections);
+
   // Same as Process(), but with a large amount of extra context information as
   // baggage. param_deref_to contains pairs of pointers and the variables they
   // dereference to, param_deref_div contains all the variable divergence
@@ -241,7 +253,11 @@ class FunctionDivergence {
   void SetVariableDivergence(const Variable *var, bool divergent);
 
   // Helper functions for accessing this class' ridiculous data structures.
-  Internal::SubBlock *GetSubBlockForBranch(Statement *statement, Block *block);
+  Internal::SubBlock *GetSubBlockForBranch(Statement *statement, Block *block) {
+    return GetSubBlockForBranchFromBlock(sub_block_, statement, block);
+  }
+  Internal::SubBlock *GetSubBlockForBranchFromBlock(
+      Internal::SubBlock *sub_block, Statement *statement, Block *block);
 
   // Costly function. See SavedState class for what is stored.
   Internal::SavedState *SaveState(Statement *statement);
@@ -325,6 +341,11 @@ class Divergence {
 
   // Processes the whole program, given the entry function.
   void ProcessEntryFunction(Function *function);
+
+  // Fills the vector with ranges of divergent code. Each pair marks the begin
+  // and last statement of a divergent section.
+  void GetDivergentCodeSectionsForFunction(Function *function,
+      std::vector<std::pair<Statement *, Statement *>> *divergent_sections);
  private:
   // Each function has its own instance of the FunctionDivergence class. 
   std::map<Function *, std::unique_ptr<FunctionDivergence>> function_div_;
