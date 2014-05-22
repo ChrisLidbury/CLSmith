@@ -15,6 +15,9 @@
 // - Const correctness.
 // - Prevent repeated processing of functions, loops, etc. by storing the
 //   initial state of the last time we processed.
+// - Use the strict method of pointer analysis, instead of the bounded method.
+//   This would be expensive, as pointer sets would have to be copied when the
+//   state is saved.
 // - Perform full static analysis, after all, there is no random behaviour.
 //
 // Some limitations:

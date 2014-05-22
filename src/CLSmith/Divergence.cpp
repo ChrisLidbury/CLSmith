@@ -113,6 +113,13 @@ void FunctionDivergence::ProcessWithContext(const std::vector<bool>& parameters,
 
   // Main processing loop.
   while (function_walker_->Advance()) ProcessStep();
+  // Post process blocks that end at the end of the function.
+  int blocks_exited = function_walker_->ExitedBranch();
+  for (; blocks_exited > 0; --blocks_exited) ProcessBlockEnd();
+
+  // Check for inconsistencies.
+  assert(nested_blocks_.empty());
+  assert(saved_if_.empty());
 
   ProcessFinalise();
   status_ = kDone;
@@ -148,7 +155,7 @@ void FunctionDivergence::ProcessStep() {
     case eContinue:
     case eBreak:    ProcessStatementJump(statement);   break;
     case eGoto:     ProcessStatementGoto(statement);   break;
-    case eArrayOp:  ProcessStatementArray(statement);assert(false);  break;
+    case eArrayOp:  ProcessStatementArray(statement); assert(false); break;
   }
 }
 
@@ -355,6 +362,9 @@ void FunctionDivergence::ProcessEndStatementFor(Statement *statement) {
       ProcessStep();
       function_walker_->Advance();
     }
+    // Any nested blocks that also end here should be processed.
+    for (; nested_blocks_.back().second != statement;)
+      ProcessBlockEnd();
 
     // Process for inc and test again.
     ProcessStatementAssign(const_cast<StatementAssign *>(statement_for->get_incr())); //const again.
