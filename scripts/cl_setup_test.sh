@@ -41,4 +41,6 @@ cp "../src/CLSmith/cl_launcher" $dir
 cp "../runtime/CLSmith.h" $dir
 cp "../runtime/safe_math_macros.h" $dir
 cp "cl_test.sh" $dir
+cp "cl_test_div.sh" $dir
 chmod +x "${dir}/cl_test.sh"
+chmod +x "${dir}/cl_test_div.sh"

@@ -61,7 +61,7 @@ class ExpressionID : public CLExpression {
   static int GetGenerationProbability(
       const CGContext &cg_context, const Type& type) {
     int prob = type.eType == eSimple && type.simple_type == eULongLong ?
-        (cg_context.blk_depth + cg_context.expr_depth) / 4 : 0;
+        (cg_context.blk_depth + cg_context.expr_depth) / 2 : 0;
     return prob > 5 ? 5 : 0;
   }
 

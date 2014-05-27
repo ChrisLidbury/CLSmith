@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # Run generator on a range of seeds.
+# Same as cl_test, but does not expect all threads to produce the same output.
+# The result is the addition of the output of all the threads.
 
 seed_min=1
 seed_max=1000
@@ -40,28 +42,28 @@ for seed in `seq $seed_min $seed_step $seed_max` ; do
   if [[ -f ${cl_filename} ]] ; then
     rm ${cl_filename}
   fi
-  eval "timeout 30 ${gen_exe} ${seed}"
+  eval "timeout 40 ${gen_exe} ${seed}"
   if [[ ! -f ${cl_filename} || $? != 0 ]] ; then
     echo "gen_error" >> ${output}
     continue
   fi
-  res=$(timeout 150 ${cl_launcher} ${cl_filename} ${cl_platform_idx} ${cl_device_idx})
+  res=$(timeout 180 ${cl_launcher} ${cl_filename} ${cl_platform_idx} ${cl_device_idx})
   if [[ $? != 0 ]] ; then
     echo "run_error" >> ${output}
     continue
   fi
   res=`echo "${res}" | sed 's/Compiler callback.*//g'`
 
-  item=`echo "${res}" | cut -d, -f1`
+  total=`echo "${res}" | cut -d, -f1 | sed 's/0x//g'`
+  total="${total^^}"
   rest=`echo "${res}" | cut -d, -f2-`
   while [[ ${rest} != "" ]] ; do
-    comp=`echo "${rest}" | cut -d, -f1`
+    next=`echo "${rest}" | cut -d, -f1 | sed 's/0x//g'`
+    next="${next^^}"
     rest=`echo "${rest}" | cut -d, -f2- -s`
-    if [[ ${item} -ne ${comp} ]] ; then
-      item=different
-      break
-    fi
+    total=`echo "obase=16;ibase=16;${total}+${next}" | bc`
   done
+  total="0x${total}"
 
-  echo ${item} >> ${output}
+  echo ${total} >> ${output}
 done
