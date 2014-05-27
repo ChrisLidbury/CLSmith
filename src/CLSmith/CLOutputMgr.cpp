@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "CLSmith/Globals.h"
+#include "CLSmith/StatementBarrier.h"
 #include "Function.h"
 #include "OutputMgr.h"
 #include "Type.h"
@@ -67,14 +68,14 @@ void CLOutputMgr::Output() {
   std::ostream &out = get_main_out();
   OutputStructUnionDeclarations(out);
 
-  Globals globals = Globals::CreateGlobals();
-  globals.OutputStructDefinition(out);
-  globals.ModifyGlobalVariableReferences();
-  globals.AddGlobalStructToAllFunctions();
+  Globals *globals = Globals::GetGlobals();
+  globals->OutputStructDefinition(out);
+  globals->ModifyGlobalVariableReferences();
+  globals->AddGlobalStructToAllFunctions();
 
   OutputForwardDeclarations(out);
   OutputFunctions(out);
-  OutputEntryFunction(globals);
+  OutputEntryFunction(*globals);
 }
 
 std::ostream& CLOutputMgr::get_main_out() {
@@ -86,7 +87,14 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   // own custom made one (without modifying the code).
   std::ostream& out = get_main_out();
   out << "__kernel void entry(__global ulong *result) {" << std::endl;
+  globals.OutputBufferInits(out);
   globals.OutputStructInit(out);
+
+  // Block all threads before entering to ensure the local buffers have been
+  // initialised.
+  output_tab(out, 1);
+  StatementBarrier::OutputBarrier(out);
+  out << std::endl;
 
   output_tab(out, 1);
   out << "func_1(";
@@ -100,6 +108,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   output_tab(out, 1);
   out << "int print_hash_value = 0;" << std::endl;
   HashGlobalVariables(out);
+  globals.HashLocalBuffers(out);
   output_tab(out, 1);
   out << "result[get_global_id(0)] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;

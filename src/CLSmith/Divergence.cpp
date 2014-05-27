@@ -155,6 +155,7 @@ void FunctionDivergence::ProcessStep() {
     case eContinue:
     case eBreak:    ProcessStatementJump(statement);   break;
     case eGoto:     ProcessStatementGoto(statement);   break;
+    case eCLStatement: assert(false); break;
     case eArrayOp:  ProcessStatementArray(statement); assert(false); break;
   }
 }

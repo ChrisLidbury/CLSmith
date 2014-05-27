@@ -86,7 +86,7 @@ public:
 
 	const ArrayVariable* collective;
 	Block* parent;
-private:
+protected:
 	ArrayVariable(Block* blk, const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const vector<unsigned int>& sizes, const Variable* isFieldVarOf);
 	
 

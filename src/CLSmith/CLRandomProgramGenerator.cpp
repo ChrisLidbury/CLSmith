@@ -41,9 +41,9 @@ int main(int argc, char **argv) {
 
   // Barrier specific stuff.
   // Must disable arrays for barrier stuff, as value is produced when printed.
-  //CGOptions::arrays(false);
+  CGOptions::arrays(false);
   // Gotos are still todo.
-  //CGOptions::gotos(false);
+  CGOptions::gotos(false);
 
   // AbsProgramGenerator does other initialisation stuff, besides itself. So we
   // call it, disregarding the returned object. Still need to delete it.

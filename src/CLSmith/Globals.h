@@ -24,6 +24,9 @@
 //
 // The global struct will be initialised by the kernel entry function, and
 // passed as a parameter to all the functions in the program.
+// TODO Proper const/mutable of the created struct (Only allow the singleton?
+//   assert no changes after struct created?).
+// TODO When memory spaces are done properly, merge vars and local buffers.
 
 #ifndef _CLSMITH_GLOBALS_H_
 #define _CLSMITH_GLOBALS_H_
@@ -31,11 +34,13 @@
 #include <algorithm>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <vector>
 
 #include "CommonMacros.h"
 
 class Function;
+namespace CLSmith { class MemoryBuffer; }
 class Type;
 class Variable;
 
@@ -60,6 +65,16 @@ class Globals {
     global_vars_.insert(global_vars_.end(), vars.begin(), vars.end());
   }
 
+  // Adds a local memory buffer. Needs special handling.
+  void AddLocalMemoryBuffer(MemoryBuffer *buffer);
+
+  // Accessors for a singleton instance of the Globals class.
+  // The instance is created lazily, and must be careful not to access it after
+  // ReleaseGlobals() is called. ReleaseGlobals() should generally be called by
+  // whatever initially called CreateGlobals();.
+  static Globals *GetGlobals();
+  static void ReleaseGlobals();
+
   // Output the definition of the global struct, including the types of all the
   // variables that have need added.
   // Must be called before ModifyGlobalVariableReferences().
@@ -69,6 +84,10 @@ class Globals {
   // element of the struct.
   // Must be called after ModifyGlobalVariableReferences().
   void OutputStructInit(std::ostream& out);
+
+  // Outputs the declaration and initialisation of the local buffer without the
+  // reference to the global struct.
+  void OutputBufferInits(std::ostream& out);
 
   // Modifies the function such that it no longer refers to global variables,
   // instead, it will refer to members of a local struct. Just adds the name of
@@ -91,7 +110,10 @@ class Globals {
 
   // Output index variables that will cover all of the indexes for all of the
   // arrays in the global struct.
-  void OutputArrayControlVars(std::ostream& out);
+  void OutputArrayControlVars(std::ostream& out) const;
+
+  // Hash the item in all local buffers that belongs to the work item.
+  void HashLocalBuffers(std::ostream& out) const;
 
   // Gets the type of the global struct, as a ptr type. The actual type can be
   // retrieved by calling:
@@ -103,7 +125,7 @@ class Globals {
 
   // Must be called after csmith has generated the program. Collects all the
   // global variables in the program.
-  static Globals CreateGlobals();
+  static Globals *CreateGlobals();
 
  private:
   // Constructs the Type and Variable objects using all the variables that have
@@ -117,6 +139,7 @@ class Globals {
 
  private:
   std::vector<Variable *> global_vars_;
+  std::vector<MemoryBuffer *> local_buffers_;
   // Type class generated lazily, needs all the global variables to have been
   // added before creation.
   std::unique_ptr<Type> struct_type_;
@@ -124,6 +147,10 @@ class Globals {
   // Also created lazily, does not own the data. Want a single variable for the
   // globals, as we modify all the globals to refer to the same struct variable.
   Variable *struct_var_;
+  // Buffer inits are collected in a stringstream, as outputting them is
+  // typically done after the reference has been modified.
+  std::stringstream buff_init_;
+  std::stringstream struct_buff_init_;
 
   DISALLOW_COPY_AND_ASSIGN(Globals);
 };

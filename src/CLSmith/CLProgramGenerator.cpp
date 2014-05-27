@@ -7,6 +7,7 @@
 
 #include "CLSmith/Divergence.h"
 #include "CLSmith/Globals.h"
+#include "CLSmith/StatementBarrier.h"
 #include "CLSmith/Walker.h"
 #include "Function.h"
 #include "Type.h"
@@ -23,10 +24,14 @@ void CLProgramGenerator::goGenerator() {
   GenerateAllTypes();
   GenerateFunctions();
 
-  //Divergence div;
-  //div.ProcessEntryFunction(GetFirstFunction());
+  Divergence div;
+  div.ProcessEntryFunction(GetFirstFunction());
+
+  Globals *globals = Globals::GetGlobals();
+  GenerateBarriers(&div, globals);
 
   output_mgr_->Output();
+  Globals::ReleaseGlobals();
 }
 
 OutputMgr *CLProgramGenerator::getOutputMgr() {

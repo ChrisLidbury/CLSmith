@@ -16,7 +16,7 @@ class CLStatement : public Statement {
     kBarrier = 0
   };
 
-  explicit CLStatement(CLStatementType type, Block *block)
+  CLStatement(CLStatementType type, Block *block)
       : Statement(eCLStatement, block),
       cl_statement_type_(type) {
   }

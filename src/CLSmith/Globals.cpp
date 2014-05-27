@@ -8,6 +8,7 @@
 
 #include "ArrayVariable.h"
 #include "util.h"
+#include "CLSmith/MemoryBuffer.h"
 #include "CVQualifiers.h"
 #include "Expression.h"
 #include "ExpressionVariable.h"
@@ -18,6 +19,30 @@
 #include "VariableSelector.h"
 
 namespace CLSmith {
+namespace {
+Globals *globals_inst = NULL;  // Singleton instance.
+}  // namespace
+
+void Globals::AddLocalMemoryBuffer(MemoryBuffer *buffer) {
+  assert(buffer->GetMemorySpace() == MemoryBuffer::kLocal);
+  local_buffers_.push_back(buffer);
+  buffer->OutputDef(buff_init_, 1);
+  output_tab(struct_buff_init_, 2);
+  buffer->Output(struct_buff_init_);
+  struct_buff_init_ << ", // ";
+  buffer->Output(struct_buff_init_);
+  struct_buff_init_ << std::endl;
+}
+
+Globals *Globals::GetGlobals() {
+  if (globals_inst == NULL) globals_inst = CreateGlobals();
+  return globals_inst;
+}
+
+void Globals::ReleaseGlobals() {
+  delete globals_inst;
+  globals_inst = NULL;
+}
 
 void Globals::OutputStructDefinition(std::ostream& out) {
   if (!struct_type_) CreateGlobalStruct();
@@ -29,6 +54,11 @@ void Globals::OutputStructDefinition(std::ostream& out) {
       continue;
     output_tab(out, 1);
     var->OutputDecl(out);
+    out << ";" << std::endl;
+  }
+  for (MemoryBuffer *buffer : local_buffers_) {
+    output_tab(out, 1);
+    buffer->OutputAliasDecl(out);
     out << ";" << std::endl;
   }
   out << "};" << std::endl;
@@ -68,11 +98,18 @@ void Globals::OutputStructInit(std::ostream& out) {
     var->Output(out);
     out << std::endl;
   }
+  out << struct_buff_init_.str();
+  struct_buff_init_.clear();
 
   output_tab(out, 1);
   out << "};" << std::endl;
   output_tab(out, 1);
   out << local_name1 << " = " << local_name2 << ";" << std::endl;
+}
+
+void Globals::OutputBufferInits(std::ostream& out) {
+  out << buff_init_.str();
+  buff_init_.clear();
 }
 
 void Globals::AddGlobalStructToFunction(Function *function, Variable *var) {
@@ -114,12 +151,21 @@ void Globals::ModifyGlobalVariableReferences() {
           struct_var_->name + "->" + var->name;
       if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
     }
+
+  // Now add to the local buffers.
+  for (MemoryBuffer *buffer : local_buffers_)
+    *const_cast<std::string *>(&buffer->name) =
+        struct_var_->name + "->" + buffer->name;
 }
 
-void Globals::OutputArrayControlVars(std::ostream& out) {
+void Globals::OutputArrayControlVars(std::ostream& out) const {
   size_t max_dimen = Variable::GetMaxArrayDimension(global_vars_);
   std::vector<const Variable *>&ctrl_vars = Variable::get_new_ctrl_vars();
   OutputArrayCtrlVars(ctrl_vars, out, max_dimen, 1);
+}
+
+void Globals::HashLocalBuffers(std::ostream& out) const {
+  for (MemoryBuffer *buffer : local_buffers_) buffer->hash(out);
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
@@ -130,8 +176,8 @@ const Variable& Globals::GetGlobalStructVar() {
   return *struct_var_;
 }
 
-Globals Globals::CreateGlobals() {
-  return Globals(*VariableSelector::GetGlobalVariables());
+Globals *Globals::CreateGlobals() {
+  return new Globals(*VariableSelector::GetGlobalVariables());
 }
 
 void Globals::CreateGlobalStruct() {
