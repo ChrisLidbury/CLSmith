@@ -27,6 +27,14 @@ if [[ ! -f "cl_test.sh" ]] ; then
   echo "Cannot find cl_test.sh"
   exit 1
 fi
+if [[ ! -f "cl_test_div.sh" ]] ; then
+  echo "Cannot find cl_test_div.sh"
+  exit 1
+fi
+if [[ ! -f "hex_add.py" ]] ; then
+  echo "Cannot find hex_add.py"
+  exit 1
+fi
 
 dir="${HOME}/$1"
 
@@ -42,5 +50,7 @@ cp "../runtime/CLSmith.h" $dir
 cp "../runtime/safe_math_macros.h" $dir
 cp "cl_test.sh" $dir
 cp "cl_test_div.sh" $dir
+cp "hex_add.py" $dir
 chmod +x "${dir}/cl_test.sh"
 chmod +x "${dir}/cl_test_div.sh"
+chmod +x "${dir}/hex_add.py"

@@ -53,17 +53,6 @@ for seed in `seq $seed_min $seed_step $seed_max` ; do
     continue
   fi
   res=`echo "${res}" | sed 's/Compiler callback.*//g'`
-
-  total=`echo "${res}" | cut -d, -f1 | sed 's/0x//g'`
-  total="${total^^}"
-  rest=`echo "${res}" | cut -d, -f2-`
-  while [[ ${rest} != "" ]] ; do
-    next=`echo "${rest}" | cut -d, -f1 | sed 's/0x//g'`
-    next="${next^^}"
-    rest=`echo "${rest}" | cut -d, -f2- -s`
-    total=`echo "obase=16;ibase=16;${total}+${next}" | bc`
-  done
-  total="0x${total}"
-
+  total=`./hex_add.py ${res}`
   echo ${total} >> ${output}
 done
