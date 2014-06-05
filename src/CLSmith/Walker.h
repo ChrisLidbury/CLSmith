@@ -178,6 +178,10 @@ class FunctionWalker {
   // necessary data.
   virtual bool Advance();
 
+  // Advances without entering any branches. Like GDB's 'next'.
+  // If we are leaving athe true branch of an if, we will enter the else branch.
+  virtual bool Next();
+
   // Information on the current statement/block.
   Statement *GetCurrentStatement() const {
     return block_walker_->WalkerBase::statement_;

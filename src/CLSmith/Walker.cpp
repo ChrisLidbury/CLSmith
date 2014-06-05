@@ -230,6 +230,32 @@ bool FunctionWalker::Advance() {
   return true;
 }
 
+bool FunctionWalker::Next() {
+  blocks_exited_ = 0;
+  blocks_entered_ = 0;
+
+  // If newly constructed, just use the standard Advance().
+  if (GetCurrentStatement() == NULL) return Advance();
+
+  while (!block_walker_->AdvanceBlock()) {
+    if (nested_blocks_.empty()) return false;
+    block_walker_.reset(nested_blocks_.top().release());
+    nested_blocks_.pop();
+    ++blocks_exited_;
+
+    // If we were in an if branch, and the else exists, enter it.
+    if (GetCurrentStatementType() == eIfElse &&
+        block_walker_->WalkerImpl<eIfElse>::else_body_) {
+      assert(block_walker_->WalkerImpl<eIfElse>::if_body_.get() == NULL);
+      EnterBranch(block_walker_->WalkerImpl<eIfElse>::else_body_.release());
+      ++blocks_entered_;
+      assert(block_walker_->AdvanceBlock());
+      break;
+    }
+  }
+  return true;
+}
+
 bool FunctionWalker::MustEnterBranch() {
   eStatementType type = GetCurrentStatementType();
   if (type == eFor)

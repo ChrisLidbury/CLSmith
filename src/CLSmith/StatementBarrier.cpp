@@ -78,12 +78,12 @@ void GenerateBarriers(Divergence *divergence, Globals *globals) {
     while (div_it != div_it_end) {
       std::unique_ptr<Walker::FunctionWalker> pos(
           Walker::FunctionWalker::CreateFunctionWalkerAtStatement(
-          function, divergent_sections.front().second));
+          function, div_it->second));
       ++div_it;
 
       // If it was at the end of the function, or the next divergent section
       // starts where this section ends then skip.
-      bool at_end = !pos->Advance();
+      bool at_end = !pos->Next();
       if (at_end) break;
       Statement *st = pos->GetCurrentStatement();
       Block *block = pos->GetCurrentBlock();
