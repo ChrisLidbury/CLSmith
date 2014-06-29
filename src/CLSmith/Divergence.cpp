@@ -625,7 +625,7 @@ bool FunctionDivergence::IsAssignmentDivergent(
 
   // Do not set variable to convergent if the lhs dereferences to multiple vars.
   bool ass_div = IsExpressionDivergent(expr);
-  if (lhs_derefs_to.size() <= 1 || (ass_div || divergent_));
+  if (lhs_derefs_to.size() <= 1 || (ass_div || divergent_))
     for (const Variable *var : lhs_derefs_to)
       SetVariableDivergence(var, ass_div || divergent_);
   return ass_div;
@@ -751,26 +751,12 @@ SubBlock *FunctionDivergence::GetSubBlockForBranchFromBlock(
 SavedState *FunctionDivergence::SaveState(Statement *statement) {
   SavedState *saved_state = new SavedState(this, statement);
 
-  // Move all sub_block_div_final_ maps that are not in this function and are
-  // not in the middle of processing.
-  for (auto it = div_->function_div_.begin(); it != div_->function_div_.end();
-      ++it)
-    if (it->first != function_ &&
-        it->second.get() != NULL &&
-        it->second->status_ != kMidProcess) {
-      saved_state->sub_block_div_finals_[it->first] =
-          std::move(it->second->sub_block_div_final_);
-      it->second->sub_block_div_final_.clear();
-    }
-
   // Could put this in the initialiser list, which would also stop default
   // constructing these maps, but this is fine :>
   saved_state->sub_block_div_ = std::move(sub_block_div_);
   saved_state->variable_div_ = std::move(variable_div_);
-  saved_state->divergent_value_ = divergent_value_;
   sub_block_div_.clear();
   variable_div_.clear();
-  divergent_value_ = false;
 
   saved_state->global_var_div_ = std::move(div_->global_var_div_);
   div_->global_var_div_.clear();
@@ -782,15 +768,7 @@ bool FunctionDivergence::RestoreAndMergeSavedState(SavedState *saved_state) {
   assert(saved_state != NULL);
   bool change = false;
   
-  // Start by examining other functions, if they exist, check for extra
-  // divergence in the sub blocks.
-  for (auto it = saved_state->sub_block_div_finals_.begin();
-      it != saved_state->sub_block_div_finals_.end(); ++it) {
-    FunctionDivergence *owner = div_->function_div_[it->first].get();
-    change |= MergeMap(&it->second, &owner->sub_block_div_final_);
-    owner->sub_block_div_final_ = std::move(it->second);
-  }
-  // Now to merge this functions sub blocks.
+  // Merge this functions sub blocks.
   change |= MergeMap(&saved_state->sub_block_div_, &sub_block_div_);
   sub_block_div_ = std::move(saved_state->sub_block_div_);
   // Restore local variables.
@@ -799,8 +777,6 @@ bool FunctionDivergence::RestoreAndMergeSavedState(SavedState *saved_state) {
   // Restore global variables.
   change |= MergeMap(&saved_state->global_var_div_, &div_->global_var_div_);
   div_->global_var_div_ = std::move(saved_state->global_var_div_);
-
-  if (!saved_state->divergent_value_ && divergent_value_) change = true;
 
   return change;
 }

@@ -24,6 +24,12 @@
 // - Fails for loopy programs, i.e. if func_1 calls func_2, which eventually
 //   calls func_1.
 // - Becomes very costly for nested for blocks.
+//
+// Major TODOs:
+// - Save pointers.
+// - Split sub-blocks on returns.
+// - Implement gotos.
+// - When arrays are fixed, implement them.
 
 #ifndef _CLSMITH_DIVERGENCE_H_
 #define _CLSMITH_DIVERGENCE_H_
@@ -91,10 +97,7 @@ class SubBlock {
 // This class will store the state of the whole process, but make it available
 // as necessary.
 // The saved state 'belongs' to the function the saved it. For the function that
-// saved it, all of the non-final, non-context members are moved; for all other
-// functions, the sub_block_div_final_ map is saved (we save this instean of the
-// whole FunctionDivergence object so that bloc_to_sub_block_final_ does not
-// change, allowing us to use the pointers as keys).
+// saved it, all of the non-final, non-context members are moved.
 // Also save the state of the global variables.
 class SavedState {
  public:
@@ -106,13 +109,9 @@ class SavedState {
   // Also mark which statement owns it, for safety.
   Statement *statement_;
 
-  // Saved sub block divergence maps from other function divergence class.
-  std::map<Function *, std::map<SubBlock *, bool>> sub_block_div_finals_;
-
   // Saved state of the owner's members (minus the context).
   std::map<SubBlock *, bool> sub_block_div_;
   std::map<const Variable *, bool> variable_div_;
-  bool divergent_value_;
 
   // Globals
   std::map<const Variable *, bool> global_var_div_;
