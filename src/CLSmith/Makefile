@@ -4,9 +4,9 @@
 
 CC=g++
 CFLAGS=-c -Wall -I../ -std=c++0x -g
-LFLAGS=../*.o -std=c++0x
+LFLAGS=-std=c++0x
 SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp Walker.cpp Divergence.cpp CLExpression.cpp StatementBarrier.cpp MemoryBuffer.cpp
-OBJS=$(SOURCES:.cpp=.o)
+OBJS=$(filter-out ../csmith-RandomProgramGenerator.o, $(wildcard ../*.o)) $(SOURCES:.cpp=.o)
 BIN=CLSmith
 
 all: generator launcher
