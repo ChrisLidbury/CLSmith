@@ -37,7 +37,7 @@ class MemoryBuffer : public ArrayVariable {
   MemoryBuffer(MemorySpace memory_space, const std::string &name,
       const Type *type, const Expression* init, const CVQualifiers *qfer,
       unsigned size)
-      : ArrayVariable(NULL, name, type, init, qfer, {size}, NULL),
+      : ArrayVariable(NULL, name, type, init, qfer, {size}, NULL, false),
       memory_space_(memory_space) {
   }
   MemoryBuffer(MemoryBuffer&& other) = default;

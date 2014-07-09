@@ -156,7 +156,7 @@ ArrayVariable::CreateArrayVariable(const CGContext& cg_context, Block* blk, cons
 			sizes.push_back(dimen_size);
 		}
 	}
-	ArrayVariable *var = new ArrayVariable(blk, name, type, init, qfer, sizes, isFieldVarOf);
+	ArrayVariable *var = new ArrayVariable(blk, name, type, init, qfer, sizes, isFieldVarOf, false);
 	ERROR_GUARD_AND_DEL1(NULL, var);
 	if (type->is_aggregate()) {
 		var->create_field_vars(type);
@@ -191,8 +191,9 @@ ArrayVariable::CreateArrayVariable(const CGContext& cg_context, Block* blk, cons
 /*
  *
  */
-ArrayVariable::ArrayVariable(Block* blk, const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const vector<unsigned int>& sizes, const Variable* isFieldVarOf)
+ArrayVariable::ArrayVariable(Block* blk, const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const vector<unsigned int>& sizes, const Variable* isFieldVarOf, bool isVector)
 	: Variable(name, type, init, qfer, isFieldVarOf, true),  
+	  isVector(isVector),
 	  collective(NULL),
 	  parent(blk),
 	  sizes(sizes)
@@ -202,6 +203,7 @@ ArrayVariable::ArrayVariable(Block* blk, const std::string &name, const Type *ty
 
 ArrayVariable::ArrayVariable(const ArrayVariable& av)
 	: Variable(av.name, av.type, av.init, &(av.qfer), av.field_var_of, true), 
+	isVector(av.isVector),
 	collective(av.collective),
 	parent(av.parent), 
 	sizes(av.sizes),

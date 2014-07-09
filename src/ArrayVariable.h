@@ -57,10 +57,10 @@ public:
 	const std::vector<const Expression*>& get_more_init_values(void) const { return init_values;}
 	bool no_loop_initializer(void) const;
 
-	ArrayVariable* itemize(void) const; 
-	ArrayVariable* itemize(const vector<int>& const_indices) const;
-	ArrayVariable* itemize(const std::vector<const Variable*>& indices, Block* blk) const;
-	ArrayVariable* itemize(const std::vector<const Expression*>& indices, Block* blk) const;
+	virtual ArrayVariable* itemize(void) const; 
+	virtual ArrayVariable* itemize(const vector<int>& const_indices) const;
+	virtual ArrayVariable* itemize(const std::vector<const Variable*>& indices, Block* blk) const;
+	virtual ArrayVariable* itemize(const std::vector<const Expression*>& indices, Block* blk) const;
 	ArrayVariable* rnd_mutate(void);
 	bool is_variant(const Variable* v) const;
 	virtual bool is_global(void) const; 
@@ -84,10 +84,11 @@ public:
 	string build_initializer_str(const vector<string>& init_strings) const;
 	string build_init_recursive(size_t dimen, const vector<string>& init_strings) const;
 
+	const bool isVector;
 	const ArrayVariable* collective;
 	Block* parent;
 protected:
-	ArrayVariable(Block* blk, const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const vector<unsigned int>& sizes, const Variable* isFieldVarOf);
+	ArrayVariable(Block* blk, const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const vector<unsigned int>& sizes, const Variable* isFieldVarOf, bool isVector);
 	
 
 	const std::vector<unsigned int> sizes;

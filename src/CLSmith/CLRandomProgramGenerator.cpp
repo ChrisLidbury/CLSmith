@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
   // Barrier specific stuff.
   // Must disable arrays for barrier stuff, as value is produced when printed.
-  CGOptions::arrays(false);
+  //CGOptions::arrays(false);
   // Gotos are still todo.
   CGOptions::gotos(false);
 

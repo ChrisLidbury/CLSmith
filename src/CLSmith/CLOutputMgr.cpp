@@ -55,6 +55,9 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "\n"
       "#define transparent_crc(X, Y, Z) "
       "transparent_crc_(&crc64_context, X, Y, Z)\n"
+      "\n"
+      "#define VECTOR(X , Y) VECTOR_(X, Y)\n"
+      "#define VECTOR_(X, Y) X##Y\n"
       << std::endl;
 
   out << std::endl;
