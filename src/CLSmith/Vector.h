@@ -73,11 +73,23 @@ class Vector : public ArrayVariable {
   void OutputDecl(std::ostream& out) const; 
   void hash(std::ostream& out) const;
 
+  // Creates a string used for initialising this vector. This has the form
+  // (typen)(...) with the number of elements in the second set of brackets
+  // matching the size of the vector.
+  // The initialiser list can have elements grouped into smaller vectors:
+  //   int8 vec = (int8)(4, (int4)(1, 2, 3, 4), 6, (int2)(9, 8))
+  std::string build_initializer_str(
+      const std::vector<std::string>& init_strings) const;
+
  private:
   // Returns the character corresponding to the component that is accessed.
   // If the size of the vector is greater than 4, the access character is a hex
   // digit, otherwise, it is one of xyzw.
   char GetComponentChar(int index) const;
+
+  // Outputs the vector type, without qualifiers, wrapped in a macro:
+  //   VECTOR(int , 8) -> int8
+  void OutputVectorType(std::ostream& out) const;
 
   // Keeps track of multiple accesses in a single itemisation.
   // e.g. 'vec.wy' will be {3, 1}

@@ -31,7 +31,7 @@ Vector *Vector::CreateVectorVariable(const CGContext& cg_context, Block *blk,
   assert(type != NULL);
   assert(type->eType == eSimple && type->simple_type != eVoid);
   // Vector size can only be one of four possibilities.
-  int num = rnd_upto(3);
+  int num = rnd_upto(4);
   Vector *vector = new Vector(
       blk, name, type, init, qfer, kSizes[num], isFieldVarOf);
   vector->add_init_value(Constant::make_random(type));
@@ -55,7 +55,7 @@ Vector *Vector::itemize(const std::vector<int>& const_indices) const {
 }
 
 Vector *Vector::itemize_simd(void) const {
-  size_t num = rnd_upto(4);
+  size_t num = rnd_upto(5);
   return num == 4 ? itemize() : itemize_simd(kSizes[num]);
 }
 
@@ -103,28 +103,17 @@ void Vector::OutputDef(std::ostream& out, int indent) const {
   assert(init);
   init_strs.push_back(init->to_string());
   for (const auto& expr : init_values) init_strs.push_back(expr->to_string());
-  // The init string is mostly the same, but wrapped in normal brackets, and has
-  // a type cast.
   std::string init_str = build_initializer_str(init_strs);
-  init_str.front() = '(';
-  init_str.back() = ')';
-  out << " = (";
-  type->Output(out);
-  out << ')' << init_str << ';';
+  out << " = " << build_initializer_str(init_strs) << ';';
   outputln(out);
 }
 
 void Vector::OutputDecl(std::ostream& out) const {
-  // Outputting the qualified type has a trailing space that must be removed.
-  //std::stringstream type_ss;
-  //output_qualified_type(type_ss);
-  out << "VECTOR(";
-  output_qualified_type(out);
-  out << ", " << sizes[0] << ") " << get_actual_name();
-  // string copy :<
-  //std::string type_str(type_ss.str());
-  //type_str.erase(type_str.size() - 1);
-  //out << type_str << sizes[0] << ' ' << get_actual_name();
+  // Trying to print all qualifiers prints the type as well. We don't allow
+  // vector pointers regardless.
+  qfer.OutputFirstQuals(out);
+  OutputVectorType(out);
+  out << ' ' << get_actual_name();
 }
 
 void Vector::hash(std::ostream& out) const {
@@ -143,8 +132,46 @@ void Vector::hash(std::ostream& out) const {
   }
 }
 
+std::string Vector::build_initializer_str(
+    const std::vector<std::string>& init_strings) const {
+  static unsigned long seed = 0xAB;
+  std::string ret;
+  ret.reserve(1000);
+  // Print the raw vector type without qualifiers.
+  stringstream ss_type;
+  OutputVectorType(ss_type);
+  ret.append("(").append(ss_type.str()).append(")");
+  // Build a nested set of vector initialisers
+  ret.append("(");
+  for (unsigned idx = 0; idx < sizes[0]; ++idx) {
+    unsigned long rnd_index = ((seed * seed + (idx + 7) * (idx + 13)) * 487);
+    if (seed >= 0x7AB) seed = 0xAB;
+    unsigned items_left = sizes[0] - idx;
+    // Print a nested vector with 50% probability.
+    if (items_left > kSizes[0] && rnd_upto(2) == 1) {
+      int max_size_idx = 3;
+      while (kSizes[max_size_idx] > items_left - 1) --max_size_idx;
+      int size = kSizes[rnd_index % (max_size_idx + 1)];
+      Vector vec(NULL, "", type, NULL, &qfer, size, NULL);
+      ret.append(vec.build_initializer_str(init_strings));
+      idx += size - 1;
+    } else {
+      ret.append(init_strings[rnd_index % init_strings.size()]);
+    }
+    if (items_left > 1) ret.append(", ");
+  }
+  ret.append(")");
+  return ret;
+}
+
 char Vector::GetComponentChar(int index) const {
   return sizes[0] <= 4 ? kCompSmall[index] : kCompBig[index];
+}
+
+void Vector::OutputVectorType(std::ostream& out) const {
+  out << "VECTOR(";
+  type->Output(out);
+  out << ", " << sizes[0] << ')';
 }
 
 }  // namespace CLSmith
