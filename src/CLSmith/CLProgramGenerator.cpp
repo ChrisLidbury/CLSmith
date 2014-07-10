@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/Divergence.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
@@ -24,11 +25,17 @@ void CLProgramGenerator::goGenerator() {
   GenerateAllTypes();
   GenerateFunctions();
 
-  Divergence div;
-  div.ProcessEntryFunction(GetFirstFunction());
+  std::unique_ptr<Divergence> div;
+  if (CLOptions::track_divergence()) {
+    div.reset(new Divergence());
+    div->ProcessEntryFunction(GetFirstFunction());
+  }
 
   Globals *globals = Globals::GetGlobals();
-  GenerateBarriers(&div, globals);
+  if (CLOptions::barriers()) {
+    if (CLOptions::divergence()) GenerateBarriers(div.get(), globals);
+    else { /*TODO Non-div barriers*/ }
+  }
 
   output_mgr_->Output();
   Globals::ReleaseGlobals();

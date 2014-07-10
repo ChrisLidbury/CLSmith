@@ -70,8 +70,11 @@ namespace Vector {
 ArrayVariable *CreateVectorVariable(const CGContext& cg_context, Block *blk,
     const std::string& name, const Type *type, const Expression *init,
     const CVQualifiers *qfer, const Variable *isFieldVarOf); // Hook
-}
-}
+}  // namespace Vector
+namespace CLOptions {
+bool vectors(); // Hook
+}  // namespace CLOptions
+}  // namespace CLSmith
 
 using namespace std;
 
@@ -1305,7 +1308,7 @@ ArrayVariable*
 VariableSelector::create_array_and_itemize(Block* blk, string name, const CGContext& cg_context, 
 		const Type* t, const Expression* init, const CVQualifiers* qfer)
 {
-	ArrayVariable* av = (t->eType == eSimple && rnd_flipcoin(20)) ?
+	ArrayVariable* av = (t->eType == eSimple && CLSmith::CLOptions::vectors() && rnd_flipcoin(20)) ?
 		CLSmith::Vector::CreateVectorVariable(cg_context, blk, name, t, init, qfer, NULL) :
 		ArrayVariable::CreateArrayVariable(cg_context, blk, name, t, init, qfer, NULL);
 	ERROR_GUARD(NULL);
@@ -1344,7 +1347,7 @@ VariableSelector::create_random_array(const CGContext& cg_context)
 	qfer.add_qualifiers(false, false);
 
 	Expression* init = Constant::make_random(type);
-	ArrayVariable* av = (type->eType == eSimple && rnd_flipcoin(20)) ?
+	ArrayVariable* av = (type->eType == eSimple && CLSmith::CLOptions::vectors() && rnd_flipcoin(20)) ?
 		CLSmith::Vector::CreateVectorVariable(cg_context, blk, name, type, init, &qfer, NULL) :
 		ArrayVariable::CreateArrayVariable(cg_context, blk, name, type, init, &qfer, NULL);
 	AllVars.push_back(av);

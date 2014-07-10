@@ -2,53 +2,77 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #include "AbsProgramGenerator.h"
 #include "CGOptions.h"
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/CLProgramGenerator.h"
 #include "platform.h"
 
+// Generator seed.
+static unsigned long g_Seed = 0;
+
+bool CheckArgExists(int idx, int argc) {
+  if (idx >= argc) std::cout << "Expected another argument" << std::endl;
+  return idx < argc;
+}
+
+bool ParseIntArg(const char *arg, unsigned long *value) {
+  bool res = sscanf(arg, "%lu", value);
+  if (!res) std::cout << "Expected integer arg for " << arg << std::endl;
+  return res;
+}
+
 int main(int argc, char **argv) {
-  // Temporary, check first param for seed.
-  unsigned long g_seed;
-  if (argc > 1) {
-    g_seed = strtoul(argv[1], NULL, 0);
-    assert(g_seed);
-  }
-  else {
-    g_seed = platform_gen_seed();
-  }
-
-  // Force options that would otherwise produce an invalid OpenCL program.
+  g_Seed = platform_gen_seed();
   CGOptions::set_default_settings();
+  CLSmith::CLOptions::set_default_settings();
 
-  // General settings for normal OpenCL programs.
-  // No static in OpenCL.
-  CGOptions::force_globals_static(false);
-  // No bit fields in OpenCL.
-  CGOptions::bitfields(false);
-  // Maybe enable in future. Has a different syntax.
-  CGOptions::packed_struct(false);
-  // No printf in OpenCL.
-  CGOptions::hash_value_printf(false);
-  // The way we currently handle globals means we need to disable consts.
-  CGOptions::consts(false);
-  // Reading smaller fields than the actual field is implementation-defined.
-  CGOptions::union_read_type_sensitive(false);
-  // Empty blocks ruin my FunctionWalker, embarassing.
-  CGOptions::empty_blocks(false);
+  // Parse command line arguments.
+  for (int idx = 1; idx < argc; ++idx) {
+    if (!strcmp(argv[idx], "--seed") ||
+        !strcmp(argv[idx], "-s")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      if (!ParseIntArg(argv[idx], &g_Seed)) return -1;
+      continue;
+    }
 
-  // Barrier specific stuff.
-  // Must disable arrays for barrier stuff, as value is produced when printed.
-  //CGOptions::arrays(false);
-  // Gotos are still todo.
-  CGOptions::gotos(false);
+    if (!strcmp(argv[idx], "--barriers")) {
+      CLSmith::CLOptions::barriers(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--divergence")) {
+      CLSmith::CLOptions::divergence(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--track_divergence")) {
+      CLSmith::CLOptions::track_divergence(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--vectors")) {
+      CLSmith::CLOptions::vectors(true);
+      continue;
+    }
+
+    std::cout << "Invalid option \"" << argv[idx] << '"' << std::endl;
+    return -1;
+  }
+  // End parsing.
+
+  // Resolve any options in CGOptions that must change as a result of options
+  // that the user has set.
+  CLSmith::CLOptions::ResolveCGOptions();
 
   // AbsProgramGenerator does other initialisation stuff, besides itself. So we
   // call it, disregarding the returned object. Still need to delete it.
   AbsProgramGenerator *generator =
-      AbsProgramGenerator::CreateInstance(argc, argv, g_seed);
+      AbsProgramGenerator::CreateInstance(argc, argv, g_Seed);
   if (!generator) {
     cout << "error: can't create AbsProgramGenerator. csmith init failed!"
          << std::endl;
@@ -56,7 +80,7 @@ int main(int argc, char **argv) {
   }
 
   // Now create our program generator for OpenCL.
-  CLSmith::CLProgramGenerator cl_generator(g_seed);
+  CLSmith::CLProgramGenerator cl_generator(g_Seed);
   cl_generator.goGenerator();
 
   // Calls Finalization::doFinalization(), which deletes everything, so must be
