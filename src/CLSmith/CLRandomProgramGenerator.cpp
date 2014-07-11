@@ -68,6 +68,8 @@ int main(int argc, char **argv) {
   // Resolve any options in CGOptions that must change as a result of options
   // that the user has set.
   CLSmith::CLOptions::ResolveCGOptions();
+  // Check for conflicting options
+  if (CLSmith::CLOptions::Conflict()) return -1;
 
   // AbsProgramGenerator does other initialisation stuff, besides itself. So we
   // call it, disregarding the returned object. Still need to delete it.
