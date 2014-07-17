@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define WORK_ITEMS 1024
 #define WORK_GROUP_SIZE WORK_ITEMS
@@ -14,9 +15,11 @@
 const char *file;
 cl_platform_id *platform;
 cl_device_id *device;
+size_t binary_size = 0;
 
 // Data to free.
 char *source_text = NULL;
+char *buf = NULL;
 
 int run_on_platform_device(cl_platform_id *, cl_device_id *);
 void error_callback(const char *, const void *, size_t, void *);
@@ -24,26 +27,70 @@ void compiler_callback(cl_program, void *);
 int cl_error_check(cl_int, const char *);
 
 int main(int argc, char **argv) {
+  
   // Parse the input. Expect three parameters.
   if (argc < 4) {
-    printf("Expected three arguments \"./cl_launcher <cl_program> <platform_idx> <device_idx> [flags...]\"\n");
+    printf("Expected at least three arguments \"./cl_launcher <cl_program> <platform_idx> <device_idx> [flags...]\"\n");
     return 1;
   }
-
-  // Source file.
-  file = argv[1];
-
+  
+  int platform_index = -1, device_index = -1;
+  int f_arg = 0, d_arg = 0, p_arg = 0;
+  
+  // Parsing arguments
+  int arg_no = 0;
+  char * curr_arg;
+  while (++arg_no < argc) {
+    curr_arg = argv[arg_no];
+    if (!strncmp(curr_arg, "-", 1)) {
+      if (arg_no + 1 == argc) {
+        printf("Option with no value found.\n");
+        return 1;
+      }
+      // Set source file
+      if (!strcmp(curr_arg, "-f") || !strcmp(curr_arg, "--filename")) {
+        file = argv[++arg_no];
+        f_arg = 1;
+      }
+      // Set device index
+      else if (!strcmp(curr_arg, "-d") || !strcmp(curr_arg, "--device_idx")) {
+        device_index = atoi(argv[++arg_no]);
+        d_arg = 1;
+      }
+      // Set platform index
+      else if (!strcmp(curr_arg, "-p") || !strcmp(curr_arg, "--platform_idx")) {
+        platform_index = atoi(argv[++arg_no]);
+        p_arg = 1;
+      }
+      // Optionally set target
+      else if (!strcmp(curr_arg, "-b") || !strcmp(curr_arg, "--binary")) {
+        binary_size = atoi(argv[++arg_no]);
+      }
+    } else {
+      printf("Expected option; found %s.\n", curr_arg);
+      return 1;
+    }
+  }
+  
+  if (f_arg + d_arg + p_arg != 3) {
+    if (!f_arg) 
+      printf("File (-f or --file) argument required.\n");
+    if (!d_arg)
+      printf("Device index (-d or --device_idx) argument required.\n");
+    if (!p_arg)
+      printf("Platform index (-p or --platform_idx) argument required.\n");
+    return 1;
+  }
+  
   // Platform ID, the index in the array of platforms.
-  int platform_index = -1;
-  sscanf(argv[2], "%d", &platform_index);
+//   sscanf(argv[2], "%d", &platform_index);
   if (platform_index < 0) {
     printf("Could not parse platform id \"%s\"\n", argv[2]);
     return 1;
   }
 
   // Device ID, not used atm.
-  int device_index = -1;
-  sscanf(argv[3], "%d", &device_index);
+//   sscanf(argv[3], "%d", &device_index);
   if (device_index < 0) {
     printf("Could not parse device id \"%s\"\n", argv[3]);
     return 1;
@@ -77,30 +124,40 @@ int main(int argc, char **argv) {
 
   int run_err = run_on_platform_device(platform, device);
   free(source_text);
+  free(buf);
 
   return run_err;
 }
 
 int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
-  // Try to read source file into a string.
+  
+  // Try to read source file into a binary buffer
   FILE *source = fopen(file, "rb");
   if (source == NULL) {
     printf("Could not open %s\n", file);
     return 1;
   }
 
-  char temp[1024];
-  while (!feof(source)) fread(temp, 1, 1024, source);
-  long source_size = ftell(source);
-  rewind(source);
+  size_t source_size;
+  if (!binary_size) {
+    char temp[1024];
+    while (!feof(source)) fread(temp, 1, 1024, source);
+    source_size = ftell(source);
+    rewind(source);
 
-  source_text = calloc(1, source_size + 1);
-  if (source_text == NULL) {
-    printf("Failed to calloc %ld bytes", source_size);
-    return 1;
+    source_text = calloc(1, source_size + 1);
+    if (source_text == NULL) {
+      printf("Failed to calloc %ld bytes", source_size);
+      return 1;
+    }
+    fread(source_text, 1, source_size, source);
+    fclose(source);
   }
-  fread(source_text, 1, source_size, source);
-  fclose(source);
+  else {
+    buf = (char *) malloc (binary_size);
+    source_size = fread(buf, 1, binary_size, source);
+    fclose(source);
+  }
 
   // Create a context, that uses our specified platform and device.
   cl_int err;
@@ -121,9 +178,17 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
 
   // Create a kernel from the source program. This involves turning the source
   // into a program object, compiling it and creating a kernel object from it.
-  const char *const_source = source_text;
-  cl_program program =
+  cl_program program;
+  if (!binary_size) {
+    const char *const_source = source_text;
+    program =
       clCreateProgramWithSource(context, 1, &const_source, NULL, &err);
+  }
+  else {
+    program =
+        clCreateProgramWithBinary(context, 1, device, (const size_t *)&source_size, 
+                                  (const unsigned char **)&buf, NULL, &err);
+  }
   if (cl_error_check(err, "Error creating program"))
     return 1;
 
