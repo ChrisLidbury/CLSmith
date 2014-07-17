@@ -60,8 +60,8 @@
 
 // TODO Add ability to disable CLSmith, and prevent link failing on this function.
 namespace CLSmith {
-Expression *make_random(CGContext &cg_context, const Type *type); // Hook
-}
+Expression *make_random(CGContext &cg_context, const Type *type, const CVQualifiers* qfer); // Hook
+}  // namespace CLSmith
 
 int eid = 0;
 
@@ -192,11 +192,11 @@ Expression::make_random(CGContext &cg_context, const Type* type, const CVQualifi
 		if (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()) {
 			filter.add(eFunction).add(eAssignment).add(eCommaExpr);
 		}
-		tt = ExpressionTypeProbability(&filter);
+		tt = type->eType == eVector ? eCLExpression : ExpressionTypeProbability(&filter);
 		ERROR_GUARD(NULL);
 
 		// Do the check here so if it fails, we can easily select something else.
-		if (tt == eCLExpression) e = CLSmith::make_random(cg_context, type);
+		if (tt == eCLExpression) e = CLSmith::make_random(cg_context, type, qfer);
 		if (e == NULL) {
 			filter.add(eCLExpression);
 			tt = ExpressionTypeProbability(&filter);

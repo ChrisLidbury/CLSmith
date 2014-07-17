@@ -8,6 +8,7 @@
 
 #include "Block.h"
 #include "CGContext.h"
+#include "CLSmith/CLOptions.h"
 #include "Constant.h"
 #include "random.h"
 #include "Type.h"
@@ -19,15 +20,25 @@ class Expression;
 class Variable;
 
 namespace CLSmith {
-
+namespace {
+// Valid vector lengths.
 const size_t kSizes[4] = {2, 4, 8, 16};
+const size_t kSizesCount = 4;
+// Outputs for component accesses.
 const char kCompSmall[4] = {'x', 'y', 'z', 'w'};
 const char kCompBig[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+// Suffix outputs.
+const char *const kHiStr = "hi";
+const char *const kLoStr = "lo";
+const char *const kEvenStr = "even";
+const char *const kOddStr = "odd";
+}  // namespace
 
 Vector *Vector::CreateVectorVariable(const CGContext& cg_context, Block *blk,
     const std::string& name, const Type *type, const Expression *init,
     const CVQualifiers *qfer, const Variable *isFieldVarOf) {
+  // This is probably not the best place to put it.
   assert(type != NULL);
   assert(type->eType == eSimple && type->simple_type != eVoid);
   // Vector size can only be one of four possibilities.
@@ -87,7 +98,7 @@ void Vector::Output(std::ostream& out) const {
   // The components must be constant, the list of expressions used by
   // ArrayVariable cannot be used for vectors. No components means we will
   // access the whole vector, so no components need to be printed.
-  for (int comp : comp_access_) out << GetComponentChar(comp);
+  for (int comp : comp_access_) out << GetComponentChar(sizes[0], comp);
 }
 
 void Vector::OutputDef(std::ostream& out, int indent) const {
@@ -112,7 +123,7 @@ void Vector::OutputDecl(std::ostream& out) const {
   // Trying to print all qualifiers prints the type as well. We don't allow
   // vector pointers regardless.
   qfer.OutputFirstQuals(out);
-  OutputVectorType(out);
+  OutputVectorType(out, type, sizes[0]);
   out << ' ' << get_actual_name();
 }
 
@@ -139,7 +150,7 @@ std::string Vector::build_initializer_str(
   ret.reserve(1000);
   // Print the raw vector type without qualifiers.
   stringstream ss_type;
-  OutputVectorType(ss_type);
+  OutputVectorType(ss_type, type, sizes[0]);
   ret.append("(").append(ss_type.str()).append(")");
   // Build a nested set of vector initialisers
   ret.append("(");
@@ -164,14 +175,46 @@ std::string Vector::build_initializer_str(
   return ret;
 }
 
-char Vector::GetComponentChar(int index) const {
-  return sizes[0] <= 4 ? kCompSmall[index] : kCompBig[index];
+int Vector::GetRandomVectorLength(int max) {
+  if (!max) max = kSizes[kSizesCount - 1];
+  int size_idx = kSizesCount - 1;
+  while (size_idx >= 0 && kSizes[size_idx] > (unsigned)max) --size_idx;
+  return size_idx >= 0 ? kSizes[rnd_upto(size_idx + 1)] : 0;
 }
 
-void Vector::OutputVectorType(std::ostream& out) const {
+// TODO: Create all combinations of type and size, like with normal types.
+const Type *Vector::PromoteTypeToVectorType(const Type *type, int size) {
+  if (!size) size = GetRandomVectorLength(0);
+  if (type->eType == eVector && type->vector_length_ == size) return type;
+  Type *vec_type = new Type(type->simple_type);
+  vec_type->eType = eVector;
+  vec_type->vector_length_ = size;
+  return vec_type;
+}
+
+const Type &Vector::DemoteVectorTypeToType(const Type *type) {
+  return Type::get_simple_type(type->simple_type);
+}
+
+char Vector::GetComponentChar(int vector_size, int index) {
+  return vector_size <= 4 ? kCompSmall[index] : kCompBig[index];
+}
+
+const char *Vector::GetSuffixString(/*enum*/ int suffix) {
+  switch (suffix) {
+    case 0: return kHiStr;
+    case 1: return kLoStr;
+    case 2: return kEvenStr;
+    case 3: return kOddStr;
+  }
+  return "";
+}
+
+void Vector::OutputVectorType(std::ostream& out, const Type *type,
+    int vector_size) {
   out << "VECTOR(";
   type->Output(out);
-  out << ", " << sizes[0] << ')';
+  out << ", " << vector_size << ')';
 }
 
 }  // namespace CLSmith

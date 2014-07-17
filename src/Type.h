@@ -61,7 +61,8 @@ enum eTypeDesc
 	eSimple,
 	ePointer,
 	eUnion,
-    eStruct,
+	eVector,
+	eStruct,
 };
 #define MAX_TYPE_DESC ((eTypeDesc) (eStruct+1))
 
@@ -271,6 +272,8 @@ public:
 					// It's a tradeoff between the current implementation and the
 					// need of struct's level type qualifiers. 
 	vector<int> bitfields_length_;		// -1 means it's a regular field
+
+	int vector_length_;                 // For vectors. Embed the length.
 
 	static Type *void_type;
 private:	

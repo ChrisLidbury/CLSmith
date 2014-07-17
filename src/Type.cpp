@@ -1504,6 +1504,7 @@ Type::SizeInBytes(void) const
     size_t i;
 	switch (eType) {
 	default: break;
+	case eVector:
 	case eSimple:
 		switch (simple_type) {
 		case eVoid:		return 0;
@@ -1633,6 +1634,7 @@ void
 Type::Output(std::ostream &out) const
 {
 	switch (eType) {
+	case eVector:
 	case eSimple:
 		if (this->simple_type == eVoid) {
 			out << "void";
@@ -1758,6 +1760,7 @@ Type::printf_directive(void) const
 	string ret;
 	size_t i;
 	switch (eType) {
+	case eVector:
 	case eSimple:
 		if (SizeInBytes() >= 8) {
 			ret = is_signed() ? "%lld" : "%llu";

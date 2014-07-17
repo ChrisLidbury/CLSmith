@@ -35,9 +35,9 @@ class Vector : public ArrayVariable {
   // itemisation.
   Vector(const Vector& other) = default;
   Vector& operator=(const Vector& other) = default;
-  // No move constructors in ArrayVariable.
-  Vector(Vector&& other) = delete;
-  Vector& operator=(Vector&& other) = delete;
+  // No move constructors in ArrayVariable, copy will be performed.
+  Vector(Vector&& other) = default;
+  Vector& operator=(Vector&& other) = default;
   virtual ~Vector() {}
 
   // Factory for producing a vector variable.
@@ -81,16 +81,31 @@ class Vector : public ArrayVariable {
   std::string build_initializer_str(
       const std::vector<std::string>& init_strings) const;
 
- private:
+  // Get a random valid vector length no greater than the specified maximum.
+  // If max is 0, no limit is imposed on the size of the vector.
+  static int GetRandomVectorLength(int max);
+
+  // Convert a simple type to a vector type. Giving a size of 0 will create a
+  // random vector length. The type can already be a vector type, so this can be
+  // used to change the length.
+  static const Type *PromoteTypeToVectorType(const Type *type, int size);
+  // Convert from a vector type to the underlying simple type.
+  static const Type& DemoteVectorTypeToType(const Type *type);
+
   // Returns the character corresponding to the component that is accessed.
   // If the size of the vector is greater than 4, the access character is a hex
   // digit, otherwise, it is one of xyzw.
-  char GetComponentChar(int index) const;
+  static char GetComponentChar(int vector_size, int index);
+  // Returns the string corresponding to the suffix by which the vector is being
+  // accessed.  // TODO migrate suffixes here.
+  static const char *GetSuffixString(/*enum*/ int suffix);
 
   // Outputs the vector type, without qualifiers, wrapped in a macro:
   //   VECTOR(int , 8) -> int8
-  void OutputVectorType(std::ostream& out) const;
+  static void OutputVectorType(std::ostream& out, const Type *type,
+      int vector_size);
 
+ private:
   // Keeps track of multiple accesses in a single itemisation.
   // e.g. 'vec.wy' will be {3, 1}
   std::vector<int> comp_access_;

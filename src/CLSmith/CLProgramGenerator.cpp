@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 
+#include "CLSmith/CLExpression.h"
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/Divergence.h"
 #include "CLSmith/Globals.h"
@@ -18,6 +19,9 @@ class OutputMgr;
 namespace CLSmith {
 
 void CLProgramGenerator::goGenerator() {
+  // Initialise probabilies.
+  CLExpression::InitProbabilityTable();
+
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);
 
