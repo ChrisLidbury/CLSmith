@@ -319,6 +319,9 @@ public:
 	static bool gotos(void);
 	static bool gotos(bool p);
 
+	static bool array_ops(void);
+	static bool array_ops(bool p);
+
 	static bool accept_argc(void);
 	static bool accept_argc(bool p);
 
@@ -561,6 +564,7 @@ private:
 	static bool divs_;
 	static bool muls_;
 	static bool gotos_;
+	static bool array_ops_;
 	static bool accept_argc_;
 	static bool random_random_;
 	static bool const_as_condition_;

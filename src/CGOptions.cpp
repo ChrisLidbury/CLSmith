@@ -156,6 +156,7 @@ DEFINE_GETTER_SETTER_BOOL(dangling_global_ptrs)
 DEFINE_GETTER_SETTER_BOOL(divs)
 DEFINE_GETTER_SETTER_BOOL(muls)
 DEFINE_GETTER_SETTER_BOOL(gotos)
+DEFINE_GETTER_SETTER_BOOL(array_ops)
 DEFINE_GETTER_SETTER_BOOL(accept_argc)
 DEFINE_GETTER_SETTER_BOOL(random_random)
 DEFINE_GETTER_SETTER_INT(stop_by_stmt) 
@@ -269,6 +270,7 @@ CGOptions::set_default_settings(void)
 	divs(true);
 	muls(true);
 	gotos(true);
+	array_ops(true);
 	accept_argc(true);
 	stop_by_stmt(-1);
 	deputy(false);
