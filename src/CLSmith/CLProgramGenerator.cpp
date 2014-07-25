@@ -10,6 +10,7 @@
 #include "CLSmith/Divergence.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
+#include "CLSmith/Vector.h"
 #include "CLSmith/Walker.h"
 #include "Function.h"
 #include "Type.h"
@@ -21,6 +22,8 @@ namespace CLSmith {
 void CLProgramGenerator::goGenerator() {
   // Initialise probabilies.
   CLExpression::InitProbabilityTable();
+  // Create types.
+  Vector::GenerateVectorTypes();
 
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);

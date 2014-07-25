@@ -3,9 +3,11 @@
 #ifndef _CLSMITH_VECTOR_H_
 #define _CLSMITH_VECTOR_H_
 
+#include <map>
 #include <ostream>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "ArrayVariable.h"
 #include "CGContext.h"
@@ -105,10 +107,19 @@ class Vector : public ArrayVariable {
   static void OutputVectorType(std::ostream& out, const Type *type,
       int vector_size);
 
+  // Must be called on startup, generates all the vector types.
+  static void GenerateVectorTypes();
+
  private:
   // Keeps track of multiple accesses in a single itemisation.
   // e.g. 'vec.wy' will be {3, 1}
   std::vector<int> comp_access_;
+
+  // All vector types. These will be pre-generated, as many of the functions
+  // that check for type compatibilities between variables rely on the types
+  // being identical.
+  static std::map<std::pair<enum eSimpleType, unsigned>, const Type *>
+      vector_types_;
 };
 
 }  // namespace CLSmith

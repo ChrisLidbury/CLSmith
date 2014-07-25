@@ -30,28 +30,27 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
 
   assert(vector_expr_table != NULL);
   int num = rnd_upto(40);
-  //enum VectorExprType vec_expr_type =
-  //    (VectorExprType)VectorFilter(vector_expr_table).lookup(num);
+  enum VectorExprType vec_expr_type =
+      (VectorExprType)VectorFilter(vector_expr_table).lookup(num);
 
   // Create a series of sub-expressions. The size of each sub-expression should
   // combine to form the size of the vector.
   std::vector<std::unique_ptr<const Expression>> exprs;
-  //if (vec_expr_type == kLiteral) {
+  if (vec_expr_type == kLiteral) {
     // Randomly create elements equal to size.
     int remain = size;
     while (remain > 0) {
       num = rnd_upto(30);
       if (remain == 1 || num < 10) {
         // Create a simple constant value.
-        //exprs.emplace_back(Constant::make_random(
-        //    &Vector::DemoteVectorTypeToType(type)));
-        exprs.emplace_back(Constant::make_int(69));
+        exprs.emplace_back(Constant::make_random(
+            &Vector::DemoteVectorTypeToType(type)));
         --remain;
       } else if (num < 20) {
         // Create a sub-vector.
         int vec_size = Vector::GetRandomVectorLength(remain);
         const Type *sub_vec_type =
-            Vector::PromoteTypeToVectorType(type, vec_size);  // memory leak
+            Vector::PromoteTypeToVectorType(type, vec_size);
         exprs.emplace_back(ExpressionVector::make_random(
             cg_context, sub_vec_type, qfer, vec_size));
         remain -= vec_size;
@@ -63,17 +62,18 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
         --remain;
       }
     }
-  /*}
-  if (vec_expr_type == kVariable || vec_expr_type == kBuiltIn) {
-    // Produce an entire vector.
-    vec_expr_type = kSIMD; // TODO
   }
-  if (vec_expr_type == kSIMD) {
+  //if (vec_expr_type == kVariable || vec_expr_type == kBuiltIn) {
+    // Produce an entire vector.
+  //  vec_expr_type = kSIMD; // TODO
+  //}
+  else {//if (vec_expr_type == kSIMD) {
     // Produce an expression that performs a series of operations on vectors. We
     // borrow from csmith's expression generation where possible.
+    const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(Expression::make_random(
         cg_context, vec_type, qfer, false, false, eFunction));
-  }*/
+  }
 
   // The expression has been produced, but we need to itemise according to the
   // size of the expected type.
@@ -142,7 +142,7 @@ unsigned ExpressionVector::get_complexity() const {
 // TODO let Vector handle this.
 void ExpressionVector::Output(std::ostream& out) const {
   if (exprs_.size() > 1) {
-    out << '(';
+    out << "((";
     Vector::OutputVectorType(out, &type_, size_);
     out << ")(";
   }
@@ -150,7 +150,7 @@ void ExpressionVector::Output(std::ostream& out) const {
     exprs_[idx]->Output(out);
     if (exprs_.size() - idx > 1) out << ", ";
   }
-  if (exprs_.size() > 1) out << ')';
+  if (exprs_.size() > 1) out << "))";
   // Output accesses if any.
   if (is_component_access_ && accesses_.empty()) return;
   out << '.';
