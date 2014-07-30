@@ -40,6 +40,8 @@ void CLProgramGenerator::goGenerator() {
   }
 
   Globals *globals = Globals::GetGlobals();
+  // Once the global struct is created, we add the global memory buffers.
+  // Adding global memory buffers to do with atomic expressions
   for (MemoryBuffer * mb : *ExpressionAtomic::GetGlobalMems())
     globals->AddGlobalMemoryBuffer(mb);
 

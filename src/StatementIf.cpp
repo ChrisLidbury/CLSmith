@@ -51,6 +51,7 @@ Expression* make_random(CGContext& cg_context, const Type* type);
 }  // namespace ExpressionAtomic
 
 namespace CLOptions {
+// Checks whether the "--atomics" argument was given
 bool atomics();
 }  // namespace CLOptions
 }  // namespace CLSmith
@@ -65,6 +66,8 @@ using namespace std;
 StatementIf *
 StatementIf::make_random(CGContext &cg_context)
 {
+        // If the appropriate flag is set, there is a chance of condition 
+        // generated to be a atomic expression
         bool build_atomic = CLSmith::CLOptions::atomics() && rnd_flipcoin(10);
         
 	DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);

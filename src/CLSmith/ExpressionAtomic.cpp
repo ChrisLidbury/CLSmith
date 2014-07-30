@@ -3,17 +3,22 @@
 
 #include <vector>
 
-#include "Expression.h"
-#include "CGContext.h"
-#include "random.h"
 #include "ArrayVariable.h"
+#include "CGContext.h"
 #include "Constant.h"
+#include "Expression.h"
+#include "random.h"
 #include "VariableSelector.h"
 
 
 namespace CLSmith {
 namespace {
+// Corresponds to the global array parameter passed to the kernel
 static MemoryBuffer* global_buf = NULL;
+
+// Holds the global array parameter reference and all references to it;
+// these need to be added to the global struct when it is created.
+// (in CLProgramGenerator::goGenerator())
 static std::vector<MemoryBuffer*>* global_mems = NULL;
 } // namespace
   
@@ -38,7 +43,7 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
       return new ExpressionAtomic(atomic_type, itemized, rnd_upto(100));
     case kCmpxchg:
       return new ExpressionAtomic(atomic_type, itemized, rnd_upto(100), 0);
-    default: assert(0); //TODO throw error
+    default: assert(0); // should never get here.
   }
 }
 
@@ -58,7 +63,8 @@ std::vector<MemoryBuffer*>* ExpressionAtomic::GetGlobalMems() {
 }
 
 void ExpressionAtomic::Output(std::ostream& out) const {
-  out << GetOpName() << "(";
+  // Need the '&' as atomic expressions expect a pointer to parameter p.
+  out << GetOpName() << "(&";
   global_var_->Output(out);
   switch(atomic_type_) {
     case kDec:
@@ -72,6 +78,7 @@ void ExpressionAtomic::Output(std::ostream& out) const {
     case kOr:
     case kXor: { out << ", " << val_; break; }
     case kCmpxchg: { out << ", " << cmp_ << ", " << val_; break; }  
+    default: assert(0) // should never get here.
   }
   out << ")";
 }
@@ -89,7 +96,7 @@ string ExpressionAtomic::GetOpName() const {
     case kAnd:     return "atomic_and";
     case kOr:      return "atomic_or";
     case kXor:     return "atomic_xor";
-    default:       assert(0); //TODO throw error 
+    default:       assert(0); // should never get here.
   }
 }
 }

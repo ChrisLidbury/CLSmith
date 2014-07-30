@@ -174,7 +174,7 @@ void Globals::ModifyGlobalVariableReferences() {
     *const_cast<std::string *>(&buffer->name) =
         struct_var_->name + "->" + buffer->name;
         
-  // Now add to the global buffers.
+  // Now add to the global buffers. 
   for (MemoryBuffer *buffer : global_buffers_)
     *const_cast<std::string *>(&buffer->name) =
         "&" + struct_var_->name + "->" + buffer->name;       
