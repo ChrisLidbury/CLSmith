@@ -25,6 +25,7 @@ class CLExpression : public Expression {
     kNone = 0,  // Sentinel value.
     kID,
     kVector,
+    kAtomic
   };
 
   explicit CLExpression(CLExpressionType type) : Expression(eCLExpression),
@@ -46,6 +47,11 @@ class CLExpression : public Expression {
 
   // When evaluated at runtime, will this produce a divergent value.
   virtual bool IsDivergent() const { return false; }//; = 0;
+  
+  // Getter for cl_expression_type_
+  enum CLExpressionType GetCLExpressionType() const {
+    return cl_expression_type_;
+  }
 
  private:
   CLExpressionType cl_expression_type_;

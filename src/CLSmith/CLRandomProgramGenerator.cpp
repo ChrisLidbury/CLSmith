@@ -59,6 +59,11 @@ int main(int argc, char **argv) {
       CLSmith::CLOptions::vectors(true);
       continue;
     }
+    
+    if (!strcmp(argv[idx], "--atomics")) {
+      CLSmith::CLOptions::atomics(true);
+      continue;
+    }
 
     std::cout << "Invalid option \"" << argv[idx] << '"' << std::endl;
     return -1;

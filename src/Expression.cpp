@@ -77,7 +77,7 @@ Expression::InitExprProbabilityTable()
 	if (CGOptions::use_embedded_assigns()) {
 		exprTable_.add_entry((int)eAssignment, 10);
 	}
-	exprTable_.add_entry((int)eCLExpression, 5);
+	exprTable_.add_entry((int)eCLExpression, 15);
 	if (CGOptions::use_comma_exprs()) {
 		exprTable_.add_entry((int)eCommaExpr, 10);
 	}

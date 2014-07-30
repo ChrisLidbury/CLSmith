@@ -193,7 +193,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Add optimisation to options later.
-  err = clBuildProgram(program, 0, NULL, "-w -I.", compiler_callback, NULL);
+  err = clBuildProgram(program, 0, NULL, "-w -I.", NULL, NULL);
   if (cl_error_check(err, "Error building program")) {
     size_t err_size;
     err = clGetProgramBuildInfo(
@@ -211,10 +211,26 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
       printf("%s", err_code);
     free(err_code);
     return 1;
+  } else {
+    cl_build_status status;
+    err = clGetProgramBuildInfo(
+        program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
+    if (cl_error_check(err, "Error getting build info"))
+      return 1;
+    else
+      printf("clBuildProgram status: %d.\n", status);
   }
-
+    
   cl_kernel kernel = clCreateKernel(program, "entry", &err);
   if (cl_error_check(err, "Error creating kernel"))
+    return 1;
+  
+  // Create buffer to store global variables in
+  int init_vals[1024] = { [0 ... 1023] = 2};
+  
+  cl_mem global_vars = clCreateBuffer(
+      context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 1024 * sizeof(int), init_vals, &err);
+  if (cl_error_check(err, "Error creating input buffer"))
     return 1;
 
   // Create the buffer that will have the results.
@@ -222,9 +238,15 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
       context, CL_MEM_WRITE_ONLY, 1024 * sizeof(cl_ulong), NULL, &err);
   if (cl_error_check(err, "Error creating output buffer"))
     return 1;
+  
+  // Set the buffers as arguments
   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &result);
-  if (cl_error_check(err, "Error setting kernel argument"))
+  if (cl_error_check(err, "Error setting kernel argument 0"))
     return 1;
+  err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &global_vars);
+  if (cl_error_check(err, "Error setting kernel argument 1"))
+    return 1;
+  
 
   // Create command to launch the kernel.
   // For now, it is 1-dimensional

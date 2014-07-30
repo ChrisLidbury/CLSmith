@@ -45,6 +45,16 @@
 #include "DepthSpec.h"
 #include "util.h"
 
+namespace CLSmith {
+namespace ExpressionAtomic {
+Expression* make_random(CGContext& cg_context, const Type* type);
+}  // namespace ExpressionAtomic
+
+namespace CLOptions {
+bool atomics();
+}  // namespace CLOptions
+}  // namespace CLSmith
+
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,6 +65,8 @@ using namespace std;
 StatementIf *
 StatementIf::make_random(CGContext &cg_context)
 {
+        bool build_atomic = CLSmith::CLOptions::atomics() && rnd_flipcoin(10);
+        
 	DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);
 	FactMgr* fm = get_fact_mgr(&cg_context); 
 	FactVec pre_facts;
@@ -65,7 +77,12 @@ StatementIf::make_random(CGContext &cg_context)
 		pre_facts = fm->global_facts;
 	}
 	cg_context.get_effect_stm().clear();
-	Expression *expr = Expression::make_random(cg_context, get_int_type(), NULL, false, !CGOptions::const_as_condition());
+        
+        Expression *expr = build_atomic ? 
+          CLSmith::ExpressionAtomic::make_random(cg_context, &Type::get_simple_type(eInt)) :
+          Expression::make_random(cg_context, get_int_type(), NULL, false, !CGOptions::const_as_condition());
+        
+        
 	ERROR_GUARD(NULL);
 	// func_1 hacking, re-analyze for multiple function calls
 	if (cg_context.get_current_func()->name == "func_1" && !(cg_context.flags & IN_LOOP)) {
@@ -86,12 +103,16 @@ StatementIf::make_random(CGContext &cg_context)
 
 	// this will save global_facts to map_facts_in[if_true], and update
 	// facts for new variables created while generating if_true
-	Block *if_true = Block::make_random(cg_context);    
+	Block *if_true = build_atomic ? 
+          Block::make_dummy_block(cg_context) :
+          Block::make_random(cg_context);    
 	ERROR_GUARD_AND_DEL1(NULL, expr);
 
 	// generate false branch with the same env as true branch
 	fm->global_facts = fm->map_facts_in[if_true];  
-	Block *if_false = Block::make_random(cg_context); 
+	Block *if_false = build_atomic ? 
+          Block::make_dummy_block(cg_context) : 
+          Block::make_random(cg_context);    
 	ERROR_GUARD_AND_DEL2(NULL, expr, if_true);
 
 	StatementIf* si = new StatementIf(cg_context.get_current_block(), *expr, *if_true, *if_false);

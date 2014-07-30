@@ -21,6 +21,7 @@ class CLOptions {
   DEFINE_CLFLAG(divergence, bool)
   DEFINE_CLFLAG(track_divergence, bool)
   DEFINE_CLFLAG(vectors, bool)
+  DEFINE_CLFLAG(atomics, bool)
   #undef DEFINE_CLFLAG
 
   // Reset any option changes, even those specified by the user.

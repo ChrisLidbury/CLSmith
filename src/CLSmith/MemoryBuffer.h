@@ -42,6 +42,8 @@ class MemoryBuffer : public ArrayVariable {
   }
   MemoryBuffer(MemoryBuffer&& other) = default;
   MemoryBuffer& operator=(MemoryBuffer&& other) = default;
+  MemoryBuffer(const MemoryBuffer& other) = default;
+  MemoryBuffer& operator=(const MemoryBuffer& other) = default;
   virtual ~MemoryBuffer() {}
 
   // Static factory, mostly just forwards it to the constructor. Does not create
@@ -49,6 +51,11 @@ class MemoryBuffer : public ArrayVariable {
   static MemoryBuffer *CreateMemoryBuffer(MemorySpace memory_space,
       const std::string &name, const Type *type, const Expression* init,
       unsigned size);
+  
+  // Takes a list of indices and creates a new memory buffer that accesses
+  // the elements at those indices; the number of indices in the list must
+  // be the same as the number of dimensions of the array
+  MemoryBuffer* itemize(const vector<int>& const_indices) const;
 
   // Print the memory space qualifier.
   static void OutputMemorySpace(std::ostream& out, MemorySpace memory_space);
@@ -61,14 +68,12 @@ class MemoryBuffer : public ArrayVariable {
   void OutputDef(std::ostream& out, int indent) const;
   void output_qualified_type(std::ostream& out) const;
 
-  // Alias must be declare with a * instead of a [] for some reason.
+  // Alias must be declared with a * instead of a [] for some reason.
   void OutputAliasDecl(std::ostream& out) const;
 
   MemorySpace GetMemorySpace() { return memory_space_; }
  private:
   MemorySpace memory_space_;
-
-  DISALLOW_COPY_AND_ASSIGN(MemoryBuffer);
 };
 
 }  // namespace CLSmith

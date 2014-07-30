@@ -8,6 +8,7 @@
 #include "CLSmith/CLExpression.h"
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/Divergence.h"
+#include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/Walker.h"
@@ -36,6 +37,9 @@ void CLProgramGenerator::goGenerator() {
   }
 
   Globals *globals = Globals::GetGlobals();
+  for (MemoryBuffer * mb : *ExpressionAtomic::GetGlobalMems())
+    globals->AddGlobalMemoryBuffer(mb);
+
   if (CLOptions::barriers()) {
     if (CLOptions::divergence()) GenerateBarriers(div.get(), globals);
     else { /*TODO Non-div barriers*/ }

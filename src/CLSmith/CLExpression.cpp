@@ -2,12 +2,13 @@
 
 #include "CGContext.h"
 #include "CLSmith/CLOptions.h"
+#include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/ExpressionID.h"
 #include "CLSmith/ExpressionVector.h"
 #include "ProbabilityTable.h"
 #include "random.h"
-#include "VectorFilter.h"
 #include "Type.h"
+#include "VectorFilter.h"
 
 class CVQualifiers;
 

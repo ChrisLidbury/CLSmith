@@ -65,8 +65,9 @@ class Globals {
     global_vars_.insert(global_vars_.end(), vars.begin(), vars.end());
   }
 
-  // Adds a local memory buffer. Needs special handling.
+  // Adds memory buffers. Needs special handling.
   void AddLocalMemoryBuffer(MemoryBuffer *buffer);
+  void AddGlobalMemoryBuffer(MemoryBuffer *buffer);
 
   // Accessors for a singleton instance of the Globals class.
   // The instance is created lazily, and must be careful not to access it after
@@ -99,7 +100,7 @@ class Globals {
   void AddGlobalStructToAllFunctions();
 
   // Modifies all the global variables such that they refer to our global struct
-  // varialble. Any methods that make use of the names of the globals before
+  // variable. Any methods that make use of the names of the globals before
   // they are modified must be called before this.
   //
   // Unfortunately, there is no easy way to change how the variables are
@@ -140,6 +141,7 @@ class Globals {
  private:
   std::vector<Variable *> global_vars_;
   std::vector<MemoryBuffer *> local_buffers_;
+  std::vector<MemoryBuffer *> global_buffers_;
   // Type class generated lazily, needs all the global variables to have been
   // added before creation.
   std::unique_ptr<Type> struct_type_;

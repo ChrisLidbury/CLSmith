@@ -8,6 +8,8 @@
 #include "CVQualifiers.h"
 #include "util.h"
 #include "Variable.h"
+#include "VariableSelector.h"
+#include "Constant.h"
 
 namespace CLSmith {
 
@@ -18,6 +20,19 @@ MemoryBuffer *MemoryBuffer::CreateMemoryBuffer(MemorySpace memory_space,
   bool vol = false;
   CVQualifiers qfer(std::vector<bool>({cnst}), std::vector<bool>({vol}));
   return new MemoryBuffer(memory_space, name, type, init, &qfer, size);
+}
+
+MemoryBuffer* MemoryBuffer::itemize(const vector<int>& const_indices) const {
+  assert(collective == 0);
+  assert(const_indices.size() == sizes.size());
+  MemoryBuffer* mb = new MemoryBuffer(*this);
+  VariableSelector::GetAllVariables()->push_back(mb);
+  for (size_t i = 0; i < sizes.size(); i++) {
+    int index = const_indices[i];
+    mb->add_index(new Constant(get_int_type(), StringUtils::int2str(index)));
+  }
+  mb->collective = this;
+  return mb;
 }
 
 void MemoryBuffer::OutputMemorySpace(

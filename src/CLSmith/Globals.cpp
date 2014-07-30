@@ -34,6 +34,17 @@ void Globals::AddLocalMemoryBuffer(MemoryBuffer *buffer) {
   struct_buff_init_ << std::endl;
 }
 
+void Globals::AddGlobalMemoryBuffer(MemoryBuffer *buffer) {
+  assert(buffer->GetMemorySpace() == MemoryBuffer::kGlobal);
+  global_buffers_.push_back(buffer);
+  if (buffer->collective) return;
+  output_tab(struct_buff_init_, 2);
+  buffer->Output(struct_buff_init_);
+  struct_buff_init_ << ", // ";
+  buffer->Output(struct_buff_init_);
+  struct_buff_init_ << std::endl;
+}
+
 Globals *Globals::GetGlobals() {
   if (globals_inst == NULL) globals_inst = CreateGlobals();
   return globals_inst;
@@ -57,6 +68,12 @@ void Globals::OutputStructDefinition(std::ostream& out) {
     out << ";" << std::endl;
   }
   for (MemoryBuffer *buffer : local_buffers_) {
+    output_tab(out, 1);
+    buffer->OutputAliasDecl(out);
+    out << ";" << std::endl;
+  }
+  for (MemoryBuffer *buffer : global_buffers_) {
+    if (buffer->collective) continue;
     output_tab(out, 1);
     buffer->OutputAliasDecl(out);
     out << ";" << std::endl;
@@ -156,6 +173,11 @@ void Globals::ModifyGlobalVariableReferences() {
   for (MemoryBuffer *buffer : local_buffers_)
     *const_cast<std::string *>(&buffer->name) =
         struct_var_->name + "->" + buffer->name;
+        
+  // Now add to the global buffers.
+  for (MemoryBuffer *buffer : global_buffers_)
+    *const_cast<std::string *>(&buffer->name) =
+        "&" + struct_var_->name + "->" + buffer->name;       
 }
 
 void Globals::OutputArrayControlVars(std::ostream& out) const {
