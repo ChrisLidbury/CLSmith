@@ -51,6 +51,12 @@
 #include "DepthSpec.h"
 #include "Enumerator.h"
 
+namespace CLSmith {
+namespace Vector {
+void OutputVectorType(std::ostream& out, const Type *type, int vector_size);
+}  // namespace Vector
+}  // namespace CLSmith
+
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1331,6 +1337,7 @@ Type::is_signed(void) const
 	default:
 		return false;
 		
+	case eVector:
 	case eSimple:
 		switch (simple_type) {
 		case eUChar:
@@ -1634,7 +1641,7 @@ void
 Type::Output(std::ostream &out) const
 {
 	switch (eType) {
-	case eVector:
+	case eVector:	CLSmith::Vector::OutputVectorType(out, this, vector_length_); break;
 	case eSimple:
 		if (this->simple_type == eVoid) {
 			out << "void";
@@ -1644,9 +1651,9 @@ Type::Output(std::ostream &out) const
 			out << "_t";
 		} 
 		break;
-    case ePointer:   ptr_type->Output( out ); out << "*"; break;
-    case eUnion:     out << "union U" << sid; break;
-    case eStruct:    out << "struct S" << sid; break;
+	case ePointer:	ptr_type->Output( out ); out << "*"; break;
+	case eUnion:	out << "union U" << sid; break;
+	case eStruct:	out << "struct S" << sid; break;
 	}
 }
 

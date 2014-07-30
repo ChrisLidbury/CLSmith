@@ -50,12 +50,22 @@ void CLOptions::ResolveCGOptions() {
     // Gotos are still todo.
     CGOptions::gotos(false);
   }
+
+  // Vector specific restrictions.
+  if (vectors_) {
+    // Array ops try to iterate over random arrays, including vectors.
+    CGOptions::array_ops(false);
+  }
 }
 
 bool CLOptions::Conflict() {
   if (barriers_ && divergence_ && !track_divergence_) {
     std::cout << "Divergence tracking must be enabled when generating barriers "
                  "and divergence." << std::endl;
+    return true;
+  }
+  if (vectors_ && track_divergence_) {
+    std::cout << "Cannot track divergence with vectors enabled." << std::endl;
     return true;
   }
   return false;

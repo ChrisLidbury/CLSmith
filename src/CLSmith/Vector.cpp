@@ -1,10 +1,12 @@
 #include "CLSmith/Vector.h"
 
+#include <map>
 #include <memory>
 #include <ostream>
-#include <vector>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "Block.h"
 #include "CGContext.h"
@@ -35,16 +37,27 @@ const char *const kEvenStr = "even";
 const char *const kOddStr = "odd";
 }  // namespace
 
+std::map<std::pair<enum eSimpleType, unsigned>, const Type *>
+    Vector::vector_types_;
+
 Vector *Vector::CreateVectorVariable(const CGContext& cg_context, Block *blk,
     const std::string& name, const Type *type, const Expression *init,
     const CVQualifiers *qfer, const Variable *isFieldVarOf) {
   // This is probably not the best place to put it.
   assert(type != NULL);
-  assert(type->eType == eSimple && type->simple_type != eVoid);
-  // Vector size can only be one of four possibilities.
-  int num = rnd_upto(4);
+  assert((type->eType == eSimple || type->eType == eVector) &&
+      type->simple_type != eVoid);
+  // The passed type may be a vector type or a simple type.
+  int size;
+  if (type->eType == eVector) {
+    size = type->vector_length_;
+    type = &Vector::DemoteVectorTypeToType(type);
+  } else {
+    size = GetRandomVectorLength(0);
+  }
+  // Create vector and push to the back of the appropriate variable list.
   Vector *vector = new Vector(
-      blk, name, type, init, qfer, kSizes[num], isFieldVarOf);
+      blk, name, type, init, qfer, size, isFieldVarOf);
   vector->add_init_value(Constant::make_random(type));
   blk ? blk->local_vars.push_back(vector) :
       VariableSelector::GetGlobalVariables()->push_back(vector);
@@ -182,18 +195,16 @@ int Vector::GetRandomVectorLength(int max) {
   return size_idx >= 0 ? kSizes[rnd_upto(size_idx + 1)] : 0;
 }
 
-// TODO: Create all combinations of type and size, like with normal types.
 const Type *Vector::PromoteTypeToVectorType(const Type *type, int size) {
   if (!size) size = GetRandomVectorLength(0);
   if (type->eType == eVector && type->vector_length_ == size) return type;
-  Type *vec_type = new Type(type->simple_type);
-  vec_type->eType = eVector;
-  vec_type->vector_length_ = size;
-  return vec_type;
+  auto it = vector_types_.find(std::make_pair(type->simple_type, size));
+  return it != vector_types_.end() ? it->second : NULL;
 }
 
 const Type &Vector::DemoteVectorTypeToType(const Type *type) {
-  return Type::get_simple_type(type->simple_type);
+  return type->eType == eVector ? Type::get_simple_type(type->simple_type) :
+      *type;
 }
 
 char Vector::GetComponentChar(int vector_size, int index) {
@@ -213,8 +224,26 @@ const char *Vector::GetSuffixString(/*enum*/ int suffix) {
 void Vector::OutputVectorType(std::ostream& out, const Type *type,
     int vector_size) {
   out << "VECTOR(";
-  type->Output(out);
+  DemoteVectorTypeToType(type).Output(out);
   out << ", " << vector_size << ')';
+}
+
+void Vector::GenerateVectorTypes() {
+  for (enum eSimpleType simple = eChar; simple < MAX_SIMPLE_TYPES;
+      simple = (eSimpleType)(simple + 1)) {
+    for (unsigned size_idx = 0; size_idx < kSizesCount; ++size_idx) {
+      Type *t = new Type(simple);
+      t->eType = eVector;
+      t->vector_length_ = kSizes[size_idx];
+      vector_types_[std::make_pair(simple, kSizes[size_idx])] = t;
+    }
+  }
+}
+
+ArrayVariable *itemize_simd_hook(const ArrayVariable *av, int access_count) {
+  const Vector *vec = dynamic_cast<const Vector *>(av);
+  assert(vec != NULL);
+  return vec->itemize_simd(access_count);
 }
 
 }  // namespace CLSmith
