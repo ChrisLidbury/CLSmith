@@ -47,7 +47,7 @@
 
 namespace CLSmith {
 namespace ExpressionAtomic {
-Expression* make_random(CGContext& cg_context, const Type* type);
+Expression* make_condition(CGContext& cg_context, const Type* type);
 }  // namespace ExpressionAtomic
 
 namespace CLOptions {
@@ -81,11 +81,10 @@ StatementIf::make_random(CGContext &cg_context)
 	}
 	cg_context.get_effect_stm().clear();
         
-        Expression *expr = build_atomic ? 
-          CLSmith::ExpressionAtomic::make_random(cg_context, &Type::get_simple_type(eInt)) :
+        Expression *expr = build_atomic ?
+          CLSmith::ExpressionAtomic::make_condition(cg_context, get_int_type()) :
           Expression::make_random(cg_context, get_int_type(), NULL, false, !CGOptions::const_as_condition());
-        
-        
+          
 	ERROR_GUARD(NULL);
 	// func_1 hacking, re-analyze for multiple function calls
 	if (cg_context.get_current_func()->name == "func_1" && !(cg_context.flags & IN_LOOP)) {

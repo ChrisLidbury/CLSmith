@@ -7,6 +7,8 @@
 #include "CGContext.h"
 #include "Constant.h"
 #include "Expression.h"
+#include "ExpressionFuncall.h"
+#include "FunctionInvocationBinary.h"
 #include "random.h"
 #include "VariableSelector.h"
 
@@ -47,6 +49,14 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
   }
 }
 
+Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *type) {
+  assert(type->eType == eSimple && type->simple_type == eInt);
+  ExpressionAtomic *eAtomic = make_random(cg_context, type);
+  FunctionInvocationBinary *fi = new FunctionInvocationBinary(eCmpEq, eAtomic,
+                                  Constant::make_int(0), NULL);
+  return new ExpressionFuncall(*fi);
+}
+
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_buf == NULL)  {
     global_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
@@ -78,7 +88,7 @@ void ExpressionAtomic::Output(std::ostream& out) const {
     case kOr:
     case kXor: { out << ", " << val_; break; }
     case kCmpxchg: { out << ", " << cmp_ << ", " << val_; break; }  
-    default: assert(0) // should never get here.
+    default: assert(0); // should never get here.
   }
   out << ")";
 }

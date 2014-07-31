@@ -55,6 +55,10 @@ class ExpressionAtomic : public CLExpression {
   // being generated.
   static ExpressionAtomic *make_random(CGContext &cg_context, const Type *type);
   
+  // Generates a random expression of the form "<atomic-expr> == <constant>" to
+  // be used as the condition for an if block.
+  static Expression *make_condition(CGContext &cg_context, const Type *type);
+  
   // This represents the __global volatile array parameter from the kernel;
   // the underlying object is a singleton MemoryBuffer.
   static MemoryBuffer* GetGlobalBuffer();

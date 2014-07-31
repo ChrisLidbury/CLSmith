@@ -177,7 +177,7 @@ void Globals::ModifyGlobalVariableReferences() {
   // Now add to the global buffers. 
   for (MemoryBuffer *buffer : global_buffers_)
     *const_cast<std::string *>(&buffer->name) =
-        "&" + struct_var_->name + "->" + buffer->name;       
+        struct_var_->name + "->" + buffer->name;       
 }
 
 void Globals::OutputArrayControlVars(std::ostream& out) const {
