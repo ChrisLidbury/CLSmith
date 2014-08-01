@@ -19,6 +19,7 @@ class CLOptions {
     static void name(type x);
   DEFINE_CLFLAG(barriers, bool)
   DEFINE_CLFLAG(divergence, bool)
+  DEFINE_CLFLAG(small, bool)
   DEFINE_CLFLAG(track_divergence, bool)
   DEFINE_CLFLAG(vectors, bool)
   DEFINE_CLFLAG(atomics, bool)

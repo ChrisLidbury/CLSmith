@@ -13,6 +13,7 @@ namespace CLSmith {
   void CLOptions::name(type x) { name##_ = x; }
 DEFINE_CLFLAG(barriers, bool, false)
 DEFINE_CLFLAG(divergence, bool, false)
+DEFINE_CLFLAG(small, bool, false)
 DEFINE_CLFLAG(track_divergence, bool, false)
 DEFINE_CLFLAG(vectors, bool, false)
 DEFINE_CLFLAG(atomics, bool, false)
@@ -21,6 +22,7 @@ DEFINE_CLFLAG(atomics, bool, false)
 void CLOptions::set_default_settings() {
   barriers_ = false;
   divergence_ = false;
+  small_ = false;
   track_divergence_ = false;
   vectors_ = false;
   atomics_ = false;
@@ -42,6 +44,12 @@ void CLOptions::ResolveCGOptions() {
   CGOptions::union_read_type_sensitive(false);
   // Empty blocks ruin my FunctionWalker, embarassing.
   CGOptions::empty_blocks(false);
+
+  // Setting for small programs.
+  if (small_) {
+    // Limit number of functions to no more than 5.
+    CGOptions::max_funcs(5);
+  }
 
   // Barrier specific stuff.
   if (track_divergence_) {
