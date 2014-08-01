@@ -11,12 +11,12 @@ namespace CLSmith {
   type CLOptions::name##_ = init; \
   type CLOptions::name() { return name##_; } \
   void CLOptions::name(type x) { name##_ = x; }
+DEFINE_CLFLAG(atomics, bool, false)
 DEFINE_CLFLAG(barriers, bool, false)
 DEFINE_CLFLAG(divergence, bool, false)
 DEFINE_CLFLAG(small, bool, false)
 DEFINE_CLFLAG(track_divergence, bool, false)
 DEFINE_CLFLAG(vectors, bool, false)
-DEFINE_CLFLAG(atomics, bool, false)
 #undef DEFINE_CLFLAG
 
 void CLOptions::set_default_settings() {

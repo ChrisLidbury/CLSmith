@@ -14,15 +14,6 @@
 // Generator seed.
 static unsigned long g_Seed = 0;
 
-/*#define PACKAGE_STRING "csmith 2.2.0"
-#define main main_
-#define AbsProgramGenerator (void)0;if(0){AbsProgramGenerator
-#include "RandomProgramGenerator.cpp"
-}return 0;}
-#undef AbsProgramGenerator
-#undef main
-#undef PACKAGE_STRING
-*/
 bool CheckArgExists(int idx, int argc) {
   if (idx >= argc) std::cout << "Expected another argument" << std::endl;
   return idx < argc;
@@ -49,6 +40,11 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--atomics")) {
+      CLSmith::CLOptions::atomics(true);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--barriers")) {
       CLSmith::CLOptions::barriers(true);
       continue;
@@ -71,11 +67,6 @@ int main(int argc, char **argv) {
 
     if (!strcmp(argv[idx], "--vectors")) {
       CLSmith::CLOptions::vectors(true);
-      continue;
-    }
-    
-    if (!strcmp(argv[idx], "--atomics")) {
-      CLSmith::CLOptions::atomics(true);
       continue;
     }
 
