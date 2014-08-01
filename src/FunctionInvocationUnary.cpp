@@ -39,6 +39,13 @@
 #include "CGContext.h"
 #include "random.h"
 
+// Required for get_type() to promote simple types.
+namespace CLSmith {
+namespace Vector {
+const Type *PromoteTypeToVectorType(const Type *type, int size);
+}  // namespace Vector
+}  // namespace CLSmith
+
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -133,7 +140,12 @@ FunctionInvocationUnary::get_type(void) const
 		break;
 
 	case eNot:
-		return Type::get_simple_type(eInt);
+		const Type &l_type = param_value[0]->get_type();
+		const Type *simple_type = &Type::get_simple_type(eInt);
+		if (l_type.eType == eVector) {
+			simple_type = CLSmith::Vector::PromoteTypeToVectorType(simple_type, l_type.vector_length_);
+		}
+		return *simple_type;
 		break;
 	}
 	assert(0);
@@ -208,7 +220,7 @@ FunctionInvocationUnary::Output(std::ostream &out) const
 		assert(!"invalid operator in FunctionInvocationUnary::Output()");
 		break;
 
-	case eMinus:
+	case eMinus: if (param_value[0]->get_type().eType == eVector) goto label;
 		if (CGOptions::avoid_signed_overflow()) { 
 			assert(op_flags);
 			string fname = op_flags->to_string(eFunc);
@@ -230,7 +242,7 @@ FunctionInvocationUnary::Output(std::ostream &out) const
 		need_cast = true;
 		// Fallthrough!
 
-	case ePlus:
+	case ePlus: label:
 	case eNot:
 	case eBitNot:
 		OutputStandardFuncName(eFunc, out);

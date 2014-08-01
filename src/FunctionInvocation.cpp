@@ -143,11 +143,22 @@ FunctionInvocation::make_random_unary(CGContext &cg_context, const Type* type)
 	eUnaryOps op = (eUnaryOps)(rnd_upto(MAX_UNARY_OP, UNARY_OPS_PROB_FILTER));
 	ERROR_GUARD(NULL);
 	SafeOpFlags *flags = NULL;
-	if (op == eMinus) {
+	if (op == eMinus && type->eType != eVector) {
 		flags = SafeOpFlags::make_random(sOpUnary);
 		ERROR_GUARD(NULL);
 		type = flags->get_lhs_type();
 		assert(type);
+	}
+	// Type restirctions for vectors.
+	if (type->eType == eVector) {
+		// Not returns signed type.
+		if (!type->is_signed() && op == eNot) {
+			op = ePlus;
+		}
+		// Unlikely, but ++ and -- might overflow.
+		if (type->is_signed() && (op == ePlus || op == eMinus)) {
+			op = eNot;
+		}
 	}
 
 	FunctionInvocation *fi = FunctionInvocationUnary::CreateFunctionInvocationUnary(cg_context, op, flags);
@@ -177,6 +188,25 @@ FunctionInvocation::make_random_binary(CGContext &cg_context, const Type* type)
 	SafeOpFlags *flags = SafeOpFlags::make_random(sOpBinary, op);
 	assert(flags);
 	ERROR_GUARD(NULL);
+	// Special stuff for vectors.
+	if (type->eType == eVector) {
+		// Only signed type can use logicals. Also no div or mod.
+		// TODO: Instead of changing the op, flip the sign of the type.
+		if (!type->is_signed() && (
+			op==eCmpGt || op==eCmpLt || op==eCmpGe || op==eCmpLe ||
+			op==eCmpEq || op==eCmpNe || op==eAnd   || op==eOr    ||
+			op==eDiv   || op==eMod)) {
+			op = eAdd;
+		}
+		// Only unsigned can use unsafe ops.
+		if (type->is_signed() && (
+			op==eAdd || op==eSub    || op==eMul || op==eDiv ||
+			op==eMod || op==eRShift || op==eLShift)) {
+			op = eAnd;
+		}
+		delete flags;
+		flags = SafeOpFlags::make_dummy_flags();
+	}
 	FunctionInvocationBinary *fi = FunctionInvocationBinary::CreateFunctionInvocationBinary(cg_context, op, flags);
 
 	Effect lhs_eff_accum;
@@ -185,6 +215,11 @@ FunctionInvocation::make_random_binary(CGContext &cg_context, const Type* type)
 	// Generate an expression with the correct type required by safe math operands 
 	const Type* lhs_type = flags->get_lhs_type();
 	const Type* rhs_type = flags->get_rhs_type();
+	// More special stuff for vectors.
+	if (type->eType == eVector) {
+		lhs_type = type;
+		rhs_type = type;
+	}
 	assert(lhs_type && rhs_type);
 	Expression *lhs = Expression::make_random(lhs_cg_context, lhs_type); 
 	ERROR_GUARD_AND_DEL1(NULL, fi);

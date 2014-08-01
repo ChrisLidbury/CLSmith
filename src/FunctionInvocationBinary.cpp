@@ -41,6 +41,13 @@
 #include "Block.h"
 #include "random.h"
 
+// Required for get_type() to promote simple types.
+namespace CLSmith {
+namespace Vector {
+const Type *PromoteTypeToVectorType(const Type *type, int size);
+}  // namespace Vector
+}  // namespace CLSmith
+
 using namespace std;
 
 static vector<bool> needcomma;  // Flag to track output of commas
@@ -211,6 +218,10 @@ FunctionInvocationBinary::get_type(void) const
 			const Type &l_type = param_value[0]->get_type();
 			const Type &r_type = param_value[1]->get_type();
 			// XXX --- not really right!
+			if (l_type.eType == eVector || r_type.eType == eVector) {
+				assert(&l_type == &r_type);
+				return l_type;
+			}
 			if ((l_type.is_signed()) && (r_type.is_signed())) {
 				return Type::get_simple_type(eInt);
 			} else {
@@ -227,7 +238,14 @@ FunctionInvocationBinary::get_type(void) const
 	case eCmpNe:
 	case eAnd:
 	case eOr:
-		return Type::get_simple_type(eInt);
+		{
+			const Type &l_type = param_value[0]->get_type();
+			const Type *simple_type = &Type::get_simple_type(eInt);
+			if (l_type.eType == eVector) {
+				simple_type = CLSmith::Vector::PromoteTypeToVectorType(simple_type, l_type.vector_length_);
+			}
+			return *simple_type;
+		}
 		break;
 
 	case eRShift:
@@ -235,6 +253,9 @@ FunctionInvocationBinary::get_type(void) const
 		{
 			const Type &l_type = param_value[0]->get_type();
 			// XXX --- not really right!
+			if (l_type.eType == eVector) {
+				return l_type;
+			}
 			if (l_type.is_signed()) {
 				return Type::get_simple_type(eInt);
 			} else {
@@ -326,7 +347,7 @@ FunctionInvocationBinary::Output(std::ostream &out) const
 		case eMod:
 		case eDiv:
 		case eLShift:
-		case eRShift:
+		case eRShift: if (param_value[0]->get_type().eType == eVector) goto label;
 			if (CGOptions::avoid_signed_overflow()) {
 				string fname = op_flags->to_string(eFunc); 
 				int id = SafeOpFlags::to_id(fname);
@@ -353,7 +374,7 @@ FunctionInvocationBinary::Output(std::ostream &out) const
 			need_cast = true;
 			// fallthrough!
 
-		default:
+		default: label:
 			// explicit type casting for op1
 			if (need_cast) {
 				out << "("; 
@@ -407,7 +428,7 @@ FunctionInvocationBinary::indented_output(std::ostream &out, int indent) const
 		case eMod:
 		case eDiv:
 		case eLShift:
-		case eRShift:
+		case eRShift: if (param_value[0]->get_type().eType == eVector) goto label;
 			if (CGOptions::avoid_signed_overflow()) {
 				output_tab(out, indent);
 				out << op_flags->to_string(eFunc);
@@ -432,7 +453,7 @@ FunctionInvocationBinary::indented_output(std::ostream &out, int indent) const
 			} 
 			// fallthrough!
 
-		default:
+		default: label:
 			param_value[0]->indented_output(out, indent);
 			out << " ";
 			OutputStandardFuncName(eFunc, out);

@@ -1,6 +1,7 @@
 #include "CLSmith/CLExpression.h"
 
 #include "CGContext.h"
+#include "CGOptions.h"
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/ExpressionID.h"
@@ -45,7 +46,8 @@ CLExpression *CLExpression::make_random(CGContext &cg_context, const Type *type,
     // Not many restrictions on vector types.
     if (tt == kVector) {
       if (!CLOptions::vectors() ||
-          (type->eType != eSimple && type->eType != eVector))
+          (type->eType != eSimple && type->eType != eVector) ||
+          cg_context.expr_depth + 2 > CGOptions::max_expr_depth())
         return NULL;
     }
   }

@@ -8,6 +8,7 @@
 #include "CLSmith/CLExpression.h"
 #include "Constant.h"
 #include "CGContext.h"
+#include "CGOptions.h"
 #include "Expression.h"
 #include "ProbabilityTable.h"
 #include "random.h"
@@ -22,6 +23,18 @@ DistributionTable *suffix_table = NULL;
 
 ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
     const Type *type, const CVQualifiers *qfer, int size) {
+  // If we have been forced in here, but the expression depth is too high,
+  // return a plain constant casted to the vector type.
+  // This should only happen if type is a vector type.
+  if (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()) {
+    assert(type->eType == eVector);
+    std::vector<std::unique_ptr<const Expression>> exprs;
+    exprs.emplace_back(
+        Constant::make_random(&Vector::DemoteVectorTypeToType(type)));
+    return new ExpressionVector(
+        std::move(exprs), *type, type->vector_length_, std::vector<int>());
+  }
+
   // Check the type. If type is not a vector type, then the expression should
   // produce a single value, so the result must be itemised. If type is a
   // vector type, the size of the vector may be different to the passed size.
@@ -47,7 +60,8 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
             &Vector::DemoteVectorTypeToType(type)));
         --remain;
       } else if (num < 20) {
-        // Create a sub-vector.
+        // Create a sub-vector. The size must be smaller, else it should be
+        // guarded to prevent infinite recursion.
         int vec_size = Vector::GetRandomVectorLength(remain);
         const Type *sub_vec_type =
             Vector::PromoteTypeToVectorType(type, vec_size);
@@ -86,15 +100,14 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
     num = rnd_upto(40);
     enum SuffixAccess suffix =
         (SuffixAccess)VectorFilter(suffix_table).lookup(num);
-    expr_vec = new ExpressionVector(std::move(exprs), /*expr_*/*type, size, suffix);
+    expr_vec = new ExpressionVector(std::move(exprs), *type, size, suffix);
   } else {
     // Create a series of random accesses.
     std::vector<int> accesses;
     int remain = size == itemise_to ? itemise_to : 0;
     for (; remain < itemise_to; ++remain) accesses.push_back(rnd_upto(size));
-    expr_vec = new ExpressionVector(std::move(exprs), /*expr_*/*type, size, accesses);
+    expr_vec = new ExpressionVector(std::move(exprs), *type, size, accesses);
   }
-  //if (vec_type != type) delete vec_type;
   return expr_vec;
 }
 
@@ -140,17 +153,19 @@ unsigned ExpressionVector::get_complexity() const {
 }
 
 // TODO let Vector handle this.
+// TODO std operators for vectors are not being done properly atm. Instead of
+// producing a vector type it will produce a scalar type, which needs the cast.
 void ExpressionVector::Output(std::ostream& out) const {
-  if (exprs_.size() > 1) {
+  //if (exprs_.size() > 1) {
     out << "((";
     Vector::OutputVectorType(out, &type_, size_);
     out << ")(";
-  }
+  //}
   for (unsigned idx = 0; idx < exprs_.size(); ++idx) {
     exprs_[idx]->Output(out);
     if (exprs_.size() - idx > 1) out << ", ";
   }
-  if (exprs_.size() > 1) out << "))";
+  /*if (exprs_.size() > 1)*/ out << "))";
   // Output accesses if any.
   if (is_component_access_ && accesses_.empty()) return;
   out << '.';
