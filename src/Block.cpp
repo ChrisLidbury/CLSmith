@@ -120,7 +120,7 @@ Block::make_random(CGContext &cg_context, bool looping)
 {
 	//static int bid = 0;
 	DEPTH_GUARD_BY_TYPE_RETURN(dtBlock, NULL);
-
+        
 	Function *curr_func = cg_context.get_current_func();
 	assert(curr_func);
 

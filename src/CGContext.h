@@ -150,6 +150,9 @@ public:
  
 	bool allow_volatile() const;
 	bool allow_const(Effect::Access access) const;
+        
+        void set_atomic_context(bool atomic_ctx);
+        bool get_atomic_context() const;
 
 private:
 	Function * const current_func; // may be null.
@@ -173,6 +176,10 @@ private:
 	Effect effect_stm;
 	// TODO: move `Function::flags' to here.
 	// TODO: move `Function::...' to here?
+        
+        // Check whether we are in an if block with a conidition containing
+        // an atomic operation
+        bool atomic_context;
 
 private:
 	CGContext &operator=(const CGContext &cgc);	// unimplementable

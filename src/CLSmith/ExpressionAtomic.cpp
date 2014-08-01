@@ -29,7 +29,7 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
   std::vector<int> rand_index (1, rnd_upto(GetGlobalBuffer()->get_size()));
   MemoryBuffer* itemized = GetGlobalBuffer()->itemize(rand_index);
   GetGlobalMems()->push_back(itemized);
-  AtomicExprType atomic_type = (AtomicExprType) rnd_upto(kXor);
+  AtomicExprType atomic_type = rnd_flipcoin(33) ? kInc : (AtomicExprType) rnd_upto(kXor);
   switch(atomic_type) {
     case kDec:
     case kInc:

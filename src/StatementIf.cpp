@@ -68,7 +68,8 @@ StatementIf::make_random(CGContext &cg_context)
 {
         // If the appropriate flag is set, there is a chance of condition 
         // generated to be a atomic expression
-        bool build_atomic = CLSmith::CLOptions::atomics() && rnd_flipcoin(10);
+        bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
+        cg_context.set_atomic_context(build_atomic);
         
 	DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);
 	FactMgr* fm = get_fact_mgr(&cg_context); 
@@ -105,16 +106,17 @@ StatementIf::make_random(CGContext &cg_context)
 
 	// this will save global_facts to map_facts_in[if_true], and update
 	// facts for new variables created while generating if_true
-	Block *if_true = build_atomic ? 
-          Block::make_dummy_block(cg_context) :
-          Block::make_random(cg_context);    
+	Block *if_true = Block::make_random(cg_context);    
 	ERROR_GUARD_AND_DEL1(NULL, expr);
 
 	// generate false branch with the same env as true branch
 	fm->global_facts = fm->map_facts_in[if_true];  
-	Block *if_false = build_atomic ? 
-          Block::make_dummy_block(cg_context) : 
-          Block::make_random(cg_context);    
+        Block *if_false;
+        if (build_atomic) {
+          if_false = Block::make_dummy_block(cg_context);
+          if_false->stms.push_back(make_noop(cg_context));
+        } else 
+          if_false = Block::make_random(cg_context);    
 	ERROR_GUARD_AND_DEL2(NULL, expr, if_true);
 
 	StatementIf* si = new StatementIf(cg_context.get_current_block(), *expr, *if_true, *if_false);

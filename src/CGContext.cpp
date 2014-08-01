@@ -70,7 +70,8 @@ CGContext::CGContext(Function *current_func, const Effect &eff_context, Effect *
 	  iv_bounds(),
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
-	  effect_accum(eff_accum)
+	  effect_accum(eff_accum),
+	  atomic_context(false)
 {
 	// Nothing else to do.
 }
@@ -88,7 +89,8 @@ CGContext::CGContext(const CGContext &cgc, const Effect &eff_context, Effect *ef
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
-	  effect_stm()
+	  effect_stm(),
+          atomic_context(false)
 {
 	// Nothing else to do.
 }
@@ -105,7 +107,8 @@ CGContext::CGContext(const CGContext &cgc, Function* f, const Effect &eff_contex
 	  iv_bounds(cgc.iv_bounds),
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
-	  effect_accum(eff_accum)
+	  effect_accum(eff_accum),
+          atomic_context(false)
 {
 	extend_call_chain(cgc);
 }
@@ -122,7 +125,8 @@ CGContext::CGContext(const CGContext &cgc, RWDirective* rwd, const Variable* iv,
 	  iv_bounds(cgc.iv_bounds),
 	  curr_rhs(NULL),
 	  effect_context(cgc.effect_context),
-	  effect_accum(cgc.effect_accum)
+	  effect_accum(cgc.effect_accum),
+          atomic_context(false)
 {
 	// add loop induction variable 
 	if (iv) {
@@ -581,6 +585,18 @@ bool
 CGContext::allow_const(Effect::Access access) const
 {
 	return access != Effect::WRITE;
+}
+
+void
+CGContext::set_atomic_context(bool atomic_ctx)
+{
+        atomic_context = atomic_ctx;
+}
+
+bool
+CGContext::get_atomic_context() const
+{
+        return atomic_context;
 }
 
 bool
