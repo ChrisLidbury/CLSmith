@@ -69,7 +69,7 @@ StatementIf::make_random(CGContext &cg_context)
         // If the appropriate flag is set, there is a chance of condition 
         // generated to be a atomic expression
         bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
-        cg_context.set_atomic_context(build_atomic);
+        cg_context.set_atomic_context(cg_context.get_atomic_context() && build_atomic);
         
 	DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);
 	FactMgr* fm = get_fact_mgr(&cg_context); 
