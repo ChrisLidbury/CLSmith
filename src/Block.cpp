@@ -42,6 +42,7 @@
 
 #include <cassert>
 #include <sstream>
+#include <typeinfo>
 
 #include "CGContext.h"
 #include "CGOptions.h"
@@ -59,6 +60,12 @@
 #include "CFGEdge.h"
 #include "Expression.h"
 #include "VectorFilter.h"
+
+namespace CLSmith {
+namespace ExpressionAtomic {
+void InsertBlockVars(std::vector<Variable*> local_vars);
+}
+}
 
 using namespace std;
 
@@ -195,6 +202,10 @@ Block::make_random(CGContext &cg_context, bool looping)
 	// ISSUE: in the exhaustive mode, do we need a return statement here 
 	// if the last statement is not?
 	Error::set_error(SUCCESS); 
+        
+        if (cg_context.get_atomic_context())
+          CLSmith::ExpressionAtomic::InsertBlockVars(b->local_vars);
+        
 	return b;
 }
 

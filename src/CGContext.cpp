@@ -90,7 +90,7 @@ CGContext::CGContext(const CGContext &cgc, const Effect &eff_context, Effect *ef
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
 	  effect_stm(),
-          atomic_context(false)
+          atomic_context(cgc.atomic_context)
 {
 	// Nothing else to do.
 }
@@ -108,7 +108,7 @@ CGContext::CGContext(const CGContext &cgc, Function* f, const Effect &eff_contex
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
-          atomic_context(false)
+          atomic_context(cgc.atomic_context)
 {
 	extend_call_chain(cgc);
 }
@@ -126,7 +126,7 @@ CGContext::CGContext(const CGContext &cgc, RWDirective* rwd, const Variable* iv,
 	  curr_rhs(NULL),
 	  effect_context(cgc.effect_context),
 	  effect_accum(cgc.effect_accum),
-          atomic_context(false)
+          atomic_context(cgc.atomic_context)
 {
 	// add loop induction variable 
 	if (iv) {

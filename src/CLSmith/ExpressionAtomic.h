@@ -11,6 +11,9 @@
 #include "CLSmith/CLExpression.h"
 #include "CLSmith/MemoryBuffer.h"
 
+#include <set>
+#include <vector>
+
 #include "ArrayVariable.h"
 #include "CGContext.h"
 #include "Type.h"
@@ -70,6 +73,17 @@ class ExpressionAtomic : public CLExpression {
   // generated until after the entire program is complete.
   static std::vector<MemoryBuffer*>* GetGlobalMems();
   
+  // Called in Block::make_random(); whenever we create a block within an atomic
+  // context, we add all the local variables (except the ArrayVariables that are
+  // part of a collective) into the block_vars vector
+  static void InsertBlockVars(std::vector<Variable*> local_vars);
+  
+  // Called in StatementIf::make_random() after the if_true block has been 
+  // created (currently, during the generation of the dummy if_false block);
+  // after all the local variables are collected, parse them in some way
+  // TODO hash them and create a special variable
+  static void ParseBlockVars(Block *if_true);
+  
   // Pure virtual methods from Expression
   ExpressionAtomic *clone() const { return NULL; };
   const Type &get_type() const { return type_; };
@@ -96,6 +110,11 @@ class ExpressionAtomic : public CLExpression {
   
   // Helper function returning the operation name for the Output() function
   string GetOpName() const;
+  
+  // Creates a new vector to hold variables created in the current block;
+  // must only be called from make_condition()
+  static void MakeBlockVars();
+  
   
   DISALLOW_COPY_AND_ASSIGN(ExpressionAtomic);
 };
