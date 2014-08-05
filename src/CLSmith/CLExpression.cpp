@@ -39,6 +39,7 @@ CLExpression *CLExpression::make_random(CGContext &cg_context, const Type *type,
     // Probability of calling get_global_id(0) is dependent on block and
     // expression depth.
     if (tt == kID) {
+      if (!CLOptions::divergence()) return NULL;
       int expr_id_prob =
           ExpressionID::GetGenerationProbability(cg_context, *type);
       if ((unsigned)expr_id_prob <= rnd_upto(5)) return NULL;

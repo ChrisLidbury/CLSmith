@@ -66,6 +66,12 @@
 #include "Constant.h"
 #include "CGOptions.h"
 
+namespace CLSmith {
+namespace ExpressionVector {
+Expression *make_constant(const Type *type, int value);
+}  // namespace ExpressionVector
+}  // namespace CLSmith
+
 using namespace std; 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -254,7 +260,9 @@ FunctionInvocation::make_random_binary(CGContext &cg_context, const Type* type)
 			bool not_constant = rnd_flipcoin(ShiftByNonConstantProb);
 			// avoid shifting negative or too much
 			if (!not_constant) {
-				rhs = Constant::make_random_upto(lhs_type->SizeInBytes() * 8);
+				rhs = lhs_type->eType == eVector ?
+					CLSmith::ExpressionVector::make_constant(rhs_type, lhs_type->SizeInBytes() * 8) :
+					Constant::make_random_upto(lhs_type->SizeInBytes() * 8);
 			} else {
 				rhs = Expression::make_random(rhs_cg_context, rhs_type, NULL, false, true, tt);
 			}

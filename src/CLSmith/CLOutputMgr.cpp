@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "Function.h"
@@ -89,7 +90,10 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   // Would ideally use the ExtensionMgr, but there is no way to set it to our
   // own custom made one (without modifying the code).
   std::ostream& out = get_main_out();
-  out << "__kernel void entry(__global ulong *result, __global volatile int *input) {" << std::endl;
+  out << "__kernel void entry(__global ulong *result";
+  if (CLOptions::atomics())
+    out << ", __global volatile int *input";
+  out << ") {" << std::endl;
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);
 

@@ -59,6 +59,9 @@ class ExpressionVector : public CLExpression {
   static ExpressionVector *make_random(CGContext &cg_context, const Type *type,
       const CVQualifiers *qfer, int size);
 
+  // Create a vector of constant elements.
+  static ExpressionVector *make_constant(const Type *type, int value);
+
   // Initialise table for selecting vector expression type. Should be called
   // once on start-up.
   static void InitProbabilityTable();

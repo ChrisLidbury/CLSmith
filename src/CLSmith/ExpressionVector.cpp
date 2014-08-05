@@ -111,6 +111,14 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
   return expr_vec;
 }
 
+ExpressionVector *ExpressionVector::make_constant(const Type *type, int value) {
+  assert(type->eType == eVector);
+  std::vector<std::unique_ptr<const Expression>> exprs;
+  exprs.emplace_back(Constant::make_int(value));
+  return new ExpressionVector(
+      std::move(exprs), *type, type->vector_length_, std::vector<int>());
+}
+
 void ExpressionVector::InitProbabilityTable() {
   vector_expr_table = new DistributionTable();
   vector_expr_table->add_entry(kLiteral, 10);
