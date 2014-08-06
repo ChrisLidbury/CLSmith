@@ -4,7 +4,7 @@
 import sys
 import os
 import argparse
-from processTimeout import Command
+from processTimeout import WorkerThread
 
 # seed_min  = 1
 # seed_max  = 1000
@@ -36,32 +36,45 @@ parser.add_argument('flags', nargs='*')
 
 args = parser.parse_args()
 
+""" ProcessTimeout testing 
+tst = WorkerThread(1, "sleep 2")
+result = tst.start()
+print(result)
+"""
+
 if os.path.isfile(args.output):
     print("Overwriting file %s." % args.output)
-   
+#"""
 output = open(args.output, 'w')
 for seed in range(args.seed_min, args.seed_max, args.seed_step):
+    print("Executing seed %s...\n" % (seed))
     if os.path.isfile(args.cl_filename):
         os.remove(args.cl_filename)
     gen_prog_string = "%s --seed %d" % (args.gen_exe, seed)
     if args.flags:
       gen_prog_string += " " + " ".join(args.flags)
-    gen_prog = Command(gen_prog_string)
-    gen_prog_res = gen_prog.run(timeout = 30)
-    if not os.path.isfile(args.cl_filename) or not gen_prog_res[0] == 0:
+    gen_prog = WorkerThread(30, gen_prog_string)
+    gen_prog_res = gen_prog.start()
+    if not os.path.isfile(args.cl_filename) or not gen_prog_res[1] == 0:
         output.write("gen_error")
         continue
-    run_prog = Command("%s %s %d %d" % (args.cl_launcher, args.cl_filename, args.cl_platform_idx, args.cl_device_idx)) 
-    run_prog_res = run_prog.run(timeout = 150)
-    if not run_prog_res[0] == 0:
+    cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, args.cl_filename, args.cl_platform_idx, args.cl_device_idx)
+    run_prog = WorkerThread(150, cmd)
+    run_prog_res = run_prog.start()
+    
+    if not run_prog_res[1] == 0:
         output.write("run_error")
         continue
-    
-    run_prog_out = run_prog_res[1].split('\n')[1]
+    elif run_prog_res[0] == "Process timeout":
+	output.write("timeout")
+	continue
+   
+    run_prog_out = run_prog_res[0]
     run_prog_out = run_prog_out.split(',')
-    run_prog_out = set(run_prog_out)
+    run_prog_out = filter(None, set(run_prog_out))
     
     if len(run_prog_out) > 1:
         output.write("Different.\n")
     else:
         output.write(run_prog_out[0] + "\n")
+#"""
