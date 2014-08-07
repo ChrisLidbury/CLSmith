@@ -48,7 +48,7 @@
 namespace CLSmith {
 namespace ExpressionAtomic {
 Expression* make_condition(CGContext& cg_context, const Type* type);
-void ParseBlockVars(Block* if_true);
+// void ParseBlockVars(Block* if_true);
 }  // namespace ExpressionAtomic
 
 namespace CLOptions {
@@ -72,6 +72,8 @@ StatementIf::make_random(CGContext &cg_context)
         // another atomic expression within an atomic block
         bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
         cg_context.set_atomic_context(cg_context.get_atomic_context() || build_atomic);
+        if (build_atomic)
+          cout << "Start atomic block" << endl;
         
 	DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);
 	FactMgr* fm = get_fact_mgr(&cg_context); 
@@ -117,7 +119,7 @@ StatementIf::make_random(CGContext &cg_context)
         if (build_atomic) {
           if_false = Block::make_dummy_block(cg_context);
           if_false->stms.push_back(make_noop(cg_context));
-          CLSmith::ExpressionAtomic::ParseBlockVars(if_true);
+//           CLSmith::ExpressionAtomic::ParseBlockVars(if_true);
         } else 
           if_false = Block::make_random(cg_context);    
 	ERROR_GUARD_AND_DEL2(NULL, expr, if_true);
@@ -126,6 +128,10 @@ StatementIf::make_random(CGContext &cg_context)
 	// compute accumulated effect for this statement
 	si->set_accumulated_effect_after_block(eff, if_true, cg_context);
 	si->set_accumulated_effect_after_block(eff, if_false, cg_context);
+        if (build_atomic) {
+          cg_context.set_atomic_context(false);
+          cout << "End atomic block" << endl;
+        }
     return si;
 }
 

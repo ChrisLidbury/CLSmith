@@ -47,6 +47,7 @@
 #include "CGOptions.h"
 #include "ArrayVariable.h"
 #include "random.h"
+#include <vector>
 
 using namespace std;
 
@@ -70,9 +71,11 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 	do {
 		DEPTH_GUARD_BY_TYPE_RETURN(dtLhs, NULL);
 		const Variable* var = 0;
-                // in atomic context, generate new variable always
-                if (cg_context.get_atomic_context())
-                  var = VariableSelector::select(Effect::WRITE, cg_context, t, qfer, dummy, eDerefExact, eNewValue);
+                // in atomic context, try to get a variable from the atomic
+                // block hierarchy
+                if (cg_context.get_atomic_context()) {
+                    var = VariableSelector::select(Effect::WRITE, cg_context, t, qfer, dummy, eDerefExact, eNewValue);
+                }
                 else {
                   // try to use one of the "must_use" variables
                   var = VariableSelector::select_must_use_var(Effect::WRITE, cg_context, t, qfer);
@@ -93,8 +96,10 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 			if (!(new_qfer.wildcard)) {
 				new_qfer.restrict(Effect::WRITE, cg_context);
 			}  
-			if (cg_context.get_atomic_context())
-                          var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact, eNewValue);
+			if (cg_context.get_atomic_context()) {
+//                           var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact, eNewValue);
+                          assert(0);
+                        }
                         else 
                           var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact);
 			ERROR_GUARD(NULL);
@@ -122,6 +127,8 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 					incr_counter(Bookkeeper::write_dereference_cnts, deref_level); 
 				}
 				Bookkeeper::record_volatile_access(var, deref_level, true);
+                                if (cg_context.get_atomic_context())
+                                  cout << "Returned new " << var->to_string() << endl;
 				return new Lhs(*var, t, compound_assign);
 			}
 			// restore the effects

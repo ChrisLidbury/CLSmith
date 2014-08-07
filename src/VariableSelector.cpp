@@ -1103,7 +1103,9 @@ VariableSelector::GenerateNewVariable(Effect::Access access,
 	DEPTH_GUARD_BY_TYPE_RETURN(dtGenerateNewVariable, NULL);
 	Variable *var = 0;
 	Function &func = *cg_context.get_current_func();
-	eVariableScope scope = VariableCreationProbability();
+	eVariableScope scope = cg_context.get_atomic_context() ?
+          eParentLocal : VariableCreationProbability();
+//         eVariableScope scope = VariableCreationProbability();
 	ERROR_GUARD(NULL);
 	const Type* t = 0;
 	switch (scope) {
@@ -1123,7 +1125,9 @@ VariableSelector::GenerateNewVariable(Effect::Access access,
 	case eParentLocal:
 	{
 		DEPTH_GUARD_BY_DEPTH_RETURN(dtGenerateNewParentLocal, NULL);
-		unsigned int index = rnd_upto(func.stack.size());
+		unsigned int index = cg_context.get_atomic_context() ?
+                  func.stack.size() - 1 :
+                  rnd_upto(func.stack.size());
 		ERROR_GUARD(NULL);
 
 		// TODO: it's ugly. For dfs_exhaustive mode, we've generate the first variable
@@ -1135,7 +1139,7 @@ VariableSelector::GenerateNewVariable(Effect::Access access,
 		}
 		t = Type::random_type_from_type(type, true, false);
 		ERROR_GUARD(NULL);
-		var = GenerateNewParentLocal(*(func.stack[index]), access, cg_context, t, qfer);
+                var = GenerateNewParentLocal(*(func.stack[index]), access, cg_context, t, qfer);
 		break;
 	}
 	default:

@@ -217,8 +217,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
         program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
     if (cl_error_check(err, "Error getting build info"))
       return 1;
-    else
-      printf("clBuildProgram status: %d.\n", status);
+    //else
+      //printf("clBuildProgram status: %d.\n", status);
   }
     
   cl_kernel kernel = clCreateKernel(program, "entry", &err);

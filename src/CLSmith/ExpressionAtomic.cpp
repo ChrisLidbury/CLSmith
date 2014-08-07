@@ -1,6 +1,7 @@
 #include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/Globals.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "ArrayVariable.h"
@@ -85,13 +86,42 @@ void ExpressionAtomic::MakeBlockVars() {
  block_vars = new std::vector<Variable*>();
 }
 
+std::vector<Variable*>* ExpressionAtomic::GetBlockVars() {
+  assert(block_vars != NULL); // MakeBlockVars() must be called before
+  return block_vars;
+}
+
 void ExpressionAtomic::InsertBlockVars(std::vector<Variable*> local_vars) {
-  assert(block_vars != NULL); // need call to MakeBlockVars
+  std::vector<Variable*>* blk_vars = GetBlockVars();
   for (Variable* v : local_vars) {
     if ((dynamic_cast<ArrayVariable*>(v)) && (v->get_collective() != v))
       continue;
-    block_vars->push_back(v);
+    blk_vars->push_back(v);
   }
+}
+
+void ExpressionAtomic::AddBlockVar(Variable *v) {
+  cout << "Adding " << v->to_string() << endl;
+  GetBlockVars()->push_back(v);
+}
+
+void ExpressionAtomic::AddBlockVar(const Variable *v) {
+  if ((dynamic_cast<const ArrayVariable*>(v)) && (v->get_collective() != v))
+    return;
+  cout << "Adding (const) " << v->to_string() << endl;
+//   GetBlockVars()->push_back(const_cast<Variable*>(v));
+}
+
+void ExpressionAtomic::RemoveBlockVars(std::vector<Variable*> local_vars) {
+  std::vector<Variable*>* blk_vars = GetBlockVars();
+  for (Variable* v : *blk_vars) 
+    cout << v->to_string() << "\n";
+  
+//   for (Variable* v : local_vars)
+//     cout << v->to_string() << "\n";
+  
+//   for (Variable* v : local_vars) 
+//     blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), v), blk_vars->end());
 }
 
 void ExpressionAtomic::ParseBlockVars(Block* if_true) {

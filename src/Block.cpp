@@ -63,7 +63,7 @@
 
 namespace CLSmith {
 namespace ExpressionAtomic {
-void InsertBlockVars(std::vector<Variable*> local_vars);
+void RemoveBlockVars(std::vector<Variable*> local_vars);
 }
 }
 
@@ -203,8 +203,17 @@ Block::make_random(CGContext &cg_context, bool looping)
 	// if the last statement is not?
 	Error::set_error(SUCCESS); 
         
-        if (cg_context.get_atomic_context())
-          CLSmith::ExpressionAtomic::InsertBlockVars(b->local_vars);
+        // After block has been generated, remove local vars from atomic
+        // block hierarchy
+        if (cg_context.get_atomic_context()) {
+//           if (b->stm_id == 315) {
+            cout << b->stm_id << "---" << endl;
+//             for (vector<Variable*>::iterator it = b->local_vars.begin(); it != b->local_vars.end(); it++)
+//               cout << (*it)->to_string() << endl;
+//           }
+//           if (b->local_vars.size() != 0)
+//             CLSmith::ExpressionAtomic::RemoveBlockVars(b->local_vars);
+        }
         
 	return b;
 }

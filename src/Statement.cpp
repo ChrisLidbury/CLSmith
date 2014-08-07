@@ -152,7 +152,7 @@ bool StatementFilter::filter(int value) const
 	if (type == eBlock) {
 		return true;
 	}
-	if ((type == eReturn) && no_return) {	
+	if ((type == eReturn) && (no_return || cg_context_.get_atomic_context())) {	
 		return true;
 	}
 	if ((type == eGoto) && !CGOptions::gotos()) {

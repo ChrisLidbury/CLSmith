@@ -73,10 +73,20 @@ class ExpressionAtomic : public CLExpression {
   // generated until after the entire program is complete.
   static std::vector<MemoryBuffer*>* GetGlobalMems();
   
+  // TODO
+  static std::vector<Variable *>* GetBlockVars();
+  
   // Called in Block::make_random(); whenever we create a block within an atomic
   // context, we add all the local variables (except the ArrayVariables that are
   // part of a collective) into the block_vars vector
   static void InsertBlockVars(std::vector<Variable*> local_vars);
+  
+  // TODO
+  static void AddBlockVar(Variable* v);
+  static void AddBlockVar(const Variable* v);
+  
+  // TODO
+  static void RemoveBlockVars(std::vector<Variable*> local_vars);
   
   // Called in StatementIf::make_random() after the if_true block has been 
   // created (currently, during the generation of the dummy if_false block);
@@ -109,7 +119,7 @@ class ExpressionAtomic : public CLExpression {
   const Type& type_;
   
   // Helper function returning the operation name for the Output() function
-  string GetOpName() const;
+  std::string GetOpName() const;
   
   // Creates a new vector to hold variables created in the current block;
   // must only be called from make_condition()
