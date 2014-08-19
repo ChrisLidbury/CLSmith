@@ -81,12 +81,15 @@ std::vector<MemoryBuffer*>* ExpressionAtomic::GetGlobalMems() {
 }
 
 void ExpressionAtomic::MakeBlockVars() {
-  if (block_vars != NULL)
+  if (block_vars != NULL) {
+    std::cout << block_vars->size() << endl;
     delete(block_vars);
- block_vars = new std::vector<Variable*>();
+  }
+  block_vars = new std::vector<Variable*>();
 }
 
 std::vector<Variable*>* ExpressionAtomic::GetBlockVars() {
+  // TODO may need check for non-visible variables
   assert(block_vars != NULL); // MakeBlockVars() must be called before
   return block_vars;
 }
@@ -94,35 +97,72 @@ std::vector<Variable*>* ExpressionAtomic::GetBlockVars() {
 void ExpressionAtomic::InsertBlockVars(std::vector<Variable*> local_vars) {
   std::vector<Variable*>* blk_vars = GetBlockVars();
   for (Variable* v : local_vars) {
-    if ((dynamic_cast<ArrayVariable*>(v)) && (v->get_collective() != v))
+//     std::cout << "Inserting " << v->to_string() << std::endl;
+    ArrayVariable * av = dynamic_cast<ArrayVariable*>(v);
+    if (av != NULL && (av->get_collective() != av)) {
+      blk_vars->push_back(const_cast<Variable*>(av->get_collective()));
       continue;
+    }
     blk_vars->push_back(v);
   }
 }
 
 void ExpressionAtomic::AddBlockVar(Variable *v) {
-  cout << "Adding " << v->to_string() << endl;
-  GetBlockVars()->push_back(v);
+  std::vector<Variable*>* blk_vars = GetBlockVars();
+  ArrayVariable * av = dynamic_cast<ArrayVariable*>(v);
+//   std::cout << "Adding " << v->to_string() << std::endl;
+  if (av != NULL && (av->get_collective() != av)) {
+    blk_vars->push_back(const_cast<Variable*>(av->get_collective()));
+    return;
+  }
+  blk_vars->push_back(v);
 }
 
-void ExpressionAtomic::AddBlockVar(const Variable *v) {
-  if ((dynamic_cast<const ArrayVariable*>(v)) && (v->get_collective() != v))
-    return;
-  cout << "Adding (const) " << v->to_string() << endl;
-//   GetBlockVars()->push_back(const_cast<Variable*>(v));
-}
+// void ExpressionAtomic::AddBlockVar(const Variable *v_i) {
+//   Variable* v = const_cast<Variable*>(v_i);
+//   if ((dynamic_cast<ArrayVariable*>(v)) && (v->get_collective() != v)) {
+//     ArrayVariable * av = dynamic_cast<ArrayVariable*>(v);
+// //     cout << "Adding collective var " << v->to_string() << endl;
+//     GetBlockVars()->push_back(const_cast<Variable*>(av->get_collective()));
+//   }
+// //   cout << "Adding (const) " << v->to_string() << endl;
+//   GetBlockVars()->push_back(v);
+// }
 
 void ExpressionAtomic::RemoveBlockVars(std::vector<Variable*> local_vars) {
   std::vector<Variable*>* blk_vars = GetBlockVars();
-  for (Variable* v : *blk_vars) 
-    cout << v->to_string() << "\n";
+//   for (Variable* v : *blk_vars) 
+//     cout << v->to_string() << "\n";
   
 //   for (Variable* v : local_vars)
 //     cout << v->to_string() << "\n";
   
-//   for (Variable* v : local_vars) 
-//     blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), v), blk_vars->end());
-}
+//   for (Variable* v : *blk_vars) {
+//     if (std::find(local_vars.begin(), local_vars.end(), v) == local_vars.end() &&
+//           v->is_visible(b))
+//       continue;
+//     if (v->is_visible_local(b))
+//       std::cout << v->to_string() << " Vis" << std::endl;
+//     std::cout << "Removing " << v->to_string() << std::endl;
+//     ArrayVariable* av = dynamic_cast<ArrayVariable*>(v);
+//     if (av != NULL && av->get_collective() != av) {
+// //       blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), av->get_collective()), blk_vars->end());
+//       continue;
+//     }
+// //     blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), v), blk_vars->end());
+//   }
+  
+  for (Variable* v : local_vars) {
+    ArrayVariable* av = dynamic_cast<ArrayVariable*>(v);
+    if (av != NULL && av->get_collective() != av) {
+//       cout << "Removing collective var " << v->to_string() << endl;
+      blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), av->get_collective()), blk_vars->end());
+      continue;
+    }
+//     cout << "Removing var " << v->to_string() << endl;
+    blk_vars->erase(std::remove(blk_vars->begin(), blk_vars->end(), v), blk_vars->end());
+  }
+} 
 
 void ExpressionAtomic::ParseBlockVars(Block* if_true) {
   cout << if_true->stm_id << " --- ";

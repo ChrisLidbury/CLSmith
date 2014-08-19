@@ -48,6 +48,14 @@
 #include "ArrayVariable.h"
 #include "random.h"
 #include <vector>
+#include "Block.h"
+
+namespace CLSmith {
+namespace ExpressionAtomic {
+std::vector<Variable *>* GetBlockVars();
+// void AddBlockVar(const Variable* v);
+}
+}
 
 using namespace std;
 
@@ -74,7 +82,17 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
                 // in atomic context, try to get a variable from the atomic
                 // block hierarchy
                 if (cg_context.get_atomic_context()) {
-                    var = VariableSelector::select(Effect::WRITE, cg_context, t, qfer, dummy, eDerefExact, eNewValue);
+//                     var = rnd_flipcoin(30) ?
+                  if (rnd_flipcoin(80)) {
+//                     std::cout << "Reuse ";
+                    var = VariableSelector::choose_var(*CLSmith::ExpressionAtomic::GetBlockVars(), Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+//                     if (var != 0)
+//                       std::cout << var->to_string() << std::endl;
+//                     else std::cout << "refail" << endl;
+                  } else  {
+//                     std::cout << "Reuse local ";
+                    var = VariableSelector::choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+                  }
                 }
                 else {
                   // try to use one of the "must_use" variables
@@ -97,11 +115,12 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 				new_qfer.restrict(Effect::WRITE, cg_context);
 			}  
 			if (cg_context.get_atomic_context()) {
-//                           var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact, eNewValue);
-                          assert(0);
+//                           std::cout << "New var ";
+                          var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact, eNewValue);
                         }
-                        else 
+                        else {
                           var = VariableSelector::select(Effect::WRITE, cg_context, t, &new_qfer, dummy, eDerefExact);
+                        }
 			ERROR_GUARD(NULL);
 			int deref_level = var->type->get_indirect_level() - t->get_indirect_level();
 			assert(!var->qfer.is_const_after_deref(deref_level));
@@ -127,8 +146,6 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 					incr_counter(Bookkeeper::write_dereference_cnts, deref_level); 
 				}
 				Bookkeeper::record_volatile_access(var, deref_level, true);
-                                if (cg_context.get_atomic_context())
-                                  cout << "Returned new " << var->to_string() << endl;
 				return new Lhs(*var, t, compound_assign);
 			}
 			// restore the effects

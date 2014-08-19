@@ -63,7 +63,9 @@
 
 namespace CLSmith {
 namespace ExpressionAtomic {
+// void RemoveBlockVars(std::vector<Variable*> local_vars);
 void RemoveBlockVars(std::vector<Variable*> local_vars);
+void InsertBlockVars(std::vector<Variable*> local_vars);
 }
 }
 
@@ -147,6 +149,11 @@ Block::make_random(CGContext &cg_context, bool looping)
 	FactMgr* fm = get_fact_mgr_for_func(curr_func);
 	fm->set_fact_in(b, fm->global_facts);
 	Effect pre_effect = cg_context.get_accum_effect();
+        
+        // TODO
+        if (cg_context.get_atomic_context())
+          CLSmith::ExpressionAtomic::InsertBlockVars(b->parent->local_vars);
+          
 
 	unsigned int max = BlockProbability(*b);
 	if (Error::get_error() != SUCCESS) {
@@ -207,12 +214,12 @@ Block::make_random(CGContext &cg_context, bool looping)
         // block hierarchy
         if (cg_context.get_atomic_context()) {
 //           if (b->stm_id == 315) {
-            cout << b->stm_id << "---" << endl;
+//             cout << b->stm_id << "---" << endl;
 //             for (vector<Variable*>::iterator it = b->local_vars.begin(); it != b->local_vars.end(); it++)
 //               cout << (*it)->to_string() << endl;
 //           }
-//           if (b->local_vars.size() != 0)
-//             CLSmith::ExpressionAtomic::RemoveBlockVars(b->local_vars);
+          if (b->local_vars.size() != 0)
+            CLSmith::ExpressionAtomic::RemoveBlockVars(b->parent->local_vars);
         }
         
 	return b;
