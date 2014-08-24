@@ -14,18 +14,26 @@ namespace CLSmith {
 DEFINE_CLFLAG(atomics, bool, false)
 DEFINE_CLFLAG(barriers, bool, false)
 DEFINE_CLFLAG(divergence, bool, false)
+DEFINE_CLFLAG(EMI, bool, false)
+DEFINE_CLFLAG(EMI_p_compound, int, 10)
+DEFINE_CLFLAG(EMI_p_leaf, int, 50)
+DEFINE_CLFLAG(EMI_p_lift, int, 10)
 DEFINE_CLFLAG(small, bool, false)
 DEFINE_CLFLAG(track_divergence, bool, false)
 DEFINE_CLFLAG(vectors, bool, false)
 #undef DEFINE_CLFLAG
 
 void CLOptions::set_default_settings() {
+  atomics_ = false;
   barriers_ = false;
   divergence_ = false;
+  EMI_ = false;
+  EMI_p_compound_ = 10;
+  EMI_p_leaf_ = 50;
+  EMI_p_lift_ = 10;
   small_ = false;
   track_divergence_ = false;
   vectors_ = false;
-  atomics_ = false;
 }
 
 void CLOptions::ResolveCGOptions() {

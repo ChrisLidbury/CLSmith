@@ -77,6 +77,7 @@ enum ProbName {
 	pBreakProb,
 	pGotoProb,
 	pArrayOpProb,
+	pCLStatementProb,
 
 	// group for assignment ops
 	pAssignOpsProb,

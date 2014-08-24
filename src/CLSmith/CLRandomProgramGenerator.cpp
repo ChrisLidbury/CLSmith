@@ -55,6 +55,38 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--EMI")) {
+      CLSmith::CLOptions::EMI(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--EMI_p_compound")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      unsigned long value;
+      if (!ParseIntArg(argv[idx], &value)) return -1;
+      CLSmith::CLOptions::EMI_p_compound(value);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--EMI_p_leaf")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      unsigned long value;
+      if (!ParseIntArg(argv[idx], &value)) return -1;
+      CLSmith::CLOptions::EMI_p_leaf(value);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--EMI_p_lift")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      unsigned long value;
+      if (!ParseIntArg(argv[idx], &value)) return -1;
+      CLSmith::CLOptions::EMI_p_lift(value);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--small")) {
       CLSmith::CLOptions::small(true);
       continue;

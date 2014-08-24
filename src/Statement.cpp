@@ -82,6 +82,10 @@
 #include "StringUtils.h"
 #include "VariableSelector.h"
 
+namespace CLSmith {
+Statement *make_random_st(CGContext& cg_context);
+}  // namespace CLSmith
+
 using namespace std;
 const Statement* Statement::failed_stm;
 
@@ -302,6 +306,9 @@ Statement::make_random(CGContext &cg_context,
 		break;
 	case eArrayOp:
 		s = StatementArrayOp::make_random(cg_context);
+		break;
+	case eCLStatement:
+		s = CLSmith::make_random_st(cg_context);
 		break;
 	}
 

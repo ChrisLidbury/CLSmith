@@ -93,6 +93,8 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << "__kernel void entry(__global ulong *result";
   if (CLOptions::atomics())
     out << ", __global volatile int *input";
+  if (CLOptions::EMI())
+    out << ", __global int *emi_input";
   out << ") {" << std::endl;
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);

@@ -37,13 +37,13 @@ class CLExpression : public Expression {
   CLExpression& operator=(CLExpression&& other) = default;
   virtual ~CLExpression() {}
 
-  // Create the random probability table, should be called once on startup.
-  static void InitProbabilityTable();
-
   // Factory for creating a random OpenCL expression. This will typically be
   // called by Expression::make_random.
   static CLExpression *make_random(CGContext &cg_context, const Type *type,
       const CVQualifiers* qfer, enum CLExpressionType tt);
+
+  // Create the random probability table, should be called once on startup.
+  static void InitProbabilityTable();
 
   // When evaluated at runtime, will this produce a divergent value.
   virtual bool IsDivergent() const { return false; }//; = 0;
@@ -62,7 +62,7 @@ class CLExpression : public Expression {
 };
 
 // Hook method for csmith.
-Expression *make_random(CGContext &cg_context, const Type *type,
+Expression *make_random(CGContext& cg_context, const Type *type,
     const CVQualifiers *qfer);
 
 }  // namespace CLSmith

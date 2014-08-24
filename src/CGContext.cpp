@@ -71,7 +71,8 @@ CGContext::CGContext(Function *current_func, const Effect &eff_context, Effect *
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
-	  atomic_context(false)
+	  atomic_context(false),
+	  emi_context(false)
 {
 	// Nothing else to do.
 }
@@ -90,7 +91,8 @@ CGContext::CGContext(const CGContext &cgc, const Effect &eff_context, Effect *ef
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
 	  effect_stm(),
-          atomic_context(cgc.atomic_context)
+          atomic_context(cgc.atomic_context),
+	  emi_context(cgc.emi_context)
 {
 	// Nothing else to do.
 }
@@ -108,7 +110,8 @@ CGContext::CGContext(const CGContext &cgc, Function* f, const Effect &eff_contex
 	  curr_rhs(NULL),
 	  effect_context(eff_context),
 	  effect_accum(eff_accum),
-          atomic_context(cgc.atomic_context)
+          atomic_context(cgc.atomic_context),
+	  emi_context(false)
 {
 	extend_call_chain(cgc);
 }
@@ -126,7 +129,8 @@ CGContext::CGContext(const CGContext &cgc, RWDirective* rwd, const Variable* iv,
 	  curr_rhs(NULL),
 	  effect_context(cgc.effect_context),
 	  effect_accum(cgc.effect_accum),
-          atomic_context(cgc.atomic_context)
+          atomic_context(cgc.atomic_context),
+	  emi_context(cgc.emi_context)
 {
 	// add loop induction variable 
 	if (iv) {
@@ -597,6 +601,18 @@ bool
 CGContext::get_atomic_context() const
 {
         return atomic_context;
+}
+
+void
+CGContext::set_emi_context(bool emi_ctx)
+{
+	emi_context = emi_ctx;
+}
+
+bool
+CGContext::get_emi_context() const
+{
+	return emi_context;
 }
 
 bool

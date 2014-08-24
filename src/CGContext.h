@@ -154,6 +154,9 @@ public:
         void set_atomic_context(bool atomic_ctx);
         bool get_atomic_context() const;
 
+	void set_emi_context(bool emi_ctx);
+	bool get_emi_context() const;
+
 private:
 	Function * const current_func; // may be null.
     
@@ -177,9 +180,12 @@ private:
 	// TODO: move `Function::flags' to here.
 	// TODO: move `Function::...' to here?
         
+	// TODO these should be flags? (#define atomic_context (16), ...)
         // Check whether we are in an if block with a conidition containing
         // an atomic operation
         bool atomic_context;
+	// Are we in an EMI block.
+	bool emi_context;
 
 private:
 	CGContext &operator=(const CGContext &cgc);	// unimplementable

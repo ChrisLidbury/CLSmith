@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "Block.h"
+#include "CLSmith/Walker.h"
 #include "Function.h"
 #include "StatementAssign.h"
 #include "CommonMacros.h"
@@ -49,7 +50,6 @@
 class Expression;
 class Statement;
 class Variable;
-namespace CLSmith { namespace Walker { class FunctionWalker; } }
 
 // Required for SavedState constructor.
 namespace CLSmith { class FunctionDivergence; }
