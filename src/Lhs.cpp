@@ -84,14 +84,19 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
                 if (cg_context.get_atomic_context()) {
 //                     var = rnd_flipcoin(30) ?
                   if (rnd_flipcoin(80)) {
-//                     std::cout << "Reuse ";
+                    std::cout << "Reuse ";
+//                     for (vector<Variable*>::iterator bv = CLSmith::ExpressionAtomic::GetBlockVars()->begin(); bv != CLSmith::ExpressionAtomic::GetBlockVars()->end(); bv++)
+//                       std::cout << (*bv)->to_string() << std::endl;
                     var = VariableSelector::choose_var(*CLSmith::ExpressionAtomic::GetBlockVars(), Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
 //                     if (var != 0)
 //                       std::cout << var->to_string() << std::endl;
 //                     else std::cout << "refail" << endl;
-                  } else  {
-//                     std::cout << "Reuse local ";
+                  } else if (rnd_flipcoin(30)) {
+                    std::cout << "Reuse local ";
                     var = VariableSelector::choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+                  } else {
+                    std::cout << "Make new ";
+                    var = VariableSelector::select(Effect::WRITE, cg_context, t, qfer, dummy, eDerefExact, eNewValue);
                   }
                 }
                 else {
