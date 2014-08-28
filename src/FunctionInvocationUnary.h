@@ -67,6 +67,8 @@ public:
 	virtual bool equals(int num) const;
 
 	virtual bool is_0_or_1(void) const { return eFunc == eNot;}
+	
+	std::string get_tmp_var_const() const { return tmp_var; }
 
 private:
 	eUnaryOps eFunc;

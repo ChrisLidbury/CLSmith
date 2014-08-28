@@ -7,6 +7,7 @@
 
 #include "CLSmith/CLExpression.h"
 #include "CLSmith/CLOptions.h"
+#include "CLSmith/CLVariable.h"
 #include "CLSmith/Divergence.h"
 #include "CLSmith/ExpressionAtomic.h"
 #include "ExpressionID.h"
@@ -76,6 +77,11 @@ void CLProgramGenerator::goGenerator() {
     if (CLOptions::divergence()) GenerateBarriers(div.get(), globals);
     else { /*TODO Non-div barriers*/ }
   }
+  
+  if (true) {
+    CLSmith::CLVariable::ParseUnusedVars();
+  }
+    
 
   // Output the whole program.
   output_mgr_->Output();

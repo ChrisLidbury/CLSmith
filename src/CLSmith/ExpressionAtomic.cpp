@@ -82,7 +82,6 @@ std::vector<MemoryBuffer*>* ExpressionAtomic::GetGlobalMems() {
 
 void ExpressionAtomic::MakeBlockVars() {
   if (block_vars != NULL) {
-    std::cout << block_vars->size() << endl;
     delete(block_vars);
   }
   block_vars = new std::vector<Variable*>();
