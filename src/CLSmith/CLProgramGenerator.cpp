@@ -78,7 +78,7 @@ void CLProgramGenerator::goGenerator() {
     else { /*TODO Non-div barriers*/ }
   }
   
-  if (true) {
+  if (CLOptions::small()) {
     CLSmith::CLVariable::ParseUnusedVars();
   }
     

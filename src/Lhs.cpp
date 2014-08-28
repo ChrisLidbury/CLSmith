@@ -85,6 +85,8 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
 //                     var = rnd_flipcoin(30) ?
                   if (rnd_flipcoin(80)) {
                     var = VariableSelector::choose_var(*CLSmith::ExpressionAtomic::GetBlockVars(), Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+                    if (var != NULL)
+                      std::cout << "select " << var->to_string() << std::endl;
                   } else if (rnd_flipcoin(30)) {
                     var = VariableSelector::choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
                   } else {
