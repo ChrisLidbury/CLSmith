@@ -1358,7 +1358,7 @@ Type::is_signed(void) const
 const Type*
 Type::to_unsigned(void) const
 {
-	if (eType == eSimple) {
+	if (eType == eSimple || eType == eVector) {
 		switch (simple_type) {
 			case eUChar:
 			case eUInt:
@@ -1371,6 +1371,29 @@ Type::to_unsigned(void) const
 			case eShort: return &get_simple_type(eUShort);
 			case eLong: return &get_simple_type(eULong);
 			case eLongLong: return &get_simple_type(eULongLong);
+			default:
+				break;
+		}
+	}
+	return NULL;
+}
+
+const Type*
+Type::to_signed(void) const
+{
+	if (eType == eSimple || eType == eVector) {
+		switch (simple_type) {
+			case eUChar: return &get_simple_type(eChar);
+			case eUInt: return &get_simple_type(eInt);
+			case eUShort: return &get_simple_type(eShort);
+			case eULong: return &get_simple_type(eLong);
+			case eULongLong: return &get_simple_type(eLongLong);
+			case eChar:
+			case eInt:
+			case eShort:
+			case eLong:
+			case eLongLong:
+				return this;
 			default:
 				break;
 		}

@@ -5,7 +5,7 @@
 CC=g++
 CFLAGS=-c -Wall -I../ -std=c++0x -g
 LFLAGS=-std=c++0x
-SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp Walker.cpp Divergence.cpp CLExpression.cpp CLStatement.cpp StatementBarrier.cpp MemoryBuffer.cpp Vector.cpp CLOptions.cpp ExpressionVector.cpp ExpressionAtomic.cpp StatementEMI.cpp
+SOURCES=CLOutputMgr.cpp CLProgramGenerator.cpp Globals.cpp CLRandomProgramGenerator.cpp Walker.cpp Divergence.cpp CLExpression.cpp CLStatement.cpp StatementBarrier.cpp MemoryBuffer.cpp Vector.cpp CLOptions.cpp ExpressionVector.cpp ExpressionAtomic.cpp StatementEMI.cpp FunctionInvocationBuiltIn.cpp
 OBJS=$(filter-out ../csmith-RandomProgramGenerator.o, $(wildcard ../*.o)) $(SOURCES:.cpp=.o)
 BIN=CLSmith
 

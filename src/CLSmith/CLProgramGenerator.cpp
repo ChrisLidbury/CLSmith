@@ -9,6 +9,7 @@
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/Divergence.h"
 #include "CLSmith/ExpressionAtomic.h"
+#include "CLSmith/FunctionInvocationBuiltIn.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/StatementEMI.h"
@@ -25,6 +26,8 @@ void CLProgramGenerator::goGenerator() {
   CLExpression::InitProbabilityTable();
   // Create vector types.
   Vector::GenerateVectorTypes();
+  // Initialise function tables.
+  FunctionInvocationBuiltIn::InitTables();
 
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);

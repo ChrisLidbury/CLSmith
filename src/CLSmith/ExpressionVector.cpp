@@ -1,15 +1,18 @@
 #include "CLSmith/ExpressionVector.h"
 
+#include <map>
 #include <memory>
 #include <ostream>
 #include <utility>
 #include <vector>
 
 #include "CLSmith/CLExpression.h"
+#include "CLSmith/FunctionInvocationBuiltIn.h"
 #include "Constant.h"
 #include "CGContext.h"
 #include "CGOptions.h"
 #include "Expression.h"
+#include "ExpressionFuncall.h"
 #include "ProbabilityTable.h"
 #include "random.h"
 #include "Type.h"
@@ -26,7 +29,7 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
   // If we have been forced in here, but the expression depth is too high,
   // return a plain constant casted to the vector type.
   // This should only happen if type is a vector type.
-  if (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()) {
+  if (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()) { // TODO use make_const
     assert(type->eType == eVector);
     std::vector<std::unique_ptr<const Expression>> exprs;
     exprs.emplace_back(
@@ -81,12 +84,16 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
     // Produce an entire vector.
   //  vec_expr_type = kSIMD; // TODO
   //}
-  else {//if (vec_expr_type == kSIMD) {
+  else if (vec_expr_type == kSIMD) {
     // Produce an expression that performs a series of operations on vectors. We
     // borrow from csmith's expression generation where possible.
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(Expression::make_random(
         cg_context, vec_type, qfer, false, false, eFunction));
+  } else /*kBuiltIn*/ {
+    const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
+    exprs.emplace_back(new ExpressionFuncall(
+        *FunctionInvocationBuiltIn::make_random(cg_context, *vec_type)));
   }
 
   // The expression has been produced, but we need to itemise according to the

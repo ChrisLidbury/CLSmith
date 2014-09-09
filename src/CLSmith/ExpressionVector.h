@@ -56,6 +56,10 @@ class ExpressionVector : public CLExpression {
   // Create an expression that produces a vector value.
   // The expression can be a vector literal, vector variable, an operation on
   // one or two vectors or calling a built-in vector function.
+  // The type of the expression will match 'type', if type is a scalar, or a
+  // vector of different length, the vector will be itemised to match.
+  // size will determine the length of the vector produced (before itemisation),
+  // it must be a valid vector length, or 0 (for a random length).
   static ExpressionVector *make_random(CGContext &cg_context, const Type *type,
       const CVQualifiers *qfer, int size);
 
@@ -82,9 +86,9 @@ class ExpressionVector : public CLExpression {
  private:
   // Vector of expressions that when combined will form an OpenCL vector.
   std::vector<std::unique_ptr<const Expression>> exprs_;
-  // Basic type.
+  // Basic type of the expression, can be a scalar.
   const Type& type_;
-  // Vector length;
+  // Vector length.
   const int size_;
   // Vector accesses.
   bool is_component_access_;  // Is the access per component (i.e. vec.xy).

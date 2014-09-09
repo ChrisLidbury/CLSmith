@@ -38,7 +38,7 @@ class StatementEMI : public CLStatement {
   }
   StatementEMI(StatementEMI&& other) = default;
   StatementEMI& operator=(StatementEMI&& other) = default;
-  virtual ~StatementEMI() {};
+  virtual ~StatementEMI() {}
 
   // Factory method for creating an EMI block. This will just be the same as
   // creating a random StatementIf, but with more control over the test

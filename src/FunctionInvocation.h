@@ -102,7 +102,8 @@ enum eInvocationType
 {
     eBinaryPrim,
     eUnaryPrim,
-    eFuncCall
+    eFuncCall,
+    eBuiltIn
 };
 
 class FunctionInvocation
