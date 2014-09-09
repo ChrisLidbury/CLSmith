@@ -38,7 +38,7 @@ class StatementEMI : public CLStatement {
   }
   StatementEMI(StatementEMI&& other) = default;
   StatementEMI& operator=(StatementEMI&& other) = default;
-  virtual ~StatementEMI() {}
+  virtual ~StatementEMI() {};
 
   // Factory method for creating an EMI block. This will just be the same as
   // creating a random StatementIf, but with more control over the test
@@ -66,6 +66,12 @@ class StatementEMI : public CLStatement {
   // Prune helper function. Pruning is performed recursively, calling this
   // function each time a block is entered.
   void PruneBlock(Block *block);
+
+  // Helper for PruneBlock. Merge the second block into the first, invalidating
+  // the second block. Position specifies where the statements are inserted,
+  // returns an iterator to the last statement.
+  std::vector<Statement *>::iterator MergeBlock(
+      std::vector<Statement *>::iterator position, Block *former, Block *merger);
 
   // If statement being wrapped.
   std::unique_ptr<StatementIf> if_block_;
@@ -95,6 +101,10 @@ class EMIController {
   // Add an emi section that will later be pruned.
   void AddStatementEMI(StatementEMI *emi) { emi_sections_.push_back(emi); }
 
+  // Remove an emi section. It is down to the Statement EMI to remove itself
+  // from the controller. Returns true if something was removed.
+  bool RemoveStatementEMI(StatementEMI *emi);
+
   // Add an itemised reference to the emi inpu data.
   void AddItemisedEMIInput(MemoryBuffer *item);
 
@@ -111,7 +121,7 @@ class EMIController {
   }
 
  private:
-  // All StatementEMIs are collected here.
+  // All StatementEMIs are collected here. (Should probably use a list)
   std::vector<StatementEMI *> emi_sections_;
   // Input data for the test expressions.
   std::unique_ptr<MemoryBuffer> emi_input_;
