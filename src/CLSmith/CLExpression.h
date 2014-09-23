@@ -39,7 +39,7 @@ class CLExpression : public Expression {
 
   // Factory for creating a random OpenCL expression. This will typically be
   // called by Expression::make_random.
-  static CLExpression *make_random(CGContext &cg_context, const Type *type,
+  static /*CL*/Expression *make_random(CGContext &cg_context, const Type *type,
       const CVQualifiers* qfer, enum CLExpressionType tt);
 
   // Create the random probability table, should be called once on startup.

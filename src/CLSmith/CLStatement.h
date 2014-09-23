@@ -20,7 +20,8 @@ class CLStatement : public Statement {
   enum CLStatementType {
     kNone = 0,  // Sentinel value
     kBarrier,
-    kEMI
+    kEMI,
+    kFakeDiverge  // Gross hack alert
   };
 
   CLStatement(CLStatementType type, Block *block)
@@ -31,13 +32,17 @@ class CLStatement : public Statement {
   CLStatement& operator=(CLStatement&& other) = default;
   virtual ~CLStatement() {}
 
-  // Initialise the probability table for selecting a random statement. Should
-  // be called once on startup.
-  static void InitProbabilityTable();
-
   // Factory for creating a random OpenCL statement.
   static CLStatement *make_random(CGContext& cg_context,
       enum CLStatementType st);
+
+  // Create an if statement with the test expression being uniform, but
+  // appearing to diverge.
+  static CLStatement *CreateFakeDivergentIf(CGContext& cg_context);
+
+  // Initialise the probability table for selecting a random statement. Should
+  // be called once on startup.
+  static void InitProbabilityTable();
 
   // Getter the the statement type.
   enum CLStatementType GetCLStatementType() const { return cl_statement_type_; }

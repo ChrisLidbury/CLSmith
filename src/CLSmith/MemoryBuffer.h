@@ -55,7 +55,10 @@ class MemoryBuffer : public ArrayVariable {
   // Takes a list of indices and creates a new memory buffer that accesses
   // the elements at those indices; the number of indices in the list must
   // be the same as the number of dimensions of the array
-  MemoryBuffer* itemize(const vector<int>& const_indices) const;
+  MemoryBuffer *itemize(const std::vector<int>& const_indices) const;
+  // Above variant for expressions.
+  MemoryBuffer *itemize(const std::vector<const Expression *> expr_indices,
+      Block *blk) const;
 
   // Print the memory space qualifier.
   static void OutputMemorySpace(std::ostream& out, MemorySpace memory_space);

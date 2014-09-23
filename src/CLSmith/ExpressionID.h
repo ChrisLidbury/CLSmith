@@ -1,16 +1,22 @@
 // Expression for retrieving the global id.
 // This will add program divergence to wherever this is added.
+// Also handles the generation of expressions involving the use of ID, such as
+// faking divergence.
 
 #ifndef _CLSMITH_EXPRESSIONID_H_
 #define _CLSMITH_EXPRESSIONID_H_
 
-#include <fstream>
+#include <ostream>
 #include <vector>
 
 #include "CLSmith/CLExpression.h"
 #include "CommonMacros.h"
 #include "CVQualifiers.h"
 #include "Type.h"
+
+namespace CLSmith { class Globals; }
+class CGContext;
+class Expression;
 
 namespace CLSmith {
 
@@ -22,21 +28,43 @@ class ExpressionID : public CLExpression {
   // Which ID is being requested.
   enum IDType {
     kGlobal = 0,
-    kLocal
+    kLocal,
+    kGroup
   };
 
   explicit ExpressionID(IDType type) : CLExpression(kID),
-      id_type_(type),
+      id_type_(type), dimension_(0),
+      type_(Type::get_simple_type(eULongLong)) {
+  }
+  ExpressionID(IDType type, int dimension) : CLExpression(kID),
+      id_type_(type), dimension_(dimension),
       type_(Type::get_simple_type(eULongLong)) {
   }
   ExpressionID(ExpressionID&& other) = default;
   ExpressionID& operator=(ExpressionID&& other) = default;
   virtual ~ExpressionID() {}
 
-  static ExpressionID *make_random(const Type* type) {
-    assert(type->eType == eSimple && type->simple_type == eULongLong);
-    return new ExpressionID(kGlobal);
-  }
+  // Will just return a call to get_global_id(0).
+  static ExpressionID *make_random(const Type* type);
+
+  // Initialise the static data used for divergence faking.
+  static void Initialise();
+
+  // Add any variables referred to throughout the program to the globals struct.
+  static void AddVarsToGlobals(Globals *globals);
+
+  // Given the context, what is the probability that the expression should be
+  // generated.
+  static int GetGenerationProbability(
+      const CGContext &cg_context, const Type& type);
+
+  // Create an expression that has uniform value across work items, but the
+  // compiler assumes is non-uniform.
+  static Expression *CreateFakeDivergentExpression(
+      const CGContext& cg_context, const Type& type);
+
+  // Outputs the name of the type of identifier (e.g. 'local' for get_local_id).
+  static void OutputIDType(std::ostream& out, IDType id_type);
 
   // Implementations of pure virtual methods in Expression. Most of these are
   // trivial, as the expression evaluates to a runtime constant.
@@ -48,25 +76,14 @@ class ExpressionID : public CLExpression {
   }
   void get_referenced_ptrs(std::vector<const Variable*>& ptrs) const {}
   unsigned get_complexity() const { return 1; }
-  void Output(std::ostream& out) const {
-    output_cast(out);
-    out << (id_type_ == kGlobal ? "get_global_id(0)" : "get_local_id(0)");
-  }
+  void Output(std::ostream& out) const;
 
   // Both local and global IDs are always divergent.
   bool IsDivergent() const { return true; }
 
-  // Given the context, what is the probability that the expression should be
-  // generated.
-  static int GetGenerationProbability(
-      const CGContext &cg_context, const Type& type) {
-    int prob = type.eType == eSimple && type.simple_type == eULongLong ?
-        (cg_context.blk_depth + cg_context.expr_depth) / 2 : 0;
-    return prob > 5 ? 5 : 0;
-  }
-
  private:
   IDType id_type_;
+  int dimension_;
   const Type& type_;
 
   DISALLOW_COPY_AND_ASSIGN(ExpressionID);

@@ -18,6 +18,7 @@ DEFINE_CLFLAG(EMI, bool, false)
 DEFINE_CLFLAG(EMI_p_compound, int, 10)
 DEFINE_CLFLAG(EMI_p_leaf, int, 50)
 DEFINE_CLFLAG(EMI_p_lift, int, 10)
+DEFINE_CLFLAG(fake_divergence, bool, false)
 DEFINE_CLFLAG(small, bool, false)
 DEFINE_CLFLAG(track_divergence, bool, false)
 DEFINE_CLFLAG(vectors, bool, false)
@@ -31,6 +32,7 @@ void CLOptions::set_default_settings() {
   EMI_p_compound_ = 10;
   EMI_p_leaf_ = 50;
   EMI_p_lift_ = 10;
+  fake_divergence_ = false;
   small_ = false;
   track_divergence_ = false;
   vectors_ = false;
@@ -82,6 +84,10 @@ bool CLOptions::Conflict() {
   }
   if (vectors_ && track_divergence_) {
     std::cout << "Cannot track divergence with vectors enabled." << std::endl;
+    return true;
+  }
+  if (divergence_ && fake_divergence_) {
+    std::cout << "Cannot have both real and fake divergence." << std::endl;
     return true;
   }
   return false;

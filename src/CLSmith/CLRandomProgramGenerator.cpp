@@ -87,6 +87,11 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--fake_divergence")) {
+      CLSmith::CLOptions::fake_divergence(true);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--small")) {
       CLSmith::CLOptions::small(true);
       continue;

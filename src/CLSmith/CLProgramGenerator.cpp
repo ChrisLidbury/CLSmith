@@ -9,6 +9,7 @@
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/Divergence.h"
 #include "CLSmith/ExpressionAtomic.h"
+#include "ExpressionID.h"
 #include "CLSmith/FunctionInvocationBuiltIn.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
@@ -24,10 +25,13 @@ namespace CLSmith {
 void CLProgramGenerator::goGenerator() {
   // Initialise probabilies.
   CLExpression::InitProbabilityTable();
+  CLStatement::InitProbabilityTable();
   // Create vector types.
   Vector::GenerateVectorTypes();
   // Initialise function tables.
   FunctionInvocationBuiltIn::InitTables();
+  // Initialise Variable objects used for thread identifiers.
+  ExpressionID::Initialise();
 
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);
@@ -62,6 +66,10 @@ void CLProgramGenerator::goGenerator() {
     for (MemoryBuffer *mb :
         *EMIController::GetEMIController()->GetItemisedEMIInput())
       globals->AddGlobalMemoryBuffer(mb);
+
+  // Add the 9 variables used for the identifiers.
+  if (CLOptions::fake_divergence())
+    ExpressionID::AddVarsToGlobals(globals);
 
   // If barriers have been set, use the divergence information to place them.
   if (CLOptions::barriers()) {

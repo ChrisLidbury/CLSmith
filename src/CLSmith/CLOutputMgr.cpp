@@ -95,6 +95,8 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
     out << ", __global volatile int *input";
   if (CLOptions::EMI())
     out << ", __global int *emi_input";
+  if (CLOptions::fake_divergence())
+    out << ", __global int *sequence_input";
   out << ") {" << std::endl;
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);

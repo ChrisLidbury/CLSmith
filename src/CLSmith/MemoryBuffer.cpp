@@ -5,11 +5,12 @@
 #include <vector>
 
 #include "ArrayVariable.h"
+#include "Block.h"
+#include "Constant.h"
 #include "CVQualifiers.h"
 #include "util.h"
 #include "Variable.h"
 #include "VariableSelector.h"
-#include "Constant.h"
 
 namespace CLSmith {
 
@@ -22,7 +23,8 @@ MemoryBuffer *MemoryBuffer::CreateMemoryBuffer(MemorySpace memory_space,
   return new MemoryBuffer(memory_space, name, type, init, &qfer, size);
 }
 
-MemoryBuffer* MemoryBuffer::itemize(const vector<int>& const_indices) const {
+MemoryBuffer* MemoryBuffer::itemize(const std::vector<int>& const_indices)
+    const {
   assert(collective == 0);
   assert(const_indices.size() == sizes.size());
   MemoryBuffer* mb = new MemoryBuffer(*this);
@@ -32,6 +34,19 @@ MemoryBuffer* MemoryBuffer::itemize(const vector<int>& const_indices) const {
     mb->add_index(new Constant(get_int_type(), StringUtils::int2str(index)));
   }
   mb->collective = this;
+  return mb;
+}
+
+MemoryBuffer *MemoryBuffer::itemize(
+    const std::vector<const Expression *> expr_indices, Block *blk) const {
+  assert(collective == 0);
+  assert(expr_indices.size() == sizes.size());
+  MemoryBuffer* mb = new MemoryBuffer(*this);
+  VariableSelector::GetAllVariables()->push_back(mb);
+  for (const Expression *expr : expr_indices) mb->add_index(expr);
+  mb->collective = this;
+  mb->parent = blk;
+  blk->local_vars.push_back(mb);
   return mb;
 }
 

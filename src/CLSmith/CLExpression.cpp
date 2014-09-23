@@ -18,7 +18,7 @@ namespace {
 DistributionTable *cl_expr_table = NULL;
 }  // namespace
 
-CLExpression *CLExpression::make_random(CGContext &cg_context, const Type *type,
+/*CL*/Expression *CLExpression::make_random(CGContext &cg_context, const Type *type,
     const CVQualifiers *qfer, enum CLExpressionType tt) {
   // kNone is used for not specifying an expression type, as it does not require
   // recursive generation.
@@ -36,13 +36,16 @@ CLExpression *CLExpression::make_random(CGContext &cg_context, const Type *type,
     int num = rnd_upto(15);
     tt = type->eType == eVector ? kVector :
         (CLExpressionType)VectorFilter(cl_expr_table).lookup(num);
-    // Probability of calling get_global_id(0) is dependent on block and
-    // expression depth.
+    // kID will be one of forced divergence or fake divergence. Probability of
+    // calling get_global_id(0) without faking divergence is dependent on block
+    // and expression depth.
     if (tt == kID) {
-      if (!CLOptions::divergence()) return NULL;
+      if (!CLOptions::divergence() && !CLOptions::fake_divergence())
+        return NULL;
       int expr_id_prob =
           ExpressionID::GetGenerationProbability(cg_context, *type);
-      if ((unsigned)expr_id_prob <= rnd_upto(5)) return NULL;
+      if (CLOptions::divergence() && (unsigned)expr_id_prob <= rnd_upto(5))
+        return NULL;
     }
     // Not many restrictions on vector types.
     if (tt == kVector) {
@@ -53,10 +56,12 @@ CLExpression *CLExpression::make_random(CGContext &cg_context, const Type *type,
     }
   }
 
-  CLExpression *expr = NULL;
+  /*CL*/Expression *expr = NULL;
   switch (tt) {
     case kID:
-      expr = ExpressionID::make_random(type); break;
+      expr = CLOptions::divergence() ? ExpressionID::make_random(type) :
+          ExpressionID::CreateFakeDivergentExpression(cg_context, *type);
+      break;
     case kVector:
       expr = ExpressionVector::make_random(cg_context, type, qfer, 0); break;
     default: assert(false);
