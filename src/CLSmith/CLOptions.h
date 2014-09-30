@@ -25,6 +25,7 @@ class CLOptions {
   DEFINE_CLFLAG(EMI_p_leaf, int)
   DEFINE_CLFLAG(EMI_p_lift, int)
   DEFINE_CLFLAG(fake_divergence, bool)
+  DEFINE_CLFLAG(output, const char*)
   DEFINE_CLFLAG(small, bool)
   DEFINE_CLFLAG(track_divergence, bool)
   DEFINE_CLFLAG(vectors, bool)

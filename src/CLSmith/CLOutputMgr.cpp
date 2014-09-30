@@ -1,8 +1,12 @@
 #include "CLSmith/CLOutputMgr.h"
 
+#include <cstdio>
 #include <fstream>
+#include <sstream>
 
 #include "CLSmith/CLOptions.h"
+#include "CLSmith/CLProgramGenerator.h"
+#include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "Function.h"
@@ -12,15 +16,34 @@
 
 namespace CLSmith {
 
-const std::string kFileName = "CLProg.c";
+CLOutputMgr::CLOutputMgr() : out_(CLOptions::output()) {
+}
 
-CLOutputMgr::CLOutputMgr() : out_(kFileName.c_str()) {
+void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::vector<unsigned int> local_dims) {
+  std::ostream &out = get_main_out();
+  out << "//";
+  if (CLOptions::atomics())
+    out << " --atomics " << CLProgramGenerator::get_atomic_blocks_no();
+  out << " -g ";
+  for (std::vector<unsigned int>::iterator it = global_dims.begin(); it < global_dims.end(); it++) {
+    out << *it;
+    if (it + 1 != global_dims.end())
+      out << ",";
+  }
+  out << " -l ";
+  for (std::vector<unsigned int>::iterator it = local_dims.begin(); it < local_dims.end(); it++) {
+    out << *it;
+    if (it + 1 != local_dims.end())
+      out << ",";
+  }
+  out << std::endl;
 }
 
 void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
   // Redefine platform independent scalar C types to platform independent scalar
   // OpenCL types.
   std::ostream &out = get_main_out();
+  OutputRuntimeInfo(CLProgramGenerator::get_global_dims(), CLProgramGenerator::get_local_dims());
   out <<
       "#define int64_t long\n"
       "#define uint64_t ulong\n"
@@ -91,13 +114,16 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   // own custom made one (without modifying the code).
   std::ostream& out = get_main_out();
   out << "__kernel void entry(__global ulong *result";
-  if (CLOptions::atomics())
-    out << ", __global volatile int *input";
+  if (CLOptions::atomics()) {
+    out << ", __global volatile int *g_atomic_input";
+    out << ", __global volatile int *g_special_values";
+  }
   if (CLOptions::EMI())
     out << ", __global int *emi_input";
   if (CLOptions::fake_divergence())
     out << ", __global int *sequence_input";
   out << ") {" << std::endl;
+  out << "unsigned int f;" << std::endl;
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);
 
@@ -120,8 +146,43 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << "int print_hash_value = 0;" << std::endl;
   HashGlobalVariables(out);
   globals.HashLocalBuffers(out);
+  if (CLOptions::atomics()) {
+    if (ExpressionAtomic::HasSVMems()) {
+      output_tab(out, 1);
+      StatementBarrier::OutputBarrier(out);
+      out << std::endl;
+      output_tab(out, 1);
+      out << "if (!(get_global_id(0) || get_global_id(1) || get_global_id(2)))" << std::endl;
+      output_tab(out, 2);
+      out << "for (i = 0 ; i <= " << CLProgramGenerator::get_threads << " * " << 
+	CLProgramGenerator::get_atomic_blocks_no() << "; i++)" << std::endl;
+      output_tab(out, 3);
+      out << "transparent_crc(";
+      ExpressionAtomic::GetSVBuffer()->Output(out);
+      out << "[i], \"";
+      ExpressionAtomic::GetSVBuffer()->Output(out);
+      out << "[i]\", print_hash_value);" << std::endl;
+    }
+    if (ExpressionAtomic::HasLocalSVMems()) {
+      output_tab(out, 1);
+      StatementBarrier::OutputBarrier(out);
+      out << std::endl;
+      output_tab(out, 1);
+      out << "if (!(get_local_id(0) || get_local_id(1) || get_local_id(2)))" << std::endl;
+      output_tab(out, 2);
+      out << "for (i = linear_group_id() * " << CLProgramGenerator::get_atomic_blocks_no() << 
+	"; i < (linear_group_id() + 1) * " << CLProgramGenerator::get_atomic_blocks_no << 
+	"; i++)" << std::endl;
+      output_tab(out, 3);
+      out << "transparent_crc(";
+      ExpressionAtomic::GetLocalSVBuffer()->Output(out);
+      out << "[i], \"";
+      ExpressionAtomic::GetLocalSVBuffer()->Output(out);
+      out << "[i]\", print_hash_value);" << std::endl;
+    }
+  }
   output_tab(out, 1);
-  out << "result[get_global_id(0)] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
+  out << "result[linear_group_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;
   out << "}" << std::endl;
 }

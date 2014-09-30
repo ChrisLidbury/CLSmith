@@ -8,6 +8,7 @@
 #include "AbsProgramGenerator.h"
 #include "CGOptions.h"
 #include "CLSmith/CLOptions.h"
+#include "CLSmith/CLOutputMgr.h"
 #include "CLSmith/CLProgramGenerator.h"
 #include "platform.h"
 
@@ -29,6 +30,7 @@ int main(int argc, char **argv) {
   g_Seed = platform_gen_seed();
   CGOptions::set_default_settings();
   CLSmith::CLOptions::set_default_settings();
+  std::string output_filename = "";
 
   // Parse command line arguments.
   for (int idx = 1; idx < argc; ++idx) {
@@ -37,6 +39,14 @@ int main(int argc, char **argv) {
       ++idx;
       if (!CheckArgExists(idx, argc)) return -1;
       if (!ParseIntArg(argv[idx], &g_Seed)) return -1;
+      continue;
+    }
+    
+    if (!strcmp(argv[idx], "--output_file") ||
+        !strcmp(argv[idx], "-o")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      CLSmith::CLOptions::output(argv[idx]);
       continue;
     }
 
