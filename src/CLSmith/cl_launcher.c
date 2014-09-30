@@ -7,21 +7,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-#define WORK_ITEMS 1024
-#define WORK_GROUP_SIZE WORK_ITEMS
+#define DEF_LOCAL_SIZE 32
+#define DEF_GLOBAL_SIZE 1024
 
 // User input.
 const char *file;
-cl_platform_id *platform;
-cl_device_id *device;
 size_t binary_size = 0;
+int device_index = 0;
+int platform_index = 0;
+char* device_name_given = "";
+
+bool atomics = false;
+int atomic_counter_no = 0;
 
 // Data to free.
 char *source_text = NULL;
 char *buf = NULL;
+int *init_atomic_vals = NULL;
+int *init_special_vals = NULL;
+size_t *local_size = NULL;
+size_t *global_size = NULL;
+char* local_dims = "";
+char* global_dims = "";
 
-int run_on_platform_device(cl_platform_id *, cl_device_id *);
+// Other parameters
+cl_platform_id *platform;
+cl_device_id *device;
+int total_threads = 1;
+
+int run_on_platform_device(cl_platform_id *, cl_device_id *, cl_uint);
 void error_callback(const char *, const void *, size_t, void *);
 void compiler_callback(cl_program, void *);
 int cl_error_check(cl_int, const char *);
@@ -30,67 +46,103 @@ int main(int argc, char **argv) {
   
   // Parse the input. Expect three parameters.
   if (argc < 4) {
-    printf("Expected at least three arguments \"./cl_launcher <cl_program> <platform_idx> <device_idx> [flags...]\"\n");
+    printf("Expected at least three arguments \"./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\"\n");
     return 1;
   }
   
-  int platform_index = -1, device_index = -1;
-  int f_arg = 0, d_arg = 0, p_arg = 0;
+  int req_arg = 0;
   
   // Parsing arguments
   int arg_no = 0;
-  char * curr_arg;
+  int parse_ret;
+  char* curr_arg;
+  char* next_arg;
   while (++arg_no < argc) {
     curr_arg = argv[arg_no];
-    if (!strncmp(curr_arg, "-", 1)) {
-      if (arg_no + 1 == argc) {
-        printf("Option with no value found.\n");
-        return 1;
-      }
-      // Set source file
-      if (!strcmp(curr_arg, "-f") || !strcmp(curr_arg, "--filename")) {
-        file = argv[++arg_no];
-        f_arg = 1;
-      }
-      // Set device index
-      else if (!strcmp(curr_arg, "-d") || !strcmp(curr_arg, "--device_idx")) {
-        device_index = atoi(argv[++arg_no]);
-        d_arg = 1;
-      }
-      // Set platform index
-      else if (!strcmp(curr_arg, "-p") || !strcmp(curr_arg, "--platform_idx")) {
-        platform_index = atoi(argv[++arg_no]);
-        p_arg = 1;
-      }
-      // Optionally set target
-      else if (!strcmp(curr_arg, "-b") || !strcmp(curr_arg, "--binary")) {
-        binary_size = atoi(argv[++arg_no]);
-      }
-    } else {
-      printf("Expected option; found %s.\n", curr_arg);
+    if (++arg_no >= argc) {
+      printf("Found option %s with no value.\n", curr_arg);
       return 1;
     }
+    next_arg = argv[arg_no];
+    parse_ret = parse_arg(curr_arg, next_arg);
+    if (!parse_ret)
+      return 1;
+    if (parse_ret == 2)
+      req_arg++;
   }
   
-  if (f_arg + d_arg + p_arg != 3) {
-    if (!f_arg) 
-      printf("File (-f or --file) argument required.\n");
-    if (!d_arg)
-      printf("Device index (-d or --device_idx) argument required.\n");
-    if (!p_arg)
-      printf("Platform index (-p or --platform_idx) argument required.\n");
+  if (req_arg != 3) {
+    printf("Require file (-f), device index (-d) and platform index (-p) arguments!\n");
     return 1;
   }
   
+  // Parse arguments found in the given source file
+  if (!parse_file_args(file)) {
+    printf("Failed parsing file for arguments.\n");
+    return 1;
+  }
+  
+  // TODO function this
+  // Parsing thread and group dimension information
+  int l_dim = 1, g_dim = 1;
+  if (local_dims == "") {
+    printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
+    local_size = malloc(sizeof(size_t));
+    local_size[0] = DEF_LOCAL_SIZE;
+  } else {
+    int i = 0;
+    while (local_dims[i] != '\0')
+      if (local_dims[i++] == ',')
+        l_dim++;
+    i = 0;
+    local_size = (size_t*)malloc(l_dim * sizeof(size_t));
+    char* tok = strtok(local_dims, ",");
+    while (tok) {
+      local_size[i++] = (size_t) atoi(tok);
+      tok = strtok(NULL, ",");
+    }
+    printf("%d ldim\n", l_dim);
+  }
+  if (global_dims == "") {
+    printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
+    global_size = malloc(sizeof(size_t));
+    global_size[0] = DEF_GLOBAL_SIZE;
+  } else {
+    int i = 0;
+    while (global_dims[i] != '\0')
+      if (global_dims[i++] == ',')
+        g_dim++;
+    i = 0;
+    global_size = malloc(g_dim * sizeof(size_t));
+    char* tok = strtok(global_dims, ",");
+    while (tok) {
+      global_size[i++] = atoi(tok);
+      tok = strtok(NULL, ",");
+    }
+    printf("%d gdim\n", g_dim);
+  }
+  
+  if (g_dim != l_dim) {
+    printf("Local and global sizes must have same number of dimensions!\n");
+    return 1;
+  }
+  if (l_dim > 3) {
+    printf("Cannot have more than 3 dimensions!\n");
+    return 1;
+  }
+  
+  // Calculating total number of work-units for future use
+  int i;
+  for (i = 0; i < l_dim; i++)
+    total_threads *= global_size[i];
+  
   // Platform ID, the index in the array of platforms.
-//   sscanf(argv[2], "%d", &platform_index);
   if (platform_index < 0) {
     printf("Could not parse platform id \"%s\"\n", argv[2]);
     return 1;
   }
 
   // Device ID, not used atm.
-//   sscanf(argv[3], "%d", &device_index);
   if (device_index < 0) {
     printf("Could not parse device id \"%s\"\n", argv[3]);
     return 1;
@@ -121,20 +173,44 @@ int main(int argc, char **argv) {
     return 1;
   }
   device = &devices[device_index];
+  
+  // Check to see if name of device corresponds to given name, if any
+  if (device_name_given) {
+    size_t name_size = 128, actual_size;
+    char* device_name_get = malloc(name_size*sizeof(char));
+    err = clGetDeviceInfo(
+      *device, CL_DEVICE_NAME, name_size, device_name_get, &actual_size);
+    if (cl_error_check(err, "clGetDeviceInfo error"))
+      return 1;
+    char* device_name = malloc(actual_size*sizeof(char));
+    strncpy(device_name, device_name_get, actual_size);
+    if (!strstr(device_name, device_name_given)) {
+      printf("Given name, %s, not found in device name, %s.\n", 
+          device_name_given, device_name);
+      return 1;
+    }
+  }
 
-  int run_err = run_on_platform_device(platform, device);
+  int run_err = run_on_platform_device(platform, device, (cl_uint) l_dim);
   free(source_text);
   free(buf);
+  free(local_size);
+  free(global_size);
+  
+  if (atomics) {
+    free(init_atomic_vals);
+    free(init_special_vals);
+  }
 
   return run_err;
 }
 
-int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
+int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_uint work_dim) {
   
   // Try to read source file into a binary buffer
   FILE *source = fopen(file, "rb");
   if (source == NULL) {
-    printf("Could not open %s\n", file);
+    printf("Could not open %s.\n", file);
     return 1;
   }
 
@@ -147,7 +223,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
 
     source_text = calloc(1, source_size + 1);
     if (source_text == NULL) {
-      printf("Failed to calloc %ld bytes", source_size);
+      printf("Failed to calloc %ld bytes.\n", source_size);
       return 1;
     }
     fread(source_text, 1, source_size, source);
@@ -220,22 +296,17 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     //else
       //printf("clBuildProgram status: %d.\n", status);
   }
+  
+  // Parse the thread and group dimension information
+  
     
   cl_kernel kernel = clCreateKernel(program, "entry", &err);
   if (cl_error_check(err, "Error creating kernel"))
     return 1;
-  
-  // Create buffer to store global variables in
-  int init_vals[1024] = { [0 ... 1023] = 2};
-  
-  cl_mem global_vars = clCreateBuffer(
-      context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 1024 * sizeof(int), init_vals, &err);
-  if (cl_error_check(err, "Error creating input buffer"))
-    return 1;
 
   // Create the buffer that will have the results.
   cl_mem result = clCreateBuffer(
-      context, CL_MEM_WRITE_ONLY, 1024 * sizeof(cl_ulong), NULL, &err);
+      context, CL_MEM_WRITE_ONLY, total_threads * sizeof(cl_ulong), NULL, &err);
   if (cl_error_check(err, "Error creating output buffer"))
     return 1;
   
@@ -243,17 +314,43 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &result);
   if (cl_error_check(err, "Error setting kernel argument 0"))
     return 1;
-  err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &global_vars);
-  if (cl_error_check(err, "Error setting kernel argument 1"))
-    return 1;
+  
+  if (atomics) {
+    // Create buffer to store counters for the atomic blocks
+    int total_counters = atomic_counter_no * total_threads;
+    init_atomic_vals = malloc(sizeof(int) * total_counters);
+    init_special_vals = malloc(sizeof(int) * total_counters);
+    // TODO fill
+    int i;
+    for (i = 0; i < total_counters; i++) {
+      init_atomic_vals[i] = 0;
+      init_special_vals[i] = 0;
+    }
+    
+    cl_mem atomic_input = clCreateBuffer(
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(int), init_atomic_vals, &err);
+    if (cl_error_check(err, "Error creating atomic input buffer"))
+      return 1;
+    
+    // Create buffer to store special values for the atomic blocks
+    cl_mem special_values = clCreateBuffer(
+        context, CL_MEM_WRITE_ONLY, total_counters * sizeof(int), NULL, &err);
+    if (cl_error_check(err, "Error creating special values input buffer"))
+      return 1;
+    
+    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &atomic_input);
+    if (cl_error_check(err, "Error setting atomic input array argument"))
+      return 1;
+    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &special_values);
+    if (cl_error_check(err, "Error setting special values array argument"))
+      return 1;
+  }
   
 
   // Create command to launch the kernel.
   // For now, it is 1-dimensional
-  size_t total_items = 1024;
-  size_t wg_size = 32;
   err = clEnqueueNDRangeKernel(
-      com_queue, kernel, 1, NULL, &total_items, &wg_size, 0, NULL, NULL);
+      com_queue, kernel, work_dim, NULL, global_size, local_size, 0, NULL, NULL);
   if (cl_error_check(err, "Error enqueueing kernel"))
     return 1;
 
@@ -263,19 +360,92 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device) {
     return 1;
 
   // Read back the reults of each thread.
-  cl_ulong c[1024];
+  cl_ulong c[total_threads];
   err = clEnqueueReadBuffer(
-      com_queue, result, CL_TRUE, 0, 1024 * sizeof(cl_ulong), c, 0, NULL, NULL);
+      com_queue, result, CL_TRUE, 0, total_threads * sizeof(cl_ulong), c, 0, NULL, NULL);
   if (cl_error_check(err, "Error reading output buffer"))
     return 1;
 
   ////
   int i;
-  for (i = 0; i < 1024; ++i) printf("%#"PRIx64",", c[i]);
+  for (i = 0; i < total_threads; ++i) printf("%#"PRIx64",", c[i]);
   ////
   
   return 0;
 }
+
+int parse_file_args(const char* filename) {
+  
+  FILE* source = fopen(filename, "r");
+  if (source == NULL) {
+    printf("Could not open file %s for argument parsing.\n", filename);
+    return 0;
+  }
+
+  char arg_buf[128];
+  fgets(arg_buf, 128, source);
+  printf("%s\n", arg_buf);
+  int buf_len = strlen(arg_buf);
+  char* new_line;
+  if (new_line = strchr(arg_buf, '\n'))
+    arg_buf[(int) (new_line - arg_buf)] = '\0';
+  
+  if (!strncmp(arg_buf, "//", 2)) {
+    char* tok = strtok(arg_buf, " ");
+    while (tok) {
+      if (!strncmp(tok, "-", 1))
+        parse_arg(tok, strtok(NULL, " "));
+      tok = strtok(NULL, " ");
+    }
+  }
+
+  fclose(source);
+  
+  return 1;
+}
+
+int parse_arg(char* arg, char* val) {
+  if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
+    file = val;
+    return 2;
+  }
+  if (!strcmp(arg, "-d") || !strcmp(arg, "--device_idx")) {
+    device_index = atoi(val);
+    return 2;
+  }
+  if (!strcmp(arg, "-p") || !strcmp(arg, "--platform_idx")) {
+    platform_index = atoi(val);
+    return 2;
+  }
+  if (!strcmp(arg, "-b") || !strcmp(arg, "--binary")) {
+    binary_size = atoi(val);
+    return 1;
+  }
+  if (!strcmp(arg, "-l") || !strcmp(arg, "--locals")) {
+    local_dims = malloc(strlen(val)*sizeof(char));
+    strcpy(local_dims, val);
+    return 1;
+  }
+  if (!strcmp(arg, "-g") || !strcmp(arg, "--groups")) {
+    global_dims = malloc(strlen(val)*sizeof(char));
+    strcpy(global_dims, val);
+    return 1;
+  }
+  if (!strcmp(arg, "-n") || !strcmp(arg, "--name")) {
+    device_name_given = val;
+    return 1;
+  }
+  if (!strcmp(arg, "--atomics")) {
+    atomics = true;
+    atomic_counter_no = atoi(val);
+    return 1;
+  }
+  printf("Failed parsing arg %s.", arg);
+  return 0;
+}
+  
+  
+  
 
 // Called if any error occurs during context creation or at kernel runtime.
 // This can be called many time asynchronously, so it must be thread safe.
@@ -298,13 +468,3 @@ int cl_error_check(cl_int err, const char *err_string) {
   printf("%s: %d\n", err_string, err);
   return 1;
 }
-
-
-
-
-
-
-
-
-
-
