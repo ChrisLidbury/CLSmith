@@ -38,7 +38,7 @@ MemoryBuffer* MemoryBuffer::itemize(const std::vector<int>& const_indices)
 }
 
 MemoryBuffer *MemoryBuffer::itemize(
-    const std::vector<const Expression *> expr_indices, Block *blk) const {
+    const std::vector<const Expression *>& expr_indices, Block *blk) const {
   assert(collective == 0);
   assert(expr_indices.size() == sizes.size());
   MemoryBuffer* mb = new MemoryBuffer(*this);
@@ -94,6 +94,23 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
   output_tab(out, indent);
   OutputWithOwnedItem(out);
   out << " = ";
+  init->Output(out);
+  out << ";" << std::endl;
+}
+
+void MemoryBuffer::OutputFullDef(std::ostream& out, int indent) const {
+  if (memory_space_ == kPrivate || memory_space_ == kConst) {
+    ArrayVariable::OutputDef(out, indent);
+    return;
+  }
+  
+  output_tab(out, indent);
+  OutputDecl(out);
+  out << ';' << std::endl;
+  output_tab(out, indent);
+  out << "for (f = 0; f < " << get_size() << "; f++)" << std::endl;
+  output_tab(out, indent+1);
+  out << name << "[f] = ";
   init->Output(out);
   out << ";" << std::endl;
 }

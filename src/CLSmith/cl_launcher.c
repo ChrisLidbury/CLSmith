@@ -101,7 +101,6 @@ int main(int argc, char **argv) {
       local_size[i++] = (size_t) atoi(tok);
       tok = strtok(NULL, ",");
     }
-    printf("%d ldim\n", l_dim);
   }
   if (global_dims == "") {
     printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
@@ -119,7 +118,6 @@ int main(int argc, char **argv) {
       global_size[i++] = atoi(tok);
       tok = strtok(NULL, ",");
     }
-    printf("%d gdim\n", g_dim);
   }
   
   if (g_dim != l_dim) {
@@ -384,7 +382,6 @@ int parse_file_args(const char* filename) {
 
   char arg_buf[128];
   fgets(arg_buf, 128, source);
-  printf("%s\n", arg_buf);
   int buf_len = strlen(arg_buf);
   char* new_line;
   if (new_line = strchr(arg_buf, '\n'))
@@ -443,9 +440,6 @@ int parse_arg(char* arg, char* val) {
   printf("Failed parsing arg %s.", arg);
   return 0;
 }
-  
-  
-  
 
 // Called if any error occurs during context creation or at kernel runtime.
 // This can be called many time asynchronously, so it must be thread safe.

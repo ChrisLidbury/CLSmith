@@ -7,6 +7,7 @@ class WorkerThread(threading.Thread):
 		super(WorkerThread, self).__init__()
 		self.timeout = timeout
 		self.cmd     = shlex.split(cmd)
+		self.output  = ["", 0]
 
 	def run(self):
 		self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE)

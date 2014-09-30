@@ -13,6 +13,7 @@
 
 #include "ArrayVariable.h"
 #include "CommonMacros.h"
+#include "Expression.h"
 
 class CVQualifiers;
 class Expression;
@@ -57,7 +58,7 @@ class MemoryBuffer : public ArrayVariable {
   // be the same as the number of dimensions of the array
   MemoryBuffer *itemize(const std::vector<int>& const_indices) const;
   // Above variant for expressions.
-  MemoryBuffer *itemize(const std::vector<const Expression *> expr_indices,
+  MemoryBuffer *itemize(const std::vector<const Expression *>& expr_indices,
       Block *blk) const;
 
   // Print the memory space qualifier.
@@ -69,6 +70,7 @@ class MemoryBuffer : public ArrayVariable {
   // only access a specific part of the buffer.
   void hash(std::ostream& out) const;
   void OutputDef(std::ostream& out, int indent) const;
+  void OutputFullDef(std::ostream& out, int indent) const;
   void output_qualified_type(std::ostream& out) const;
 
   // Alias must be declared with a * instead of a [] for some reason.

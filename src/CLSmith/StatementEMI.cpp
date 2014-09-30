@@ -27,8 +27,10 @@ StatementEMI *StatementEMI::make_random(CGContext& cg_context) {
   static int item_count = 0;
   assert(item_count < 1024);
   MemoryBuffer *emi_input = EMIController::GetEMIController()->GetEMIInput();
-  MemoryBuffer *item1 = emi_input->itemize({item_count++});
-  MemoryBuffer *item2 = emi_input->itemize({item_count++});
+//   MemoryBuffer *item1 = emi_input->itemize({item_count++});
+  MemoryBuffer* item1 = emi_input->itemize(std::vector<int> (1, item_count++));
+//   MemoryBuffer *item2 = emi_input->itemize({item_count++});
+  MemoryBuffer* item2 = emi_input->itemize(std::vector<int> (1, item_count++));
   SafeOpFlags *flags = SafeOpFlags::make_dummy_flags();
   Expression *test = new ExpressionFuncall(*new FunctionInvocationBinary(eCmpLt,
       new ExpressionVariable(*item1), new ExpressionVariable(*item2), flags));

@@ -23,6 +23,9 @@ class CLOutputMgr : public OutputMgr {
   explicit CLOutputMgr(const std::string& filename) : out_(filename.c_str()) {}
   explicit CLOutputMgr(const char *filename) : out_(filename) {}
   ~CLOutputMgr() { out_.close(); }
+  
+  // Outputs information regarding the runtime to be read by the host code
+  void OutputRuntimeInfo(std::vector<unsigned int> threads, std::vector<unsigned int> groups);
 
   // Inherited from OutputMgr. Outputs comments, #defines and forward
   // declarations.

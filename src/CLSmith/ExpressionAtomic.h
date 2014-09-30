@@ -9,6 +9,7 @@
 #define _CLSMITH_EXPRESSIONATOMIC_H_
 
 #include "CLSmith/CLExpression.h"
+#include "CLSmith/ExpressionAtomicAccess.h"
 #include "CLSmith/MemoryBuffer.h"
 
 #include <set>
@@ -26,9 +27,9 @@ class ExpressionAtomic : public CLExpression {
   enum AtomicExprType {
     kAdd = 0,
     kSub,
-    kXchg,
     kInc,
     kDec,
+    kXchg,
     kCmpxchg,
     kMin,
     kMax, 
@@ -36,24 +37,30 @@ class ExpressionAtomic : public CLExpression {
     kOr,
     kXor
   };
-  
+    
   // Three constructors for the three possible operations:
   // * inc and dec have one parameter;
   // * cmpxchg has three parameters;
   // * other operations have two parameters.
   // For simplicity, all the parameters are considered int, coming from a
   // __global volatile array passed as a parameter to the kernel.
-  ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var) : CLExpression(kAtomic), 
-    global_var_(global_var), atomic_type_(type), type_(Type::get_simple_type(eInt)) {}
-  
-  ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var, int val) : 
-    CLExpression(kAtomic), global_var_(global_var), val_(val), atomic_type_(type), 
-    type_(Type::get_simple_type(eInt)) {}
-    
-  ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var, int val, int cmp) : 
-    CLExpression(kAtomic), global_var_(global_var), val_(val), cmp_(cmp), 
+  ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var, const ExpressionAtomicAccess* eaa) : 
+    CLExpression(kAtomic), global_var_(global_var), access_(eaa), 
     atomic_type_(type), type_(Type::get_simple_type(eInt)) {}
   
+  ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var, const ExpressionAtomicAccess* eaa, int val) : 
+    CLExpression(kAtomic), global_var_(global_var), access_(eaa),
+    val_(val), atomic_type_(type), type_(Type::get_simple_type(eInt)) {}
+    
+    // Unused; only for cmpxchng
+//   ExpressionAtomic (AtomicExprType type, ArrayVariable* global_var, int val, int cmp) : 
+//     CLExpression(kAtomic), global_var_(global_var),
+//     val_(val), cmp_(cmp), atomic_type_(type), type_(Type::get_simple_type(eInt)) {}
+    
+
+  // TODO
+  const ExpressionAtomicAccess* get_access(void) const {return this->access_;} ;
+    
   // Generates a random atomic expression; all expressions have equal chance of 
   // being generated.
   static ExpressionAtomic *make_random(CGContext &cg_context, const Type *type);
@@ -65,6 +72,15 @@ class ExpressionAtomic : public CLExpression {
   // This represents the __global volatile array parameter from the kernel;
   // the underlying object is a singleton MemoryBuffer.
   static MemoryBuffer* GetGlobalBuffer();
+  static MemoryBuffer* GetSVBuffer();
+  static MemoryBuffer* GetLocalBuffer();
+  static MemoryBuffer* GetLocalSVBuffer();
+  
+  // Initialize various parameters related to atomic blocks
+  static void InitAtomics(void);
+  
+  // Return the number of maximum atomic blocks for the current program
+  static int get_atomic_blocks_no(void);
   
   // Since all the p arguments of the atomic expressions come from the global
   // array, it must be held in the struct, for global access. Here we save all
@@ -72,27 +88,30 @@ class ExpressionAtomic : public CLExpression {
   // global struct; this is required as the global struct should not get
   // generated until after the entire program is complete.
   static std::vector<MemoryBuffer*>* GetGlobalMems();
+  static std::vector<MemoryBuffer*>* GetSVMems();
+  static std::vector<MemoryBuffer*>* GetLocalMems();
+  static std::vector<MemoryBuffer*>* GetLocalSVMems();
+  static bool HasSVMems();
+  static bool HasLocalSVMems();
   
   // TODO
-  static std::vector<Variable *>* GetBlockVars();
+  static std::vector<Variable *>* GetBlockVars(Block* b);
   
   // Called in Block::make_random(); whenever we create a block within an atomic
   // context, we add all the local variables (except the ArrayVariables that are
   // part of a collective) into the block_vars vector
-  static void InsertBlockVars(std::vector<Variable*> local_vars);
+  static void InsertBlockVars(std::vector<Variable*> local_vars, std::vector<Variable*>* blk_vars);
   
   // TODO
   static void AddBlockVar(Variable* v);
   static void AddBlockVar(const Variable* v);
   
   // TODO
-  static void RemoveBlockVars(std::vector<Variable*> local_vars);
+  static void GenBlockVars(Block* curr);
   
-  // Called in StatementIf::make_random() after the if_true block has been 
-  // created (currently, during the generation of the dummy if_false block);
-  // after all the local variables are collected, parse them in some way
-  // TODO hash them and create a special variable
-  static void ParseBlockVars(Block *if_true);
+  // TODO
+  static void RemoveBlockVars(Block* b);
+  static void DelBlockVars();
   
   // Pure virtual methods from Expression
   ExpressionAtomic *clone() const { return NULL; };
@@ -108,6 +127,7 @@ class ExpressionAtomic : public CLExpression {
   // Represents the p parameter of the expression; it is an array access into
   // the global array parameter
   ArrayVariable* global_var_;
+  const ExpressionAtomicAccess* access_;
   
   // The two additional parameters required by certain operations
   // TODO consider making Variable
@@ -123,7 +143,9 @@ class ExpressionAtomic : public CLExpression {
   
   // Creates a new vector to hold variables created in the current block;
   // must only be called from make_condition()
-  static void MakeBlockVars();
+  static void MakeBlockVars(Block* parent);
+  
+  static void PrintBlockVars();
   
   
   DISALLOW_COPY_AND_ASSIGN(ExpressionAtomic);

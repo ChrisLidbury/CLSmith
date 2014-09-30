@@ -63,9 +63,8 @@
 
 namespace CLSmith {
 namespace ExpressionAtomic {
-// void RemoveBlockVars(std::vector<Variable*> local_vars);
-void RemoveBlockVars(std::vector<Variable*> local_vars);
-void InsertBlockVars(std::vector<Variable*> local_vars);
+void RemoveBlockVars(Block* b);
+void GenBlockVars(Block* curr);
 }
 }
 
@@ -152,9 +151,8 @@ Block::make_random(CGContext &cg_context, bool looping)
         
         // TODO
         if (cg_context.get_atomic_context())
-          CLSmith::ExpressionAtomic::InsertBlockVars(b->parent->local_vars);
+          CLSmith::ExpressionAtomic::GenBlockVars(b);
           
-
 	unsigned int max = BlockProbability(*b);
 	if (Error::get_error() != SUCCESS) {
 		curr_func->stack.pop_back();
@@ -208,20 +206,12 @@ Block::make_random(CGContext &cg_context, bool looping)
 
 	// ISSUE: in the exhaustive mode, do we need a return statement here 
 	// if the last statement is not?
-	Error::set_error(SUCCESS); 
+	Error::set_error(SUCCESS);
         
-        // After block has been generated, remove local vars from atomic
-        // block hierarchy
-        if (cg_context.get_atomic_context()) {
-//           if (b->stm_id == 315) {
-//             cout << b->stm_id << "---" << endl;
-//             for (vector<Variable*>::iterator it = b->local_vars.begin(); it != b->local_vars.end(); it++)
-//               cout << (*it)->to_string() << endl;
-//           }
-          if (b->local_vars.size() != 0)
-            CLSmith::ExpressionAtomic::RemoveBlockVars(b->parent->local_vars);
-        }
-        
+        // TODO
+//         if (cg_context.get_atomic_context())
+//           CLSmith::ExpressionAtomic::RemoveBlockVars(b);
+
 	return b;
 }
 

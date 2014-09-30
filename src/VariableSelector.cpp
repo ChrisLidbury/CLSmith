@@ -76,9 +76,6 @@ ArrayVariable *itemize_simd_hook(const ArrayVariable *av, int access_count);  //
 namespace CLOptions {
 bool vectors(); // Hook
 }  // namespace CLOptions
-// namespace ExpressionAtomic {
-// void AddBlockVar(Variable* v);
-// }  // namespace ExpressionAtomic
 }  // namespace CLSmith
 
 using namespace std;
@@ -944,8 +941,6 @@ VariableSelector::GenerateNewParentLocal(Block &block,
 
 	Variable* var = create_and_initialize(access, cg_context, t, &var_qfer, blk, name);
 	blk->local_vars.push_back(var);
-//         if (cg_context.get_atomic_context())
-//           CLSmith::ExpressionAtomic::AddBlockVar(var);
 	FactMgr* fm = get_fact_mgr(&cg_context);
 	fm->add_new_var_fact_and_update_inout_maps(blk, var->get_collective());
 	var_created = true;

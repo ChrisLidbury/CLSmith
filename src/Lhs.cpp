@@ -52,8 +52,7 @@
 
 namespace CLSmith {
 namespace ExpressionAtomic {
-std::vector<Variable *>* GetBlockVars();
-// void AddBlockVar(const Variable* v);
+std::vector<Variable *>* GetBlockVars(Block* b);
 }
 }
 
@@ -82,14 +81,17 @@ Lhs::make_random(CGContext &cg_context, const Type* t, const CVQualifiers* qfer,
                 // in atomic context, try to get a variable from the atomic
                 // block hierarchy
                 if (cg_context.get_atomic_context()) {
-//                     var = rnd_flipcoin(30) ?
                   if (rnd_flipcoin(80)) {
-                    var = VariableSelector::choose_var(*CLSmith::ExpressionAtomic::GetBlockVars(), Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+                    var = VariableSelector::choose_var(*CLSmith::ExpressionAtomic::GetBlockVars(cg_context.get_current_block()), Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+//                     var = VariableSelector::choose_ok_var(*CLSmith::ExpressionAtomic::GetBlockVars(cg_context.get_current_block()));
                     if (var != NULL)
-                      std::cout << "select " << var->to_string() << std::endl;
-                  } else if (rnd_flipcoin(30)) {
+                      std::cout << "reuse " << var->to_string() << "in block " << cg_context.get_current_block()->stm_id << std::endl;
+                  } else if (rnd_flipcoin(60)) {
                     var = VariableSelector::choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, t, qfer, eDerefExact, dummy);
+                    if (var != NULL)
+                      std::cout << "local " << var->to_string() << std::endl;
                   } else {
+                    std::cout << "new " << std::endl;
                     var = VariableSelector::select(Effect::WRITE, cg_context, t, qfer, dummy, eDerefExact, eNewValue);
                   }
                 }

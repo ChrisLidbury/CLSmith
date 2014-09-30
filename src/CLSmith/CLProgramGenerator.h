@@ -36,6 +36,16 @@ class CLProgramGenerator : public AbsProgramGenerator {
 
   // Inherited from AbsProgramGenerator. ?
   std::string get_count_prefix(const std::string& name);
+  
+  // Returns information regarding threads and groups that the generated program
+  // decided upon
+  static const unsigned int get_threads(void);
+  static const unsigned int get_groups(void); 
+  static const unsigned int get_total_threads(void);
+  static const unsigned int get_threads_per_group(void);
+  static const std::vector<unsigned int>& get_global_dims(void);
+  static const std::vector<unsigned int>& get_local_dims(void);
+  static const unsigned int get_atomic_blocks_no(void);
 
   // Inherited from AbsProgramGenerator.This one doesn't generally do much, as
   // we assume that the initialise method of the csmith program generators has
@@ -45,6 +55,15 @@ class CLProgramGenerator : public AbsProgramGenerator {
  private:
   std::unique_ptr<OutputMgr> output_mgr_;
   unsigned long seed_;
+  
+  // To be called at the beginning of the program generation; sets the 
+  // runtime parameters of the program, such as number of groups or threads
+  // the program should be running with
+  void InitRuntimeParameters(void);
+  
+  // Used as a helper function for calculating the dimensions of the global
+  // work size; gets a list of the divisors of the given argument
+  std::vector<unsigned int>* get_divisors(unsigned int val);
 
   DISALLOW_COPY_AND_ASSIGN(CLProgramGenerator);
 };

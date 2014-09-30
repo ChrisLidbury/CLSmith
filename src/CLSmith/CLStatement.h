@@ -21,7 +21,8 @@ class CLStatement : public Statement {
     kNone = 0,  // Sentinel value
     kBarrier,
     kEMI,
-    kFakeDiverge  // Gross hack alert
+    kFakeDiverge,  // Gross hack alert
+    kAtomic
   };
 
   CLStatement(CLStatementType type, Block *block)

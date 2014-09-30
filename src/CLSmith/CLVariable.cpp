@@ -197,10 +197,15 @@ Block* b) {
    || !var->to_string().compare(0, 2, "p_")) {
     return;
   }
+//   std::cout << "Search " << var->to_string() << std::endl;
   while (find(b->local_vars.begin(), b->local_vars.end(), var) == 
                                                         b->local_vars.end()) {
     // if NULL, search all blocks for variable (for gotos and so)
-    assert (b != NULL && b->parent != NULL);
+//     assert (b != NULL && b->parent != NULL);
+    if (b->parent == NULL) {
+      std::cout << "failed " << var->to_string() << std::endl;
+      return;
+    }
     b = b->parent;
   }
   if (accesses->find(b->stm_id) != accesses->end()) {
