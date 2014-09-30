@@ -77,10 +77,10 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
   std::vector<const Expression*> eaa_arr (1, eaa);
   MemoryBuffer* itemized;
   if (eaa->is_global()) {
-    itemized = GetGlobalBuffer()->itemize(eaa_arr);
+    itemized = GetGlobalBuffer()->itemize(eaa_arr, cg_context.get_current_block());
     GetGlobalMems()->push_back(itemized);
   } else if (eaa->is_local()) {
-    itemized = GetLocalBuffer()->itemize(eaa_arr);
+    itemized = GetLocalBuffer()->itemize(eaa_arr, cg_context.get_current_block());
     GetLocalMems()->push_back(itemized);
   } else assert(0);
   AtomicExprType atomic_type = rnd_flipcoin(33) ? kInc : (AtomicExprType) rnd_upto(kDec + 1);
