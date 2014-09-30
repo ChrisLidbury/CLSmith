@@ -182,7 +182,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
     }
   }
   output_tab(out, 1);
-  out << "result[linear_group_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
+  out << "result[linear_global_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;
   out << "}" << std::endl;
 }
