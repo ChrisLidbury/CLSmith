@@ -6,26 +6,21 @@ import os
 import argparse
 from processTimeout import WorkerThread
 
-# seed_min  = 1
-# seed_max  = 1000
-# seed_step = 1
+clLauncherExecutable = "cl_launcher"
+pathSeparator = os.sep
+if sys.platform == "win32":
+  clLauncherExecutable += ".exe"
+  pathSeparator += os.sep
 
-# cl_launcher       = "." + os.sep + "cl_launcher"
-# cl_filename       = "CLProg.c"
-# cl_platform_idx   = 0
-# cl_device_idx     = 0
+parser = argparse.ArgumentParser("Run generator on a range of given programs.")
 
-# output  = "Result.csv"
-# gen_exe = "." + os.sep + "CLSmith"
-
-parser = argparse.ArgumentParser("Run generator on a range of seeds.")
-
-parser.add_argument('-cl_launcher', default = "." + os.sep + "cl_launcher")
+parser.add_argument('-cl_launcher', default = "." + pathSeparator + clLauncherExecutable)
 parser.add_argument('-cl_platform_idx', default = 0, type = int)
 parser.add_argument('-cl_device_idx', default = 0, type = int)
 
 parser.add_argument('-path', default = "CLSmithTests/")
 parser.add_argument('-output', default = "Result.csv")
+parser.add_argument('-timeout', default = 150, type = int)
 
 parser.add_argument('flags', nargs='*')
 
@@ -54,7 +49,7 @@ for curr_file in os.listdir(args.path):
   
   file_path = args.path + os.sep + curr_file
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
-  run_prog = WorkerThread(150, cmd)
+  run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
   
   if not run_prog_res[1] == 0:
