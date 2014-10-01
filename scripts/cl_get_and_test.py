@@ -65,5 +65,6 @@ for curr_file in os.listdir(args.path):
   run_prog_out = filter(None, set(run_prog_out))
   
   for result in run_prog_out:
-      output.write(result + "\n\n")
+      output.write(result + ", ")
+  output.write("\n")
 #"""
