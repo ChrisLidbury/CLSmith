@@ -44,6 +44,7 @@ if not os.path.exists(args.path):
 file_list = os.listdir(args.path)
 file_index = 0
 for curr_file in os.listdir(args.path):
+  output.write("RESULTS FOR " + curr_file + "\n")  
   file_index += 1
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   
@@ -63,8 +64,6 @@ for curr_file in os.listdir(args.path):
   run_prog_out = run_prog_out.split(',')
   run_prog_out = filter(None, set(run_prog_out))
   
-  if len(run_prog_out) > 1:
-      output.write("Different.\n")
-  else:
-      output.write(run_prog_out[0] + "\n")
+  for result in run_prog_out:
+      output.write(result + "\n\n")
 #"""
