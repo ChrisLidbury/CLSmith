@@ -48,7 +48,7 @@ for curr_file in os.listdir(args.path):
   file_index += 1
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   
-  file_path = args.path + os.sep + curr_file
+  file_path = args.path + pathSeparator + curr_file
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
