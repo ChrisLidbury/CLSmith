@@ -30,15 +30,16 @@ namespace ParameterType {
 // These indicate how the return type of the function needs to be transformed
 // to give the type of a given parameter.
 enum TypeConversion {
-  kExact = 0,     // No conversion.
-  kUnsignToSign,  // Convert to unsigned iff a signed type.
-  kSignToUnsign,  // Convert to signed iff a unsigned type.
-  kFlipSign,      // Flip from signed to unsigned and vice versa.
-  kDemote,        // Demote from vector to scalar.
-  kDemoteChance,  // Demote from vector to scalar with 50% probability.
-  kPromote,       // Promote from scalar to vector.
-  kNarrow,        // Reduce the size of the type (e.g. int -> short).
-  kFlipNarrow,    // FlipSign and Narrow.
+  kExact = 0,      // No conversion.
+  kUnsignToSign,   // Convert to unsigned iff a signed type.
+  kSignToUnsign,   // Convert to signed iff a unsigned type.
+  kFlipSign,       // Flip from signed to unsigned and vice versa.
+  kDemote,         // Demote from vector to scalar.
+  kDemoteChance,   // Demote from vector to scalar with 50% probability.
+  kDemoteChance2,  // Demote chance, where the next depends on the previous.
+  kPromote,        // Promote from scalar to vector.
+  kNarrow,         // Reduce the size of the type (e.g. int -> short).
+  kFlipNarrow,     // FlipSign and Narrow.
 };
 
 // Useful typedefs for handling parameters. Need GCC 4.7

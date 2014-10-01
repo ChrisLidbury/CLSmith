@@ -7,6 +7,7 @@
 
 #include "Block.h"
 #include "CGContext.h"
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/ExpressionID.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/MemoryBuffer.h"
@@ -84,7 +85,8 @@ void StatementComm::InitBuffers() {
   // The variable that will be accessed throughout the program randomly.
   var = values->itemize(std::vector<const Expression *>({
       new ExpressionVariable(*tid)}), new Block(NULL, 0));  // leak
-  VariableSelector::GetGlobalVariables()->push_back(var);
+  if (CLOptions::inter_thread_comm())
+    VariableSelector::GetGlobalVariables()->push_back(var);
 }
 
 void StatementComm::OutputPermutations(std::ostream& out) {

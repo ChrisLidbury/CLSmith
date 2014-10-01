@@ -31,8 +31,10 @@ namespace ParameterType {
 
 const Type& ConvertParameterType(
     const Type& type, enum TypeConversion conversion) {
-  // Only convert scalar and vector types. Other types shpuld never get here.
+  // Only convert scalar and vector types. Other types should never get here.
   assert(type.eType == eSimple || type.eType == eVector);
+  // For kDemoteChance2.
+  static int demote_next = 0;
   const Type *t = NULL;
   switch (conversion) {
     case kExact: return type;
@@ -46,6 +48,13 @@ const Type& ConvertParameterType(
       return Vector::DemoteVectorTypeToType(&type);
     case kDemoteChance:
       return rnd_flipcoin(50) ? Vector::DemoteVectorTypeToType(&type) : type;
+    case kDemoteChance2: {
+      bool reset_demote_next = demote_next != 0;
+      if (demote_next == 0) demote_next = rnd_flipcoin(50) ? 1 : -1;
+      t = demote_next == 1 ? &Vector::DemoteVectorTypeToType(&type) : &type;
+      if (reset_demote_next) demote_next = 0;
+      return *t;
+    }
     case kPromote:
       return *Vector::PromoteTypeToVectorType(&type, 0);
     case kNarrow:
@@ -121,8 +130,18 @@ enum FunctionInvocationIntegerBuiltIn::BuiltIn
 
   assert(integer_func_table != NULL);
   VectorFilter filter(integer_func_table);
+  // Not available in OpenCL 1.0.
+  filter.add(kCtz).add(kPopCount);
+  // Unsafe for any type.
+  filter.add(kRotate);
+  // Does not make sense to do Abs on an unsigned value.
+  if (!type.is_signed())
+    filter.add(kAbs);
+  // Vulnerable to overflow
   if (type.is_signed())
-    filter.add(kAbs).add(kAbsDiff);
+    filter.add(kAbsDiff).add(kHAdd).add(kRHAdd).add(kMadHi).add(kMulHi)
+        .add(kMad24).add(kMul24);
+  // Cannot upsample to a char.
   if (type.simple_type == eChar || type.simple_type == eUChar)
     filter.add(kUpSample);
   int rnd = rnd_upto(filter.get_max_prob());
@@ -148,6 +167,7 @@ void FunctionInvocationIntegerBuiltIn::InitTables() {
   using Internal::ParameterType::kExact;
   using Internal::ParameterType::kUnsignToSign;
   using Internal::ParameterType::kDemoteChance;
+  using Internal::ParameterType::kDemoteChance2;
   using Internal::ParameterType::kNarrow;
   using Internal::ParameterType::kFlipNarrow;
   (*integer_param_map)[kIdentity] = { kExact };
@@ -156,7 +176,7 @@ void FunctionInvocationIntegerBuiltIn::InitTables() {
   (*integer_param_map)[kAddSat]   = { kExact, kExact };
   (*integer_param_map)[kHAdd]     = { kExact, kExact };
   (*integer_param_map)[kRHAdd]    = { kExact, kExact };
-  (*integer_param_map)[kClamp]    = { kExact, kDemoteChance, kDemoteChance }; //either both or none?
+  (*integer_param_map)[kClamp]    = { kExact, kDemoteChance2, kDemoteChance2 };
   (*integer_param_map)[kClz]      = { kExact };
   (*integer_param_map)[kCtz]      = { kExact };
   (*integer_param_map)[kMadHi]    = { kExact, kExact, kExact };
