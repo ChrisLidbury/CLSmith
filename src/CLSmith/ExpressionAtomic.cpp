@@ -108,7 +108,7 @@ Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
     global_in_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
-      "g_atomic_input", &Type::get_simple_type(eInt), NULL, CLProgramGenerator::get_groups() * no_atomic_blocks);
+      "g_atomic_input", &Type::get_simple_type(eInt), NULL, {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
   }
   return global_in_buf;
@@ -117,7 +117,7 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
   if (global_sv_buf == NULL) {
     global_sv_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
-      "g_special_values", &Type::get_simple_type(eInt), NULL, CLProgramGenerator::get_groups() * no_atomic_blocks);
+      "g_special_values", &Type::get_simple_type(eInt), NULL, {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetSVMems()->push_back(global_sv_buf);
   }
   return global_sv_buf;
@@ -127,7 +127,7 @@ MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
   if (local_in_buf == NULL)  {
     local_in_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
       "l_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0), 
-      no_atomic_blocks);
+      {(unsigned)no_atomic_blocks});
     GetLocalMems()->push_back(local_in_buf);
   }
   return local_in_buf;
@@ -137,7 +137,7 @@ MemoryBuffer* ExpressionAtomic::GetLocalSVBuffer() {
   if (local_sv_buf == NULL) {
     local_sv_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
       "l_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
-      no_atomic_blocks);
+      {(unsigned)no_atomic_blocks});
     GetLocalSVMems()->push_back(local_sv_buf);
   }
   return local_sv_buf;

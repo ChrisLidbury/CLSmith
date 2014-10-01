@@ -1,6 +1,5 @@
 #include "CLSmith/Globals.h"
 
-#include <cstring>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -28,7 +27,7 @@ void Globals::AddLocalMemoryBuffer(MemoryBuffer *buffer) {
   assert(buffer->GetMemorySpace() == MemoryBuffer::kLocal);
   local_buffers_.push_back(buffer);
   if (buffer->collective) return;
-  buffer->OutputFullDef(buff_init_, 1);
+  buffer->OutputDef(buff_init_, 1);
   output_tab(struct_buff_init_, 2);
   buffer->Output(struct_buff_init_);
   struct_buff_init_ << ", // ";
@@ -166,7 +165,7 @@ void Globals::ModifyGlobalVariableReferences() {
   // variables.
   // Variable::is_global() is unreliable.
   for (Variable *var : *VariableSelector::GetAllVariables())
-    if (var->name.find("g_") == 0 && std::find(global_buffers_.begin(), global_buffers_.end(), var) == global_buffers_.end()) {
+    if (var->name.find("g_") == 0 && std::find(global_buffers_.begin(), global_buffers_.end(), var) == global_buffers_.end()) { //?
       *const_cast<std::string *>(&var->name) =
           struct_var_->name + "->" + var->name;
       if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
@@ -190,12 +189,7 @@ void Globals::OutputArrayControlVars(std::ostream& out) const {
 }
 
 void Globals::HashLocalBuffers(std::ostream& out) const {
-  // TODO check for the l_ occurence after the prefixed global struct name
-  for (MemoryBuffer *buffer : local_buffers_) {
-//     if (!strncmp(buffer->name.c_str(), "l_", 2))
-//       continue;
-//     buffer->hash(out);
-  }
+  for (MemoryBuffer *buffer : local_buffers_) buffer->hash(out);
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
