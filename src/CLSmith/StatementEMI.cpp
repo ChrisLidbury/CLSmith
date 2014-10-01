@@ -183,7 +183,7 @@ EMIController *EMIController::CreateEMIController() {
   // TODO this may need to be __const
   return new EMIController(MemoryBuffer::CreateMemoryBuffer(
       MemoryBuffer::kGlobal, "emi_input", &Type::get_simple_type(eInt), NULL,
-      1024));
+      {1024}));
 }
 
 bool EMIController::RemoveStatementEMI(StatementEMI *emi) {

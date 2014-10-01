@@ -4,6 +4,7 @@
 #include "CGContext.h"
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/ExpressionID.h"
+#include "CLSmith/StatementComm.h"
 #include "CLSmith/StatementEMI.h"
 #include "ProbabilityTable.h"
 #include "Type.h"
@@ -23,7 +24,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     // is that if NULL is returned to Statement::make_random(), it will
     // recursively call itself, instead of specifying a non CLStatement.
     assert (cl_stmt_table != NULL);
-    int num = rnd_upto(15);
+    int num = rnd_upto(20);
     st = (CLStatementType)VectorFilter(cl_stmt_table).lookup(num);
     // Must only include barriers if they are enabled and no divergence.
     if (st == kBarrier) {
@@ -37,6 +38,10 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     if (st == kFakeDiverge) {
       /*if (!CLOptions::fake_divergence())*/ return NULL;
     }
+    // Inter-thread communication must be set.
+    if (st == kComm) {
+      if (!CLOptions::inter_thread_comm()) return NULL;
+    }
   }
 
   CLStatement *stmt = NULL;
@@ -47,6 +52,8 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
       stmt = StatementEMI::make_random(cg_context); break;
     case kFakeDiverge:
       stmt = CreateFakeDivergentIf(cg_context); break;
+    case kComm:
+      stmt = StatementComm::make_random(cg_context); break;
     default: assert(false);
   }
   return stmt;
@@ -67,6 +74,7 @@ void CLStatement::InitProbabilityTable() {
   cl_stmt_table->add_entry(kBarrier, 5);
   cl_stmt_table->add_entry(kEMI, 5);
   cl_stmt_table->add_entry(kFakeDiverge, 5);
+  cl_stmt_table->add_entry(kComm, 5);
 }
 
 Statement *make_random_st(CGContext& cg_context) {

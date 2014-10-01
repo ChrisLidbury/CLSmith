@@ -65,7 +65,7 @@ Vector *Vector::CreateVectorVariable(const CGContext& cg_context, Block *blk,
 }
 
 Vector *Vector::itemize(void) const {
-  return itemize({rnd_upto(sizes[0])});
+  return itemize({(int)rnd_upto(sizes[0])});
 }
 
 Vector *Vector::itemize(const std::vector<int>& const_indices) const {

@@ -44,8 +44,9 @@ class ExpressionID : public CLExpression {
   ExpressionID& operator=(ExpressionID&& other) = default;
   virtual ~ExpressionID() {}
 
-  // Will just return a call to get_global_id(0).
-  static ExpressionID *make_random(const Type* type);
+  // Will just return a call to get_?_id(dim) at random based on what flags have
+  // been set.
+  static Expression/*ID*/ *make_random(CGContext& cg_context, const Type* type);
 
   // Initialise the static data used for divergence faking.
   static void Initialise();

@@ -19,6 +19,8 @@ DEFINE_CLFLAG(EMI_p_compound, int, 10)
 DEFINE_CLFLAG(EMI_p_leaf, int, 50)
 DEFINE_CLFLAG(EMI_p_lift, int, 10)
 DEFINE_CLFLAG(fake_divergence, bool, false)
+DEFINE_CLFLAG(group_divergence, bool, false)
+DEFINE_CLFLAG(inter_thread_comm, bool, false)
 DEFINE_CLFLAG(output, const char*, "CLProg.c")
 DEFINE_CLFLAG(small, bool, false)
 DEFINE_CLFLAG(track_divergence, bool, false)
@@ -34,6 +36,8 @@ void CLOptions::set_default_settings() {
   EMI_p_leaf_ = 50;
   EMI_p_lift_ = 10;
   fake_divergence_ = false;
+  group_divergence_ = false;
+  inter_thread_comm_ = false;
   output_ = "CLProg.c";
   small_ = false;
   track_divergence_ = false;
@@ -90,6 +94,11 @@ bool CLOptions::Conflict() {
   }
   if (divergence_ && fake_divergence_) {
     std::cout << "Cannot have both real and fake divergence." << std::endl;
+    return true;
+  }
+  if (divergence_ && inter_thread_comm_) {
+    std::cout << "Cannot have divergence and inter-thread communication." <<
+                 std::endl;
     return true;
   }
   return false;

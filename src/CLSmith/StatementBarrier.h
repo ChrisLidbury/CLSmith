@@ -30,6 +30,9 @@ namespace CLSmith {
 // where appropriate.
 class StatementBarrier : public CLStatement {
  public:
+  StatementBarrier(Block *block)
+      : CLStatement(kBarrier, block), gate_(NULL), buffer_() {
+  }
   StatementBarrier(Block *block, Variable *gate, MemoryBuffer *buffer)
       : CLStatement(kBarrier, block), gate_(gate), buffer_(buffer) {
   }

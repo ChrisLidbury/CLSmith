@@ -16,11 +16,11 @@ namespace CLSmith {
 
 MemoryBuffer *MemoryBuffer::CreateMemoryBuffer(MemorySpace memory_space,
     const std::string &name, const Type *type, const Expression* init,
-    unsigned size) {
-  bool cnst = memory_space == kConst;
+    std::vector<unsigned> sizes) {
+  bool cnst = false; //memory_space == kConst;
   bool vol = false;
   CVQualifiers qfer(std::vector<bool>({cnst}), std::vector<bool>({vol}));
-  return new MemoryBuffer(memory_space, name, type, init, &qfer, size);
+  return new MemoryBuffer(memory_space, name, type, init, &qfer, sizes);
 }
 
 MemoryBuffer* MemoryBuffer::itemize(const std::vector<int>& const_indices)
@@ -56,7 +56,7 @@ void MemoryBuffer::OutputMemorySpace(
     case kGlobal:  out << "__global";  break;
     case kLocal:   out << "__local";   break;
     case kPrivate: out << "__private"; break;
-    case kConst:   out << "__const";   break;
+    case kConst:   out << "__constant";   break;
   }
 }
 
@@ -67,8 +67,8 @@ void MemoryBuffer::OutputWithOwnedItem(std::ostream& out) const {
 }
 
 void MemoryBuffer::hash(std::ostream& out) const {
+  if (collective != NULL) return;
   if (memory_space_ == kConst) return;
-
   if (memory_space_ == kPrivate) {
     ArrayVariable::hash(out);
     return;
@@ -98,21 +98,8 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
   out << ";" << std::endl;
 }
 
-void MemoryBuffer::OutputFullDef(std::ostream& out, int indent) const {
-  if (memory_space_ == kPrivate || memory_space_ == kConst) {
-    ArrayVariable::OutputDef(out, indent);
-    return;
-  }
-  
-  output_tab(out, indent);
-  OutputDecl(out);
-  out << ';' << std::endl;
-  output_tab(out, indent);
-  out << "for (f = 0; f < " << get_size() << "; f++)" << std::endl;
-  output_tab(out, indent+1);
-  out << name << "[f] = ";
-  init->Output(out);
-  out << ";" << std::endl;
+void MemoryBuffer::OutputDecl(std::ostream& out) const {
+  ArrayVariable::OutputDecl(out);
 }
 
 void MemoryBuffer::output_qualified_type(std::ostream& out) const {

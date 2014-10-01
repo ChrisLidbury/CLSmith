@@ -22,7 +22,7 @@ DistributionTable *cl_expr_table = NULL;
     const CVQualifiers *qfer, enum CLExpressionType tt) {
   // kNone is used for not specifying an expression type, as it does not require
   // recursive generation.
-  // If the expected type is a vector tpye, then automatically set the term type
+  // If the expected type is a vector type, then automatically set the term type
   // to a vector expression.
   if (tt == kNone && type->eType == eVector) tt = kVector;
   if (tt == kNone) {
@@ -36,16 +36,20 @@ DistributionTable *cl_expr_table = NULL;
     int num = rnd_upto(15);
     tt = type->eType == eVector ? kVector :
         (CLExpressionType)VectorFilter(cl_expr_table).lookup(num);
-    // kID will be one of forced divergence or fake divergence. Probability of
-    // calling get_global_id(0) without faking divergence is dependent on block
-    // and expression depth.
+    // kID will be one of divergence, fake divergence or group divergence.
+    // Probability of calling get_global_id(0) without faking divergence is
+    // dependent on block and expression depth.
     if (tt == kID) {
-      if (!CLOptions::divergence() && !CLOptions::fake_divergence())
+      if (!CLOptions::divergence() && !CLOptions::fake_divergence() &&
+          !CLOptions::group_divergence())
         return NULL;
-      int expr_id_prob =
-          ExpressionID::GetGenerationProbability(cg_context, *type);
-      if (CLOptions::divergence() && (unsigned)expr_id_prob <= rnd_upto(5))
+      if (type->eType != eSimple || type->is_signed())
         return NULL;
+      // TODO find a way to limit div like this.
+      //if (CLOptions::divergence() && !CLOptions::fake_divergence() &&
+      //    !CLOptions::group_divergence() &&
+      //    (unsigned)ExpressionID::GetGenerationProbability(cg_context, *type) <=
+      //    rnd_upto(5))
     }
     // Not many restrictions on vector types.
     if (tt == kVector) {
@@ -59,9 +63,7 @@ DistributionTable *cl_expr_table = NULL;
   /*CL*/Expression *expr = NULL;
   switch (tt) {
     case kID:
-      expr = CLOptions::divergence() ? ExpressionID::make_random(type) :
-          ExpressionID::CreateFakeDivergentExpression(cg_context, *type);
-      break;
+      expr = ExpressionID::make_random(cg_context, type); break;
     case kVector:
       expr = ExpressionVector::make_random(cg_context, type, qfer, 0); break;
     default: assert(false);

@@ -16,6 +16,7 @@
 #include "CLSmith/StatementAtomicResult.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
+#include "CLSmith/StatementComm.h"
 #include "CLSmith/StatementEMI.h"
 #include "CLSmith/Vector.h"
 #include "Function.h"
@@ -53,7 +54,9 @@ void CLProgramGenerator::goGenerator() {
   // Initalize atomic parameters
   if (CLOptions::atomics())
     ExpressionAtomic::InitAtomics();
-  
+  // Initialise buffers used for inter-thread communication.
+  StatementComm::InitBuffers();
+
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);
 
@@ -106,6 +109,10 @@ void CLProgramGenerator::goGenerator() {
   // Add the 9 variables used for the identifiers.
   if (CLOptions::fake_divergence())
     ExpressionID::AddVarsToGlobals(globals);
+
+  // Add buffers used for inter-thread comm.
+  if (CLOptions::inter_thread_comm())
+    StatementComm::AddVarsToGlobals(globals);
 
   // If barriers have been set, use the divergence information to place them.
   if (CLOptions::barriers()) {

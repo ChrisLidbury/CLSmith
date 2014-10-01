@@ -61,7 +61,7 @@ class FunctionInvocationBuiltIn : public FunctionInvocation {
   enum BuiltInType { kInteger = 0 };
   FunctionInvocationBuiltIn(enum BuiltInType built_in_type, const Type& type)
     : FunctionInvocation(eBuiltIn, SafeOpFlags::make_dummy_flags()),
-      type_(type_), built_in_type_(built_in_type_) {
+      type_(type_), built_in_type_(built_in_type) {
   }
   FunctionInvocationBuiltIn(FunctionInvocationBuiltIn&& other) = default;
   FunctionInvocationBuiltIn& operator=(

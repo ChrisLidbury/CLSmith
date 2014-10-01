@@ -9,6 +9,7 @@
 #include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
+#include "CLSmith/StatementComm.h"
 #include "Function.h"
 #include "OutputMgr.h"
 #include "Type.h"
@@ -84,6 +85,10 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "#define VECTOR_(X, Y) X##Y\n"
       << std::endl;
 
+  // Permuation buffers for inter-thread comm.
+  if (CLOptions::inter_thread_comm())
+    StatementComm::OutputPermutations(out);
+
   out << std::endl;
   out << "// Seed: " << seed << std::endl;
   out << std::endl;
@@ -122,6 +127,8 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
     out << ", __global int *emi_input";
   if (CLOptions::fake_divergence())
     out << ", __global int *sequence_input";
+  if (CLOptions::inter_thread_comm())
+    out << ", __global long *comm_values";
   out << ") {" << std::endl;
   out << "unsigned int f;" << std::endl;
   globals.OutputBufferInits(out);
@@ -181,6 +188,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
       out << "[i]\", print_hash_value);" << std::endl;
     }
   }
+  if (CLOptions::inter_thread_comm()) StatementComm::HashCommValues(out);
   output_tab(out, 1);
   out << "result[linear_global_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;

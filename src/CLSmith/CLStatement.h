@@ -22,7 +22,8 @@ class CLStatement : public Statement {
     kBarrier,
     kEMI,
     kFakeDiverge,  // Gross hack alert
-    kAtomic
+    kAtomic,
+    kComm
   };
 
   CLStatement(CLStatementType type, Block *block)

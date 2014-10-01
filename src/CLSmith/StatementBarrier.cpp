@@ -24,11 +24,17 @@ StatementBarrier *StatementBarrier::make_random(Block *block) {
   Variable *gate = VariableSelector::new_variable(gensym("gate_"),
       &Type::get_simple_type(eInt), Constant::make_int(0), &gate_qfer);
   MemoryBuffer *buffer = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
-      gensym("lb_"), &Type::get_simple_type(eUInt), Constant::make_int(1), 32);
+      gensym("lb_"), &Type::get_simple_type(eUInt), Constant::make_int(1), {32});
   return new StatementBarrier(block, gate, buffer);
 }
 
 void StatementBarrier::Output(std::ostream& out, FactMgr */*fm*/, int indent) const {
+  if (gate_ == NULL) {
+    output_tab(out, indent);
+    OutputBarrier(out);
+    out << std::endl;
+    return;
+  }
   // Output gate check.
   output_tab(out, indent);
   out << "if (!";

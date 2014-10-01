@@ -28,7 +28,7 @@ class Vector : public ArrayVariable {
   // Basic constructor with parameters required by ArrayVariable.
   // Will only accept 1-dimensional sizes.
   Vector(Block* blk, const std::string& name, const Type *type,
-      const Expression *init, const CVQualifiers *qfer, int size,
+      const Expression *init, const CVQualifiers *qfer, unsigned size,
       const Variable *isFieldVarOf)
       : ArrayVariable(blk, name, type, init, qfer, {size}, isFieldVarOf, true) {
   }

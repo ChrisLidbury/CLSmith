@@ -303,6 +303,9 @@ VariableSelector::is_eligible_var(const Variable* var, int deref_level, Effect::
 	if (deref_level != 0 && var->isArray && static_cast<const ArrayVariable *>(var)->isVector) {
 		return false;
 	}
+        if (deref_level != 0 && var->name.find("comm_") !=  string::npos) {
+		return false;
+	}
 	return true;
 }
 
@@ -505,6 +508,8 @@ VariableSelector::choose_var(vector<Variable *> vars,
 				}
 				// don't take the address of a vector element
 				if (vv->isArray && static_cast<ArrayVariable *>(vv)->isVector) continue;
+				//
+				if (vv->name.find("comm_") !=  string::npos) continue;
 				addressable_vars.push_back(vv);
 			}
 		}
@@ -906,6 +911,8 @@ VariableSelector::make_init_value(Effect::Access access, const CGContext &cg_con
 
 	// Assumes it can generate anything, best we can do atm is try again ...
 	if (var->isArray && static_cast<ArrayVariable *>(var)->isVector)
+		return make_init_value(access, cg_context, t, qf, b);
+	if (var->name.find("comm_") !=  string::npos)
 		return make_init_value(access, cg_context, t, qf, b);
 	assert(var);
 	return new ExpressionVariable(*var, t);

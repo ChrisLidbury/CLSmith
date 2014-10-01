@@ -37,8 +37,8 @@ class MemoryBuffer : public ArrayVariable {
 
   MemoryBuffer(MemorySpace memory_space, const std::string &name,
       const Type *type, const Expression* init, const CVQualifiers *qfer,
-      unsigned size)
-      : ArrayVariable(NULL, name, type, init, qfer, {size}, NULL, false),
+      std::vector<unsigned> sizes)
+      : ArrayVariable(NULL, name, type, init, qfer, sizes, NULL, false),
       memory_space_(memory_space) {
   }
   MemoryBuffer(MemoryBuffer&& other) = default;
@@ -51,7 +51,7 @@ class MemoryBuffer : public ArrayVariable {
   // a random array, must be set by the user.
   static MemoryBuffer *CreateMemoryBuffer(MemorySpace memory_space,
       const std::string &name, const Type *type, const Expression* init,
-      unsigned size);
+      std::vector<unsigned> size);
   
   // Takes a list of indices and creates a new memory buffer that accesses
   // the elements at those indices; the number of indices in the list must
@@ -70,7 +70,7 @@ class MemoryBuffer : public ArrayVariable {
   // only access a specific part of the buffer.
   void hash(std::ostream& out) const;
   void OutputDef(std::ostream& out, int indent) const;
-  void OutputFullDef(std::ostream& out, int indent) const;
+  void OutputDecl(std::ostream& out) const;
   void output_qualified_type(std::ostream& out) const;
 
   // Alias must be declared with a * instead of a [] for some reason.

@@ -102,6 +102,16 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--group_divergence")) {
+      CLSmith::CLOptions::group_divergence(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--inter_thread_comm")) {
+      CLSmith::CLOptions::inter_thread_comm(true);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--small")) {
       CLSmith::CLOptions::small(true);
       continue;
