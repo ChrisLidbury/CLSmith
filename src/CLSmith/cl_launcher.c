@@ -38,9 +38,14 @@ cl_device_id *device;
 int total_threads = 1;
 
 int run_on_platform_device(cl_platform_id *, cl_device_id *, cl_uint);
-void error_callback(const char *, const void *, size_t, void *);
-void compiler_callback(cl_program, void *);
+void 
+#ifdef _MSC_VER
+  __stdcall 
+#endif
+  error_callback(const char *, const void *, size_t, void *);
 int cl_error_check(cl_int, const char *);
+int parse_arg(char* arg, char* val);
+int parse_file_args(const char* filename);
 
 int main(int argc, char **argv) {
   
@@ -87,7 +92,7 @@ int main(int argc, char **argv) {
   int l_dim = 1, g_dim = 1;
   if (local_dims == "") {
     printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
-    local_size = malloc(sizeof(size_t));
+    local_size = (size_t*)malloc(sizeof(size_t));
     local_size[0] = DEF_LOCAL_SIZE;
   } else {
     int i = 0;
@@ -104,7 +109,7 @@ int main(int argc, char **argv) {
   }
   if (global_dims == "") {
     printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
-    global_size = malloc(sizeof(size_t));
+    global_size = (size_t*)malloc(sizeof(size_t));
     global_size[0] = DEF_GLOBAL_SIZE;
   } else {
     int i = 0;
@@ -112,7 +117,7 @@ int main(int argc, char **argv) {
       if (global_dims[i++] == ',')
         g_dim++;
     i = 0;
-    global_size = malloc(g_dim * sizeof(size_t));
+    global_size = (size_t*)malloc(g_dim * sizeof(size_t));
     char* tok = strtok(global_dims, ",");
     while (tok) {
       global_size[i++] = atoi(tok);
@@ -148,8 +153,8 @@ int main(int argc, char **argv) {
 
   // Query the OpenCL API for the given platform ID.
   cl_int err;
-  cl_platform_id platforms[platform_index + 1];
-  cl_int platform_count;
+  cl_platform_id * platforms = (cl_platform_id*)malloc(sizeof(cl_platform_id)*(platform_index + 1));
+  cl_uint platform_count;
   err = clGetPlatformIDs(platform_index + 1, platforms, &platform_count);
   if (cl_error_check(err, "clGetPlatformIDs error"))
     return 1;
@@ -160,8 +165,8 @@ int main(int argc, char **argv) {
   platform = &platforms[platform_index];
 
   // Find all the GPU devices for the platform.
-  cl_device_id devices[device_index + 1];
-  cl_int device_count;
+  cl_device_id * devices = (cl_device_id*)malloc(sizeof(cl_device_id)*(device_index + 1));
+  cl_uint device_count;
   err = clGetDeviceIDs(
       *platform, CL_DEVICE_TYPE_ALL, device_index + 1, devices, &device_count);
   if (cl_error_check(err, "clGetDeviceIDs error"))
@@ -175,12 +180,12 @@ int main(int argc, char **argv) {
   // Check to see if name of device corresponds to given name, if any
   if (device_name_given) {
     size_t name_size = 128, actual_size;
-    char* device_name_get = malloc(name_size*sizeof(char));
+    char* device_name_get = (char*)malloc(name_size*sizeof(char));
     err = clGetDeviceInfo(
       *device, CL_DEVICE_NAME, name_size, device_name_get, &actual_size);
     if (cl_error_check(err, "clGetDeviceInfo error"))
       return 1;
-    char* device_name = malloc(actual_size*sizeof(char));
+    char* device_name = (char*)malloc(actual_size*sizeof(char));
     strncpy(device_name, device_name_get, actual_size);
     if (!strstr(device_name, device_name_given)) {
       printf("Given name, %s, not found in device name, %s.\n", 
@@ -194,6 +199,8 @@ int main(int argc, char **argv) {
   free(buf);
   free(local_size);
   free(global_size);
+  free(platforms);
+  free(devices);
   
   if (atomics) {
     free(init_atomic_vals);
@@ -219,7 +226,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     source_size = ftell(source);
     rewind(source);
 
-    source_text = calloc(1, source_size + 1);
+    source_text = (char*)calloc(1, source_size + 1);
     if (source_text == NULL) {
       printf("Failed to calloc %ld bytes.\n", source_size);
       return 1;
@@ -274,7 +281,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
         program, *device, CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);
     if (cl_error_check(err, "Error getting build info"))
       return 1;
-    char *err_code = malloc(err_size);
+    char *err_code = (char*)malloc(err_size);
     if (err_code == NULL) {
       printf("Failed to malloc %ld bytes\n", err_size);
       return 1;
@@ -316,8 +323,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   if (atomics) {
     // Create buffer to store counters for the atomic blocks
     int total_counters = atomic_counter_no * total_threads;
-    init_atomic_vals = malloc(sizeof(int) * total_counters);
-    init_special_vals = malloc(sizeof(int) * total_counters);
+    init_atomic_vals = (int*)malloc(sizeof(int) * total_counters);
+    init_special_vals = (int*)malloc(sizeof(int) * total_counters);
     // TODO fill
     int i;
     for (i = 0; i < total_counters; i++) {
@@ -358,7 +365,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Read back the reults of each thread.
-  cl_ulong c[total_threads];
+  cl_ulong * c = (cl_ulong*)malloc(sizeof(cl_ulong)*total_threads);
   err = clEnqueueReadBuffer(
       com_queue, result, CL_TRUE, 0, total_threads * sizeof(cl_ulong), c, 0, NULL, NULL);
   if (cl_error_check(err, "Error reading output buffer"))
@@ -366,8 +373,17 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
   ////
   int i;
-  for (i = 0; i < total_threads; ++i) printf("%#"PRIx64",", c[i]);
-  ////
+  for (i = 0; i < total_threads; ++i)
+    printf(
+#ifdef _MSC_VER
+    "%I64x,"
+#else
+    "%#"PRIx64","
+#endif  
+    , c[i]);
+////
+
+  free(c);
   
   return 0;
 }
@@ -419,12 +435,12 @@ int parse_arg(char* arg, char* val) {
     return 1;
   }
   if (!strcmp(arg, "-l") || !strcmp(arg, "--locals")) {
-    local_dims = malloc(strlen(val)*sizeof(char));
+    local_dims = (char*)malloc(strlen(val)*sizeof(char));
     strcpy(local_dims, val);
     return 1;
   }
   if (!strcmp(arg, "-g") || !strcmp(arg, "--groups")) {
-    global_dims = malloc(strlen(val)*sizeof(char));
+    global_dims = (char*)malloc(strlen(val)*sizeof(char));
     strcpy(global_dims, val);
     return 1;
   }
@@ -443,15 +459,13 @@ int parse_arg(char* arg, char* val) {
 
 // Called if any error occurs during context creation or at kernel runtime.
 // This can be called many time asynchronously, so it must be thread safe.
-void error_callback(
+void
+#ifdef _MSC_VER
+__stdcall 
+#endif 
+error_callback(
     const char *errinfo, const void *private_info, size_t cb, void *user_data) {
   printf("Error found (callback):\n%s\n", errinfo);
-}
-
-// Called by an OpenCL compiler when building a program. Called asynchronously,
-// so must be thread safe.
-void compiler_callback(cl_program program, void *user_data) {
-  printf("Compiler callback\n");
 }
 
 // Error checker, useful to help remove some of the boiler plate.
