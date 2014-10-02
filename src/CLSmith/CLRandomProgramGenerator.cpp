@@ -69,6 +69,11 @@ int main(int argc, char **argv) {
       CLSmith::CLOptions::EMI(true);
       continue;
     }
+    
+    if (!strcmp(argv[idx], "--atomic_reductions")) {
+      CLSmith::CLOptions::atomic_reductions(true);
+      continue;
+    }
 
     if (!strcmp(argv[idx], "--EMI_p_compound")) {
       ++idx;
