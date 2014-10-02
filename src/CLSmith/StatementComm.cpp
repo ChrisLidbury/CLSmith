@@ -42,23 +42,32 @@ MemoryBuffer *var;
 }  // namespace
 
 StatementComm *StatementComm::make_random(CGContext& cg_context) {
+  int group_size = CLProgramGenerator::get_threads_per_group();
   // rand_expr
   Expression *expr = Expression::make_random(
       cg_context, &Type::get_simple_type(eUInt));
   // rand_expr % 10
   expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
       expr, Constant::make_int(10), SafeOpFlags::make_dummy_flags()));
-  // get_group_id(0) * 32
-  Expression *expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eMul,
-      new ExpressionID(ExpressionID::kGroup), Constant::make_int(32),
+  // tid % group_size
+  Expression *expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
+      new ExpressionVariable(*tid), Constant::make_int(group_size),
       SafeOpFlags::make_dummy_flags()));
-  // (get_group_id(0) * 32) + tid
-  expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eAdd,
-      expr_, new ExpressionVariable(*tid), SafeOpFlags::make_dummy_flags()));
-  // permutations[rand_expr % 10][(get_group_id(0) * 32) + tid]
+  // permutations[rand_expr % 10][tid % group_size]
   expr = new ExpressionVariable(*permutations->itemize(
       std::vector<const Expression *>({expr, expr_}),
       cg_context.get_current_block()));
+  // get_linear_group_id() * group_size
+  expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eMul,
+      new ExpressionID(ExpressionID::kLinearGroup),
+      Constant::make_int(group_size), SafeOpFlags::make_dummy_flags()));
+  // (get_linear_group_id() * group_size) + permutations[rand_expr % 10][tid % group_size]
+  expr = new ExpressionFuncall(*new FunctionInvocationBinary(eAdd,
+      expr_, expr, SafeOpFlags::make_dummy_flags()));
+  // permutations[rand_expr % 10][(get_linear_group_id() * group_size) + tid]
+  //expr = new ExpressionVariable(*permutations->itemize(
+  //    std::vector<const Expression *>({expr, expr_}),
+  //    cg_context.get_current_block()));
   StatementAssign *st_ass = StatementAssign::make_possible_compound_assign(
       cg_context, *new Lhs(*tid), eSimpleAssign, *expr);
   return new StatementComm(cg_context.get_current_block(),
@@ -77,12 +86,13 @@ void StatementComm::InitBuffers() {
       "permutations", &Type::get_simple_type(eUInt), NULL,
       {kPermCount, perm_size});
   values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal, "comm_values",
-      &Type::get_simple_type(eLongLong), Constant::make_int(1), {32});
+      &Type::get_simple_type(eLongLong), Constant::make_int(1),
+      {CLProgramGenerator::get_total_threads()});
   // The initial value of the tid will come from the first permutation.
   // Lots of memory leaks here, probably not worth cleaning.
   ExpressionVariable *init = new ExpressionVariable(*permutations->itemize(  // leak
       std::vector<const Expression *>({
-      Constant::make_int(0), new ExpressionID(ExpressionID::kLocal)}),
+      Constant::make_int(0), new ExpressionID(ExpressionID::kLinearLocal)}),
       new Block(NULL, 0)));  // leak
   tid = Variable::CreateVariable("tid", &Type::get_simple_type(eUInt), init,
       new CVQualifiers(std::vector<bool>({false}), std::vector<bool>({false})));

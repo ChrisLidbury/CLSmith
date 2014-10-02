@@ -96,9 +96,12 @@ Expression *ExpressionID::CreateFakeDivergentExpression(
 
 void ExpressionID::OutputIDType(std::ostream& out, IDType id_type) {
   switch (id_type) {
-    case kGlobal: out << "global"; return;
-    case kLocal:  out << "local";  return;
-    case kGroup:  out << "group";  return;
+    case kGlobal:       out << "global";        return;
+    case kLocal:        out << "local";         return;
+    case kGroup:        out << "group";         return;
+    case kLinearGlobal: out << "linear_global"; return;
+    case kLinearLocal:  out << "linear_local";  return;
+    case kLinearGroup:  out << "linear_group";  return;
   }
 }
 
@@ -106,7 +109,9 @@ void ExpressionID::Output(std::ostream& out) const {
   output_cast(out);
   out << "get_";
   OutputIDType(out, id_type_);
-  out << "_id(" << dimension_ << ')';
+  out << "_id(";
+  if (id_type_ <= kGroup) out << dimension_;
+  out << ")";
 }
 
 }  // namespace CLSmith

@@ -29,7 +29,10 @@ class ExpressionID : public CLExpression {
   enum IDType {
     kGlobal = 0,
     kLocal,
-    kGroup
+    kGroup,
+    kLinearGlobal,
+    kLinearLocal,
+    kLinearGroup
   };
 
   explicit ExpressionID(IDType type) : CLExpression(kID),

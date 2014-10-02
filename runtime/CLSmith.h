@@ -10,21 +10,21 @@ transparent_crc_ (uint64_t *crc64_context, uint64_t val, const __constant char* 
 }
 
 inline uint32_t
-linear_group_id (void)
+get_linear_group_id (void)
 {
   return (get_group_id(2) * get_num_groups(1) + get_group_id(1)) * 
     get_num_groups(0) + get_group_id(0);
 }
 
 inline uint32_t
-linear_global_id (void)
+get_linear_global_id (void)
 {
   return (get_global_id(2) * get_global_size(1) + get_global_id(1)) * 
     get_global_size(0) + get_global_id(0);
 }
 
 inline uint32_t
-linear_local_id (void)
+get_linear_local_id (void)
 {
   return (get_local_id(2) * get_local_size(1) + get_local_id(1)) * 
     get_local_size(0) + get_local_id(0);
