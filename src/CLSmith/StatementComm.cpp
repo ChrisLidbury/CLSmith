@@ -1,13 +1,14 @@
 #include "CLSmith/StatementComm.h"
 
 #include <algorithm>
-#include <array>
 #include <ostream>
 #include <random>
+#include <vector>
 
 #include "Block.h"
 #include "CGContext.h"
 #include "CLSmith/CLOptions.h"
+#include "CLSmith/CLProgramGenerator.h" // temp
 #include "CLSmith/ExpressionID.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/MemoryBuffer.h"
@@ -31,7 +32,7 @@ const int kPermCount = 10;
 // Const buffer that holds the random permutations of [0..31].
 MemoryBuffer *permutations;
 // Each permutation.
-int permute_values[10][32];
+std::vector<int> *permute_values[kPermCount];
 // Local buffer that holds the intermediate values.
 MemoryBuffer *values;
 // Variable that holds the random thread ID.
@@ -65,13 +66,16 @@ StatementComm *StatementComm::make_random(CGContext& cg_context) {
 }
 
 void StatementComm::InitBuffers() {
+  unsigned perm_size = CLProgramGenerator::get_threads_per_group();
   for (int idx = 0; idx < kPermCount; ++idx) {
-    for (int id = 0; id < 32; ++id) permute_values[idx][id] = id;
-    std::shuffle(std::begin(permute_values[idx]), std::end(permute_values[idx]),
+    permute_values[idx] = new std::vector<int>(perm_size);
+    for (unsigned id = 0; id < perm_size; ++id) (*permute_values[idx])[id] = id;
+    std::shuffle(permute_values[idx]->begin(), permute_values[idx]->end(),
         std::default_random_engine(rnd_upto(65535)));
   }
   permutations = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kConst,
-      "permutations", &Type::get_simple_type(eUInt), NULL, {kPermCount, 32});
+      "permutations", &Type::get_simple_type(eUInt), NULL,
+      {kPermCount, perm_size});
   values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal, "comm_values",
       &Type::get_simple_type(eLongLong), Constant::make_int(1), {32});
   // The initial value of the tid will come from the first permutation.
@@ -93,8 +97,9 @@ void StatementComm::OutputPermutations(std::ostream& out) {
   permutations->OutputDecl(out);
   out << " = {" << std::endl;
   for (int idx = 0; idx < kPermCount; ++idx) {
-    out << "{" << permute_values[idx][0];
-    for (int id = 1; id < 32; ++id) out << "," << permute_values[idx][id];
+    out << "{" << (*permute_values[idx])[0];
+    for (int id = 1; id < (int)permute_values[idx]->size(); ++id)
+      out << "," << (*permute_values[idx])[id];
     out << "}";
     if (idx < kPermCount - 1) out << ",";
     out << " // permutation " << idx << std::endl;
