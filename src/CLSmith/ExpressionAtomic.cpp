@@ -77,10 +77,10 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
   std::vector<const Expression*> eaa_arr (1, eaa);
   MemoryBuffer* itemized;
   if (eaa->is_global()) {
-    itemized = GetGlobalBuffer()->itemize(eaa_arr, cg_context.get_current_block());
+    itemized = GetGlobalBuffer()->itemize(eaa_arr, Block::make_dummy_block(cg_context));
     GetGlobalMems()->push_back(itemized);
   } else if (eaa->is_local()) {
-    itemized = GetLocalBuffer()->itemize(eaa_arr, cg_context.get_current_block());
+    itemized = GetLocalBuffer()->itemize(eaa_arr, Block::make_dummy_block(cg_context));
     GetLocalMems()->push_back(itemized);
   } else assert(0);
   AtomicExprType atomic_type = rnd_flipcoin(33) ? kInc : (AtomicExprType) rnd_upto(kDec + 1);
@@ -108,7 +108,8 @@ Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
     global_in_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
-      "g_atomic_input", &Type::get_simple_type(eInt), NULL, {CLProgramGenerator::get_groups() * no_atomic_blocks});
+      "g_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0),
+      {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
   }
   return global_in_buf;
@@ -117,7 +118,8 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
   if (global_sv_buf == NULL) {
     global_sv_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
-      "g_special_values", &Type::get_simple_type(eInt), NULL, {CLProgramGenerator::get_groups() * no_atomic_blocks});
+      "g_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetSVMems()->push_back(global_sv_buf);
   }
   return global_sv_buf;

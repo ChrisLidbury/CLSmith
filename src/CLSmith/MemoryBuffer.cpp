@@ -83,6 +83,7 @@ void MemoryBuffer::hash(std::ostream& out) const {
 }
 
 void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
+  if (collective != NULL) return;
   if (memory_space_ == kPrivate || memory_space_ == kConst) {
     ArrayVariable::OutputDef(out, indent);
     return;

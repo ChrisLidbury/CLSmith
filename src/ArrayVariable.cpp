@@ -184,7 +184,7 @@ ArrayVariable::CreateArrayVariable(const CGContext& cg_context, Block* blk, cons
 	}
 
 	// add it to global list or local variable list
-	blk? blk->local_vars.push_back(var) : VariableSelector::GetGlobalVariables()->push_back(var);
+        blk? blk->local_vars.push_back(var) : VariableSelector::GetGlobalVariables()->push_back(var);
 	return var;
 }
  

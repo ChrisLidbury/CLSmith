@@ -5,6 +5,7 @@
 #include "CLSmith/CLOptions.h"
 #include "CLSmith/ExpressionID.h"
 #include "CLSmith/StatementComm.h"
+#include "CLSmith/StatementAtomicReduction.h"
 #include "CLSmith/StatementEMI.h"
 #include "ProbabilityTable.h"
 #include "Type.h"
@@ -24,7 +25,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     // is that if NULL is returned to Statement::make_random(), it will
     // recursively call itself, instead of specifying a non CLStatement.
     assert (cl_stmt_table != NULL);
-    int num = rnd_upto(20);
+    int num = rnd_upto(25);
     st = (CLStatementType)VectorFilter(cl_stmt_table).lookup(num);
     // Must only include barriers if they are enabled and no divergence.
     if (st == kBarrier) {
@@ -33,6 +34,10 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     // Only use EMI blocks if they are enabled and we are not already in one.
     if (st == kEMI) {
       if (!CLOptions::EMI() || cg_context.get_emi_context()) return NULL;
+    }
+    // Only generate atomic reductions if they are set.
+    if (st == kReduction) {
+      if (!CLOptions::atomic_reductions()) return NULL;
     }
     // Fake divergence must also be set.
     if (st == kFakeDiverge) {
@@ -50,6 +55,8 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
       assert(false);
     case kEMI:
       stmt = StatementEMI::make_random(cg_context); break;
+    case kReduction:
+      stmt = StatementAtomicReduction::make_random(cg_context); break;
     case kFakeDiverge:
       stmt = CreateFakeDivergentIf(cg_context); break;
     case kComm:
@@ -73,6 +80,7 @@ void CLStatement::InitProbabilityTable() {
   cl_stmt_table = new DistributionTable();
   cl_stmt_table->add_entry(kBarrier, 5);
   cl_stmt_table->add_entry(kEMI, 5);
+  cl_stmt_table->add_entry(kReduction, 5);
   cl_stmt_table->add_entry(kFakeDiverge, 5);
   cl_stmt_table->add_entry(kComm, 5);
 }

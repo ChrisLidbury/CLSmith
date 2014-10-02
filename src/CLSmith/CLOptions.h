@@ -24,6 +24,7 @@ class CLOptions {
   DEFINE_CLFLAG(EMI_p_compound, int)
   DEFINE_CLFLAG(EMI_p_leaf, int)
   DEFINE_CLFLAG(EMI_p_lift, int)
+  DEFINE_CLFLAG(atomic_reductions, bool)
   DEFINE_CLFLAG(fake_divergence, bool)
   DEFINE_CLFLAG(group_divergence, bool)
   DEFINE_CLFLAG(inter_thread_comm, bool)

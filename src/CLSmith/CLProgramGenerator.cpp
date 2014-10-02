@@ -15,6 +15,7 @@
 #include "CLSmith/FunctionInvocationBuiltIn.h"
 #include "CLSmith/StatementAtomicResult.h"
 #include "CLSmith/Globals.h"
+#include "CLSmith/StatementAtomicReduction.h"
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/StatementComm.h"
 #include "CLSmith/StatementEMI.h"
@@ -79,6 +80,10 @@ void CLProgramGenerator::goGenerator() {
   // If atomic blocks are generated, add operations for the special values
   if (CLOptions::atomics())
     StatementAtomicResult::GenSpecialVals();
+  
+  // If atomic reductions are generated, add the hash buffer
+  if (CLOptions::atomic_reductions())
+    StatementAtomicReduction::RecordBuffer();
 
   // At this point, all the global variables have been created.
   Globals *globals = Globals::GetGlobals();
@@ -190,7 +195,7 @@ const unsigned int CLProgramGenerator::get_total_threads() {
 }
 
 const unsigned int CLProgramGenerator::get_threads_per_group() {
-  return noGroups / noThreads;
+  return noThreads / noGroups;
 }
 
 const std::vector<unsigned int>& CLProgramGenerator::get_global_dims() {

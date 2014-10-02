@@ -130,7 +130,6 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   if (CLOptions::inter_thread_comm())
     out << ", __global long *comm_values";
   out << ") {" << std::endl;
-  out << "unsigned int f;" << std::endl;
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);
 

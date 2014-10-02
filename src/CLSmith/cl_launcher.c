@@ -18,6 +18,7 @@ size_t binary_size = 0;
 int device_index = 0;
 int platform_index = 0;
 char* device_name_given = "";
+bool debug_build = false;
 
 bool atomics = false;
 int atomic_counter_no = 0;
@@ -64,11 +65,13 @@ int main(int argc, char **argv) {
   char* next_arg;
   while (++arg_no < argc) {
     curr_arg = argv[arg_no];
-    if (++arg_no >= argc) {
-      printf("Found option %s with no value.\n", curr_arg);
-      return 1;
+    if (strncmp(curr_arg, "---", 3)) {
+      if (++arg_no >= argc) {
+        printf("Found option %s with no value.\n", curr_arg);
+        return 1;
+      }
+      next_arg = argv[arg_no];
     }
-    next_arg = argv[arg_no];
     parse_ret = parse_arg(curr_arg, next_arg);
     if (!parse_ret)
       return 1;
@@ -276,21 +279,23 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   // Add optimisation to options later.
   err = clBuildProgram(program, 0, NULL, "-w -I.", NULL, NULL);
   if (cl_error_check(err, "Error building program")) {
-    size_t err_size;
-    err = clGetProgramBuildInfo(
-        program, *device, CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);
-    if (cl_error_check(err, "Error getting build info"))
-      return 1;
-    char *err_code = (char*)malloc(err_size);
-    if (err_code == NULL) {
-      printf("Failed to malloc %ld bytes\n", err_size);
-      return 1;
+    if (debug_build) {      
+      size_t err_size;
+      err = clGetProgramBuildInfo(
+          program, *device, CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);
+      if (cl_error_check(err, "Error getting build info"))
+        return 1;
+      char *err_code = (char*)malloc(err_size);
+      if (err_code == NULL) {
+        printf("Failed to malloc %ld bytes\n", err_size);
+        return 1;
+      }
+      err = clGetProgramBuildInfo(
+          program, *device, CL_PROGRAM_BUILD_LOG, err_size, err_code, &err_size);
+      if (!cl_error_check(err, "Error getting build info"))
+        printf("%s", err_code);
+      free(err_code);
     }
-    err = clGetProgramBuildInfo(
-        program, *device, CL_PROGRAM_BUILD_LOG, err_size, err_code, &err_size);
-    if (!cl_error_check(err, "Error getting build info"))
-      printf("%s", err_code);
-    free(err_code);
     return 1;
   } else {
     cl_build_status status;
@@ -301,10 +306,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     //else
       //printf("clBuildProgram status: %d.\n", status);
   }
-  
-  // Parse the thread and group dimension information
-  
-    
+ 
+  // Create the kernel 
   cl_kernel kernel = clCreateKernel(program, "entry", &err);
   if (cl_error_check(err, "Error creating kernel"))
     return 1;
@@ -451,6 +454,10 @@ int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "--atomics")) {
     atomics = true;
     atomic_counter_no = atoi(val);
+    return 1;
+  }
+  if (!strcmp(arg, "---debug")) {
+    debug_build = true;
     return 1;
   }
   printf("Failed parsing arg %s.", arg);

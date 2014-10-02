@@ -18,6 +18,7 @@ DEFINE_CLFLAG(EMI, bool, false)
 DEFINE_CLFLAG(EMI_p_compound, int, 10)
 DEFINE_CLFLAG(EMI_p_leaf, int, 50)
 DEFINE_CLFLAG(EMI_p_lift, int, 10)
+DEFINE_CLFLAG(atomic_reductions, bool, false)
 DEFINE_CLFLAG(fake_divergence, bool, false)
 DEFINE_CLFLAG(group_divergence, bool, false)
 DEFINE_CLFLAG(inter_thread_comm, bool, false)
@@ -35,6 +36,7 @@ void CLOptions::set_default_settings() {
   EMI_p_compound_ = 10;
   EMI_p_leaf_ = 50;
   EMI_p_lift_ = 10;
+  atomic_reductions_ = false;
   fake_divergence_ = false;
   group_divergence_ = false;
   inter_thread_comm_ = false;
