@@ -11,6 +11,21 @@
 #include <stdbool.h>
 #endif
 
+#ifdef _MSC_VER
+#include <windows.h>
+#include <rtcapi.h>
+int exception_handler(LPEXCEPTION_POINTERS p)
+{
+    printf("Exception detected during test execution!");
+    exit(1);
+}
+int runtime_check_handler(int errorType, const char *filename, int linenumber, const char *moduleName, const char *format, ...)
+{
+    printf("Error type %d at %s line %d in %s", errorType, filename, linenumber, moduleName);
+    exit(1);
+}
+#endif
+
 #define DEF_LOCAL_SIZE 32
 #define DEF_GLOBAL_SIZE 1024
 
@@ -51,7 +66,14 @@ int parse_arg(char* arg, char* val);
 int parse_file_args(const char* filename);
 
 int main(int argc, char **argv) {
-  
+
+#ifdef _MSC_VER
+  DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
+  SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
+  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)&exception_handler); 
+  _RTC_SetErrorFunc(&runtime_check_handler);
+#endif
+
   // Parse the input. Expect three parameters.
   if (argc < 4) {
     printf("Expected at least three arguments \"./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\"\n");
