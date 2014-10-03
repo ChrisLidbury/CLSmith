@@ -67,5 +67,6 @@ for curr_file in os.listdir(args.path):
   
   for result in run_prog_out:
       output.write(result + ", ")
+      output.flush()
   output.write("\n")
 #"""
