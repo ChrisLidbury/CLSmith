@@ -82,6 +82,13 @@ void CLOptions::ResolveCGOptions() {
     // Array ops try to iterate over random arrays, including vectors.
     CGOptions::array_ops(false);
   }
+  
+  // Atomic specific restrictions.
+  if (atomics_) {
+    // Cannot have goto in atomic blocks; greedily stop all gotos from being 
+    // generated.
+    CGOptions::gotos(false);
+  }
 }
 
 bool CLOptions::Conflict() {

@@ -68,8 +68,6 @@ using namespace std;
 namespace CLSmith {
 }
 
-bool in_atomic = false;
-
 /*
  *
  */
@@ -79,15 +77,11 @@ StatementIf::make_random(CGContext &cg_context)
         // If the appropriate flag is set, there is a chance of condition 
         // generated to be a atomic expression; however, do not generate
         // another atomic expression within an atomic block
-        bool build_atomic = !in_atomic && CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
+        bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
         if (build_atomic) {
           std::cout << "Start atomic block" << std::endl;
         }
-        assert(in_atomic == cg_context.get_atomic_context());
         cg_context.set_atomic_context(cg_context.get_atomic_context() || build_atomic);
-        if(build_atomic) {
-          in_atomic = true;
-        }
 
         DEPTH_GUARD_BY_TYPE_RETURN(dtStatementIf, NULL);
 	FactMgr* fm = get_fact_mgr(&cg_context); 
@@ -142,7 +136,6 @@ StatementIf::make_random(CGContext &cg_context)
 	si->set_accumulated_effect_after_block(eff, if_true, cg_context);
 	si->set_accumulated_effect_after_block(eff, if_false, cg_context);
         if (build_atomic) {
-          in_atomic = false;
           CLSmith::StatementAtomicResult::RecordIfID(if_true->stm_id, expr);
           CLSmith::ExpressionAtomic::DelBlockVars();
           cg_context.set_atomic_context(false);
