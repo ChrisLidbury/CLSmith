@@ -62,8 +62,8 @@ void MemoryBuffer::OutputMemorySpace(
 
 void MemoryBuffer::OutputWithOwnedItem(std::ostream& out) const {
   Output(out);
-  out << (memory_space_ == kGlobal ? "[linear_global_id()]" :
-      memory_space_ == kLocal ? "[linear_local_id()]" : "");
+  out << (memory_space_ == kGlobal ? "[get_linear_global_id()]" :
+      memory_space_ == kLocal ? "[get_linear_local_id()]" : "");
 }
 
 void MemoryBuffer::hash(std::ostream& out) const {
@@ -92,6 +92,11 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
   output_tab(out, indent);
   OutputDecl(out);
   out << ';' << std::endl;
+  if (memory_space_ == kLocal) {
+    std::vector<const Variable *>& ctrl_vars = Variable::get_new_ctrl_vars();
+    output_init(out, init, ctrl_vars, indent);
+    return;
+  }
   output_tab(out, indent);
   OutputWithOwnedItem(out);
   out << " = ";

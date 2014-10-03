@@ -81,7 +81,10 @@ void CLProgramGenerator::goGenerator() {
   if (CLOptions::atomic_reductions())
     StatementAtomicReduction::RecordBuffer();
 
-  // At this point, all the global variables have been created.
+  // At this point, all the global variables that have been created throughout
+  // program generation should have been created. Any global variables added to
+  // VariableSelector's global list after this point must be added to globals
+  // manually, or the name will not be prepended with the global struct.
   Globals *globals = Globals::GetGlobals();
 
   // Once the global struct is created, we add the global memory buffers.
@@ -124,11 +127,9 @@ void CLProgramGenerator::goGenerator() {
     if (CLOptions::divergence()) GenerateBarriers(div.get(), globals);
     else { /*TODO Non-div barriers*/ }
   }
-  
-  if (CLOptions::small()) {
+
+  if (CLOptions::small())
     CLSmith::CLVariable::ParseUnusedVars();
-  }
-    
 
   // Output the whole program.
   output_mgr_->Output();

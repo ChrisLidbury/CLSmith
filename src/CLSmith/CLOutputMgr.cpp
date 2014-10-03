@@ -130,6 +130,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   if (CLOptions::inter_thread_comm())
     out << ", __global long *comm_values";
   out << ") {" << std::endl;
+  globals.OutputArrayControlVars(out);
   globals.OutputBufferInits(out);
   globals.OutputStructInit(out);
 
@@ -145,7 +146,6 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << ");" << std::endl;
 
   // Handle hashing and outputting.
-  globals.OutputArrayControlVars(out);
   output_tab(out, 1);
   out << "uint64_t crc64_context = 0xFFFFFFFFFFFFFFFFUL;" << std::endl;
   output_tab(out, 1);
@@ -189,7 +189,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   }
   if (CLOptions::inter_thread_comm()) StatementComm::HashCommValues(out);
   output_tab(out, 1);
-  out << "result[linear_global_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
+  out << "result[get_linear_global_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"
       << std::endl;
   out << "}" << std::endl;
 }

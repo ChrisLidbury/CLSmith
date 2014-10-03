@@ -1,5 +1,6 @@
 #include "CLSmith/Globals.h"
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -104,7 +105,7 @@ void Globals::OutputStructInit(std::ostream& out) {
       ArrayVariable *var_array = dynamic_cast<ArrayVariable *>(var);
       if (var_array->collective) continue;
       output_tab(out, 2);
-      vector<std::string> init_strings;
+      std::vector<std::string> init_strings;
       init_strings.push_back(var_array->init->to_string());
       for (const Expression *init : var_array->get_more_init_values())
         init_strings.push_back(init->to_string());
@@ -183,9 +184,13 @@ void Globals::ModifyGlobalVariableReferences() {
 }
 
 void Globals::OutputArrayControlVars(std::ostream& out) const {
-  size_t max_dimen = Variable::GetMaxArrayDimension(global_vars_);
-  std::vector<const Variable *>&ctrl_vars = Variable::get_new_ctrl_vars();
-  OutputArrayCtrlVars(ctrl_vars, out, max_dimen, 1);
+  size_t max_dim = Variable::GetMaxArrayDimension(global_vars_);
+  for (MemoryBuffer *buf : local_buffers_)
+    max_dim = std::max(max_dim, buf->get_dimension());
+  for (MemoryBuffer *buf : global_buffers_)
+    max_dim = std::max(max_dim, buf->get_dimension());
+  std::vector<const Variable *>& ctrl_vars = Variable::get_new_ctrl_vars();
+  OutputArrayCtrlVars(ctrl_vars, out, max_dim, 1);
 }
 
 void Globals::HashLocalBuffers(std::ostream& out) const {
