@@ -36,10 +36,6 @@ static unsigned int noGroups = 1;
 static std::vector<unsigned int> globalDim (no_dims, 1);
 static std::vector<unsigned int> localDim (no_dims, 1);
 
-// used for dimension calculation
-unsigned int const primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 
-  43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
-
 void CLProgramGenerator::goGenerator() {
   // Initialise probabilies.
   CLExpression::InitProbabilityTable();
@@ -104,6 +100,10 @@ void CLProgramGenerator::goGenerator() {
       globals->AddGlobalMemoryBuffer(mb);
     }
   }
+  
+  // Add the reduction variables for atomic reductions to the global struct
+  if (CLOptions::atomic_reductions())
+    StatementAtomicReduction::AddVarsToGlobals(globals);
 
   // Now add the input data for EMI sections if specified.
   if (CLOptions::EMI())
@@ -216,15 +216,14 @@ void CLProgramGenerator::initialize() {
 std::vector<unsigned int>* CLProgramGenerator::get_divisors(unsigned int val) {
   std::vector<unsigned int>* divisors = new std::vector<unsigned int>();
   divisors->push_back(1); divisors->push_back(val);
-  unsigned int max_check = sqrt(val);
-  for (unsigned int i = 0; i < sizeof(primes) / sizeof(*primes); i++) {
-    if (primes[i] > max_check)
-      break;
-    if (!(noThreads % primes[i])) {
-      divisors->push_back(primes[i]);
-      divisors->push_back(val / primes[i]);
+  for (unsigned int i = 2; i < sqrt(val); i++) {
+    if (!(noThreads % i)) {
+      divisors->push_back(i);
+      divisors->push_back(val / i);
     }
   }
+  if (i * i == val)
+    divisors->push_back(i);
   return divisors;
 }
 
