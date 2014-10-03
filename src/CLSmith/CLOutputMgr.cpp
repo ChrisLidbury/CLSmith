@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "CLSmith/CLOptions.h"
+  #include "CLSmith/CLOptions.h"
 #include "CLSmith/CLProgramGenerator.h"
 #include "CLSmith/ExpressionAtomic.h"
 #include "CLSmith/Globals.h"
@@ -151,41 +151,8 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   output_tab(out, 1);
   out << "int print_hash_value = 0;" << std::endl;
   HashGlobalVariables(out);
-  if (CLOptions::atomics()) {
-    if (ExpressionAtomic::HasSVMems()) {
-      output_tab(out, 1);
-      StatementBarrier::OutputBarrier(out);
-      out << std::endl;
-      output_tab(out, 1);
-      out << "if (!(get_global_id(0) || get_global_id(1) || get_global_id(2)))" << std::endl;
-      output_tab(out, 2);
-      out << "for (i = 0 ; i <= " << CLProgramGenerator::get_threads << " * " << 
-	CLProgramGenerator::get_atomic_blocks_no() << "; i++)" << std::endl;
-      output_tab(out, 3);
-      out << "transparent_crc(";
-      ExpressionAtomic::GetSVBuffer()->Output(out);
-      out << "[i], \"";
-      ExpressionAtomic::GetSVBuffer()->Output(out);
-      out << "[i]\", print_hash_value);" << std::endl;
-    }
-    if (ExpressionAtomic::HasLocalSVMems()) {
-      output_tab(out, 1);
-      StatementBarrier::OutputBarrier(out);
-      out << std::endl;
-      output_tab(out, 1);
-      out << "if (!(get_local_id(0) || get_local_id(1) || get_local_id(2)))" << std::endl;
-      output_tab(out, 2);
-      out << "for (i = linear_group_id() * " << CLProgramGenerator::get_atomic_blocks_no() << 
-	"; i < (linear_group_id() + 1) * " << CLProgramGenerator::get_atomic_blocks_no << 
-	"; i++)" << std::endl;
-      output_tab(out, 3);
-      out << "transparent_crc(";
-      ExpressionAtomic::GetLocalSVBuffer()->Output(out);
-      out << "[i], \"";
-      ExpressionAtomic::GetLocalSVBuffer()->Output(out);
-      out << "[i]\", print_hash_value);" << std::endl;
-    }
-  }
+  if (CLOptions::atomics())
+    ExpressionAtomic::OutputHashing(out);
   if (CLOptions::inter_thread_comm()) StatementComm::HashCommValues(out);
   output_tab(out, 1);
   out << "result[get_linear_global_id()] = crc64_context ^ 0xFFFFFFFFFFFFFFFFUL;"

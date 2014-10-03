@@ -122,6 +122,9 @@ class ExpressionAtomic : public CLExpression {
   unsigned get_complexity() const { return 1; }
 
   void Output(std::ostream& out) const;
+  
+  // Prints out the required code to hash the special values in the results
+  static void OutputHashing(std::ostream& out);
     
  private:
   // Represents the p parameter of the expression; it is an array access into
