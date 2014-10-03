@@ -11,7 +11,7 @@ runtime      = ".." + os.sep + "runtime" + os.sep
 clLauncherExecutable = "cl_launcher"
 if sys.platform == "win32":
   clLauncherExecutable += ".exe"
-  
+
 makeGen = not (len(sys.argv) == 3 and sys.argv[2] == "--no-gen")
 
 if  len(sys.argv) == 1:
@@ -52,7 +52,7 @@ if os.path.exists(dir):
 os.mkdir(dir)
 if makeGen:
   shutil.copy(srcCLSmith + "CLSmith", dir)
-shutil.copy(srcCLSmith + "cl_launcher", dir)
+shutil.copy(srcCLSmith + clLauncherExecutable, dir)
 shutil.copy(runtime + "CLSmith.h", dir)
 shutil.copy(runtime + "safe_math_macros.h", dir)
 shutil.copy("cl_test.py", dir)
