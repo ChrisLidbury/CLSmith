@@ -151,7 +151,6 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   output_tab(out, 1);
   out << "int print_hash_value = 0;" << std::endl;
   HashGlobalVariables(out);
-  globals.HashLocalBuffers(out);
   if (CLOptions::atomics()) {
     if (ExpressionAtomic::HasSVMems()) {
       output_tab(out, 1);

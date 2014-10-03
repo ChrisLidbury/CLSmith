@@ -6,6 +6,7 @@
 
 #include "ArrayVariable.h"
 #include "Block.h"
+#include "CLSmith/ExpressionID.h"
 #include "Constant.h"
 #include "CVQualifiers.h"
 #include "util.h"
@@ -93,8 +94,12 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
   OutputDecl(out);
   out << ';' << std::endl;
   if (memory_space_ == kLocal) {
+    output_tab(out, indent);
+    out << "if (";
+    ExpressionID(ExpressionID::kLinearLocal).Output(out);
+    out << " == 0)" << std::endl;
     std::vector<const Variable *>& ctrl_vars = Variable::get_new_ctrl_vars();
-    output_init(out, init, ctrl_vars, indent);
+    output_init(out, init, ctrl_vars, indent + 1);
     return;
   }
   output_tab(out, indent);
@@ -107,6 +112,7 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
 void MemoryBuffer::OutputDecl(std::ostream& out) const {
   ArrayVariable::OutputDecl(out);
 }
+
 void MemoryBuffer::output_qualified_type(std::ostream& out) const {
   OutputMemorySpace(out, memory_space_);
   out << " ";
