@@ -150,7 +150,6 @@ void CLProgramGenerator::InitRuntimeParameters() {
     div = divisors[rnd_upto(divisors.size())];
     chosen_div.push_back(div);
     currNo /= div;
-    std::cout << "Selected " << div << std::endl;
   }
   assert(chosen_div.size() == no_dims);
   for (unsigned int i = 0; i < no_dims; i++) {
@@ -169,9 +168,6 @@ void CLProgramGenerator::InitRuntimeParameters() {
   } while (curr_thr_p_grp > max_threads_per_group);
   for (unsigned int i = 0; i < no_dims; i++)
     noGroups *= globalDim[i] / localDim[i];
-  
-  std::cout << "Threads = " << noThreads << std::endl;
-  std::cout << "Groups = " << noGroups << std::endl;
 }
 
 OutputMgr *CLProgramGenerator::getOutputMgr() {

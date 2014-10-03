@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 #include <numeric>
-#include <queue>
+#include <stack>
 
 #include "ArrayVariable.h"
 #include "Block.h"
@@ -55,8 +55,8 @@ static std::vector<MemoryBuffer*>* local_sv = NULL;
 
 // To be used during code generation; holds the variables generated in an 
 // atomic block and uses them to compute a special value used for checking
-static std::map<int, std::vector<Variable *>*>* block_vars = NULL;
-static Block* atomic_parent = NULL;
+static std::stack<std::map<int, std::vector<Variable *>*>*>* block_vars = NULL;
+static std::stack<Block*>* atomic_parent = NULL;
 
 static std::vector<int>* free_counters = NULL;
 } // namespace
@@ -64,7 +64,8 @@ static std::vector<int>* free_counters = NULL;
 void ExpressionAtomic::InitAtomics() {
   no_atomic_blocks = rnd_upto(100); //rnd_upto(CLSmith::CLProgramGenerator::get_threads() / CLSmith::CLProgramGenerator::get_groups()) + 1;
   free_counters = new vector<int>(CLProgramGenerator::get_groups() * no_atomic_blocks, 0);
-  block_vars = new std::map<int, std::vector<Variable*>*>();
+  block_vars = new std::stack<std::map<int, std::vector<Variable*>*>*>();
+  atomic_parent = new std::stack<Block*>();
   std::iota(free_counters->begin(), free_counters->end(), 0);
   StatementAtomicResult::InitResults();
 }
@@ -188,31 +189,35 @@ bool ExpressionAtomic::HasLocalSVMems() {
 }
 
 void ExpressionAtomic::MakeBlockVars(Block* parent) {
-  if (block_vars != NULL) {
-    block_vars->clear();
-  } else {
-    block_vars = new std::map<int, std::vector<Variable*>*>(); 
-  }
-  atomic_parent = parent;
+  assert(block_vars->size() == atomic_parent->size());
+  block_vars->emplace(new std::map<int, std::vector<Variable*>*>());
+  atomic_parent->push(parent);
+//   if (block_vars != NULL) {
+//     block_vars->clear();
+//   } else {
+//     delete(block_vars);
+//     block_vars = new std::map<int, std::vector<Variable*>*>(); 
+//   }
+//   atomic_parent = parent;
 }
 
-void ExpressionAtomic::PrintBlockVars() {
-  std::cout << "--- BLOCKVARS ---" << std::endl;
-  for (std::map<int, std::vector<Variable*>*>::iterator it = block_vars->begin(); it != block_vars->end(); it++) {
-    std:: cout << "blk id " << (*it).first << std::endl;
-    for (Variable* v : *((*it).second))
-      std::cout << v->to_string() << std::endl;
-  }
-  std::cout << "--- ENDBLOCKVARS ---" << std::endl;
-}
+// void ExpressionAtomic::PrintBlockVars() {
+//   std::cout << "--- BLOCKVARS ---" << std::endl;
+//   for (std::map<int, std::vector<Variable*>*>::iterator it = block_vars->begin(); it != block_vars->end(); it++) {
+//     std:: cout << "blk id " << (*it).first << std::endl;
+//     for (Variable* v : *((*it).second))
+//       std::cout << v->to_string() << std::endl;
+//   }
+//   std::cout << "--- ENDBLOCKVARS ---" << std::endl;
+// }
 
 void ExpressionAtomic::GenBlockVars(Block* curr) {
-  std::cout << "Gening " << curr->stm_id << std::endl;
-  std::map<int, std::vector<Variable*>*>* blk_vars = block_vars;
+//   std::cout << "Gening " << curr->stm_id << std::endl;
+  std::map<int, std::vector<Variable*>*>* blk_vars = block_vars->top();
   assert(blk_vars->find(curr->stm_id) == blk_vars->end());
   std::vector<Variable*>* new_blk_vars = new std::vector<Variable*> ();
   blk_vars->insert(std::pair<int, std::vector<Variable*>*> (curr->stm_id, new_blk_vars));
-  if (curr->parent != atomic_parent)
+  if (curr->parent != atomic_parent->top())
     new_blk_vars->insert(new_blk_vars->begin(), curr->parent->local_vars.begin(), curr->parent->local_vars.end());
   if (blk_vars->find(curr->parent->stm_id) != blk_vars->end()) {
     std::vector<Variable*>* parent_blk_vars = (*blk_vars->find(curr->parent->stm_id)).second;
@@ -223,9 +228,10 @@ void ExpressionAtomic::GenBlockVars(Block* curr) {
 std::vector<Variable*>* ExpressionAtomic::GetBlockVars(Block* b) {
   // TODO may need check for non-visible variables
 //   std::cout << "Getting " << b->stm_id << std::endl;
-  assert(!block_vars->empty()); // MakeBlockVars() must be called before
-  assert(block_vars->find(b->stm_id) != block_vars->end());
-  return (*block_vars->find(b->stm_id)).second;
+//   assert(block_vars != NULL);
+//   assert(!block_vars->empty()); // MakeBlockVars() must be called before
+  assert(block_vars->top()->find(b->stm_id) != block_vars->top()->end());
+  return (*block_vars->top()->find(b->stm_id)).second;
 }
 
 void ExpressionAtomic::InsertBlockVars(std::vector<Variable*> local_vars, std::vector<Variable*>* blk_vars) {
@@ -246,14 +252,16 @@ void ExpressionAtomic::InsertBlockVars(std::vector<Variable*> local_vars, std::v
 
 void ExpressionAtomic::RemoveBlockVars(Block* b) {
 //   std::cout << "Removing " << b->stm_id << std::endl;
-  assert(block_vars->find(b->stm_id) != block_vars->end());
-  block_vars->erase(b->stm_id);
+  assert(block_vars->top()->find(b->stm_id) != block_vars->top()->end());
+  block_vars->top()->erase(b->stm_id);
 }
 
 void ExpressionAtomic::DelBlockVars() {
-  delete(block_vars);
-  block_vars = NULL;
-  atomic_parent = NULL;
+  block_vars->pop();
+  atomic_parent->pop();
+//   delete(block_vars);
+//   block_vars = NULL;
+//   atomic_parent = NULL;
 }
 
 void ExpressionAtomic::Output(std::ostream& out) const {

@@ -78,8 +78,10 @@ StatementIf::make_random(CGContext &cg_context)
         // generated to be a atomic expression; however, do not generate
         // another atomic expression within an atomic block
         bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
+        static int thru = 0;
+        thru++;
         if (build_atomic) {
-          std::cout << "Start atomic block" << std::endl;
+//           std::cout << "Start atomic block" << std::endl;
         }
         cg_context.set_atomic_context(cg_context.get_atomic_context() || build_atomic);
 
@@ -139,7 +141,7 @@ StatementIf::make_random(CGContext &cg_context)
           CLSmith::StatementAtomicResult::RecordIfID(if_true->stm_id, expr);
           CLSmith::ExpressionAtomic::DelBlockVars();
           cg_context.set_atomic_context(false);
-          std::cout << "End atomic block" << std::endl;
+//           std::cout << "End atomic block" << std::endl;
         }
     return si;
 }
