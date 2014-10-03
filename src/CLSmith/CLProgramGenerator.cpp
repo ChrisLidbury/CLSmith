@@ -216,7 +216,8 @@ void CLProgramGenerator::initialize() {
 std::vector<unsigned int>* CLProgramGenerator::get_divisors(unsigned int val) {
   std::vector<unsigned int>* divisors = new std::vector<unsigned int>();
   divisors->push_back(1); divisors->push_back(val);
-  for (unsigned int i = 2; i < sqrt(val); i++) {
+  unsigned int i;
+  for (i = 2; i < sqrt(val); i++) {
     if (!(noThreads % i)) {
       divisors->push_back(i);
       divisors->push_back(val / i);
