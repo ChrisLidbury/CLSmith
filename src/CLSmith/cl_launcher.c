@@ -36,6 +36,7 @@ int device_index = 0;
 int platform_index = 0;
 char* device_name_given = "";
 bool debug_build = false;
+bool disable_opts = false;
 
 bool atomics = false;
 int atomic_counter_no = 0;
@@ -301,7 +302,10 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Add optimisation to options later.
-  err = clBuildProgram(program, 0, NULL, "-w -I.", NULL, NULL);
+  char* options = "-w -I.";
+  if (disable_opts)
+    strcat(options, " -cl_opt_disable");
+  err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
   if (cl_error_check(err, "Error building program")) {
     if (debug_build) {      
       size_t err_size;
@@ -482,6 +486,10 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "---debug")) {
     debug_build = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---disable_opts")) {
+    disable_opts = true;
     return 1;
   }
   printf("Failed parsing arg %s.", arg);

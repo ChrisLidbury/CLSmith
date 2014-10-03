@@ -23,10 +23,11 @@ parser.add_argument('-path', default = "CLSmithTests/")
 parser.add_argument('-output', default = "Result.csv")
 parser.add_argument('-timeout', default = 150, type = int)
 parser.add_argument('-debug', dest = 'debug', action = 'store_true')
+parser.add_argument('-disable_opts', dest = 'disable_opts', action = 'store_true')
 
 parser.add_argument('flags', nargs='*')
 
-parser.set_defaults(debug = False)
+parser.set_defaults(debug = False, disable_opts = False)
 
 args = parser.parse_args()
 
@@ -58,6 +59,8 @@ for curr_file in dirlist:
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
   if (args.device_name_contains):
       cmd += " -n " + args.device_name_contains
+  if (args.disable_opts):
+      cmd += " ---disable_opts"
   if (args.debug):
       cmd += " ---debug"
   run_prog = WorkerThread(args.timeout, cmd)
