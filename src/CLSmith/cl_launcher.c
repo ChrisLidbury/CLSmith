@@ -7,7 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _MSC_VER
 #include <stdbool.h>
+#endif
 
 #define DEF_LOCAL_SIZE 32
 #define DEF_GLOBAL_SIZE 1024
