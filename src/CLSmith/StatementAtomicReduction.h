@@ -31,15 +31,22 @@ class StatementAtomicReduction : public CLStatement {
     kOr,
     kXor
   };
+  
+  enum MemoryLoc {
+    kLocal = 0,
+    kGlobal
+  };
    
-  StatementAtomicReduction(Variable* var, Expression* e, const bool add_global, 
-    Block* b, AtomicOp op) : CLStatement(kAtomic, b), var_(var), expr_(e), 
-        op_(op), add_global_(add_global), type_(Type::get_simple_type(eInt)) {}
+  StatementAtomicReduction(Expression* e, const bool add_global, 
+    Block* b, AtomicOp op, MemoryLoc mem) : CLStatement(kAtomic, b), expr_(e), 
+        op_(op), mem_loc_(mem), add_global_(add_global), 
+        type_(Type::get_simple_type(eUInt)) {}
         
   static StatementAtomicReduction* make_random(CGContext& cg_context);
   
-  static void AddVarsToGlobals(Globals* globals);
+  static MemoryBuffer* get_local_rvar();
   
+  static void AddVarsToGlobals(Globals* globals);
   static void RecordBuffer();
         
   // Pure virtual methods from Statement
@@ -50,9 +57,9 @@ class StatementAtomicReduction : public CLStatement {
   void Output(std::ostream& out, FactMgr* fm = 0, int indent = 0) const;
   
  private:
-  Variable* var_;
   Expression* expr_;
   AtomicOp op_;
+  MemoryLoc mem_loc_;
   const bool add_global_;
   
   const Type& type_;

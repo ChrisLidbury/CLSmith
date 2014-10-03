@@ -12,8 +12,13 @@
 namespace CLSmith {
   
 namespace {
-// Variable to store the value of a modified variable
+// Variable to store the value of a modified variable.
 Variable* hash_buffer = NULL;
+
+// Variable representing the reduction target (either local or global);
+// if global, must be a buffer, indexing at the current linear group id.
+MemoryBuffer* local_reduction = NULL;
+MemoryBuffer* global_reduction = NULL;
 }
   
 StatementAtomicReduction* StatementAtomicReduction::make_random(CGContext &cg_context) {
@@ -28,9 +33,10 @@ StatementAtomicReduction* StatementAtomicReduction::make_random(CGContext &cg_co
     invalid_vars.push_back(var);
   }
   const bool has_global = (const bool) rnd_upto(2);
-  AtomicOp op = (AtomicOp) rnd_upto(kXor);
-  return new StatementAtomicReduction(var, expr, has_global, 
-                                      cg_context.get_current_block(), op);
+  AtomicOp op = (AtomicOp) rnd_upto(kXor + 1);
+  MemoryLoc mem = (MemoryLoc) rnd_upto(kGlobal);
+  return new StatementAtomicReduction(expr, has_global, 
+                                      cg_context.get_current_block(), op, mem);
 }
 
 Variable* StatementAtomicReduction::get_hash_buffer() {
@@ -42,10 +48,25 @@ Variable* StatementAtomicReduction::get_hash_buffer() {
   return hash_buffer;
 }
 
+MemoryBuffer* StatementAtomicReduction::get_local_rvar() {
+  if (local_reduction == NULL)
+    local_reduction = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
+        "l_atomic_reduction", &Type::get_simple_type(eUInt), 
+        Constant::make_int(0), {1});
+  return local_reduction;
+}
+
 void StatementAtomicReduction::RecordBuffer() {
   Variable* buf = get_hash_buffer();
   if (buf != NULL)
     VariableSelector::GetGlobalVariables()->push_back(buf);
+}
+
+
+void StatementAtomicReduction::AddVarsToGlobals(Globals* globals) {
+  MemoryBuffer* local_red = get_local_rvar();
+  if (local_red != NULL)
+    globals->AddLocalMemoryBuffer(local_red);
 }
   
 void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent) const {
@@ -61,7 +82,13 @@ void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent
     case (kOr)   : out << "or"  ; break;
     case (kXor)  : out << "xor" ; break;
   }
-  out << "(" << var_->to_string() << ", ";
+  out << "(";
+  if (mem_loc_ == kLocal)
+    out << get_local_rvar()->to_string();
+  else if (mem_loc_ == kGlobal)
+    out << "hi";
+  else assert(0);
+  out << ", ";
   expr_->Output(out);
   if (add_global_)
     out << " + linear_global_id()";
@@ -69,9 +96,9 @@ void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent
   output_tab(out, indent);
   StatementBarrier::OutputBarrier(out); out << std::endl;
   output_tab(out, indent);
-  out << "if (linear_global_id() == 0)" << std::endl;
+  out << "if (linear_local_id() == 0)" << std::endl;
   output_tab(out, indent + 1);
-  out << get_hash_buffer()->to_string() <<  "+=" << var_->to_string() << ";" << std::endl;
+  out << get_hash_buffer()->to_string() <<  " += " << get_local_rvar()->to_string() << ";" << std::endl;
   output_tab(out, indent);
   StatementBarrier::OutputBarrier(out); out << std::endl;
 }
