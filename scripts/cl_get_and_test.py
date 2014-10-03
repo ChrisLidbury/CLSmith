@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser("Run generator on a range of given programs.")
 parser.add_argument('-cl_launcher', default = "." + pathSeparator + clLauncherExecutable)
 parser.add_argument('-cl_platform_idx', default = 0, type = int)
 parser.add_argument('-cl_device_idx', default = 0, type = int)
+parser.add_argument('-device_name_contains', default = "")
 
 parser.add_argument('-path', default = "CLSmithTests/")
 parser.add_argument('-output', default = "Result.csv")
@@ -49,7 +50,7 @@ for curr_file in os.listdir(args.path):
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   
   file_path = args.path + pathSeparator + curr_file
-  cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
+  cmd = "%s -f %s -p %d -d %d -n %s" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx, args.device_name_contains)
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
   
