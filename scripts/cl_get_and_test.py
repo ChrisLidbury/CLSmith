@@ -27,6 +27,8 @@ parser.add_argument('-disable_opts', dest = 'disable_opts', action = 'store_true
 
 parser.add_argument('flags', nargs='*')
 
+parser.add_argument('-resume', type=argparse.FileType('r'), default=None, help="Do not run tests that appear in an existing results file")
+
 parser.set_defaults(debug = False, disable_opts = False)
 
 args = parser.parse_args()
@@ -46,13 +48,24 @@ if not os.path.exists(args.path):
   print("Given path %s does not exist!" % (args.path))
   exit(1);
 
+already_processed = []
+if args.resume:
+  for l in args.resume:
+    if "RESULTS FOR" in l:
+      already_processed.append(l.split()[-1])
+
 file_list = os.listdir(args.path)
 file_index = 0
 dirlist = sorted(os.listdir(args.path))
 for curr_file in dirlist:
+  file_index += 1
+
+  if curr_file in already_processed:
+      print("Skipping kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
+      continue
+
   output.write("RESULTS FOR " + curr_file + "\n")  
   output.flush()
-  file_index += 1
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   
   file_path = args.path + pathSeparator + curr_file
@@ -65,6 +78,10 @@ for curr_file in dirlist:
       cmd += " ---debug"
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
+
+  if "not found in device name" in run_prog_res[0]:
+      print("Mismatch in device name (aborting all further runs)")
+      sys.exit(1)
   
   if not run_prog_res[1] == 0:
       output.write("run_error: %s\n" % (run_prog_res[0]))
