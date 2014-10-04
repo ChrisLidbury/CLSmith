@@ -30,16 +30,17 @@ namespace ParameterType {
 // These indicate how the return type of the function needs to be transformed
 // to give the type of a given parameter.
 enum TypeConversion {
-  kExact = 0,      // No conversion.
-  kUnsignToSign,   // Convert to unsigned iff a signed type.
-  kSignToUnsign,   // Convert to signed iff a unsigned type.
-  kFlipSign,       // Flip from signed to unsigned and vice versa.
-  kDemote,         // Demote from vector to scalar.
-  kDemoteChance,   // Demote from vector to scalar with 50% probability.
-  kDemoteChance2,  // Demote chance, where the next depends on the previous.
-  kPromote,        // Promote from scalar to vector.
-  kNarrow,         // Reduce the size of the type (e.g. int -> short).
-  kFlipNarrow,     // FlipSign and Narrow.
+  kExact = 0,       // No conversion.
+  kUnsignToSign,    // Convert to unsigned iff a signed type.
+  kSignToUnsign,    // Convert to signed iff a unsigned type.
+  kFlipSign,        // Flip from signed to unsigned and vice versa.
+  kDemote,          // Demote from vector to scalar.
+  kDemoteChance,    // Demote from vector to scalar with 50% probability.
+  kDemoteChance2,   // Demote chance, where the next depends on the previous.
+  kPromote,         // Promote from scalar to vector.
+  kNarrow,          // Reduce the size of the type (e.g. int -> short).
+  kFlipNarrow,      // FlipSign and Narrow.
+  kToUnsignNarrow,  // SignToUnsign and Narrow.
 };
 
 // Useful typedefs for handling parameters. Need GCC 4.7
@@ -62,7 +63,7 @@ class FunctionInvocationBuiltIn : public FunctionInvocation {
   enum BuiltInType { kInteger = 0 };
   FunctionInvocationBuiltIn(enum BuiltInType built_in_type, const Type& type)
     : FunctionInvocation(eBuiltIn, SafeOpFlags::make_dummy_flags()),
-      type_(type_), built_in_type_(built_in_type) {
+      type_(type), built_in_type_(built_in_type) {
   }
   FunctionInvocationBuiltIn(FunctionInvocationBuiltIn&& other) = default;
   FunctionInvocationBuiltIn& operator=(
@@ -86,6 +87,9 @@ class FunctionInvocationBuiltIn : public FunctionInvocation {
 
   // Output only the name of the built-in function (no brackets or params).
   virtual void OutputFuncName(std::ostream& out) const = 0;
+
+  // Get the expected type of the function paramter at index idx.
+  virtual const Type& GetParameterType(size_t idx) const = 0;
 
   enum BuiltInType GetBuiltInType() const { return built_in_type_; }
  protected:
@@ -134,6 +138,7 @@ class FunctionInvocationIntegerBuiltIn : public FunctionInvocationBuiltIn {
 
   // Pure virtual in FunctionInvocationBuiltIn.
   void OutputFuncName(std::ostream& out) const;
+  const Type& GetParameterType(size_t idx) const;
 
   enum BuiltIn GetBuiltIn() const { return built_in_; }
  private:

@@ -46,16 +46,15 @@ DistributionTable *cl_expr_table = NULL;
       if (type->eType != eSimple || type->is_signed())
         return NULL;
       // TODO find a way to limit div like this.
-      //if (CLOptions::divergence() && !CLOptions::fake_divergence() &&
-      //    !CLOptions::group_divergence() &&
-      //    (unsigned)ExpressionID::GetGenerationProbability(cg_context, *type) <=
+      //if ((unsigned)ExpressionID::GetGenerationProbability(cg_context, *type) <=
       //    rnd_upto(5))
     }
     // Not many restrictions on vector types.
     if (tt == kVector) {
       if (!CLOptions::vectors() ||
           (type->eType != eSimple && type->eType != eVector) ||
-          cg_context.expr_depth + 2 > CGOptions::max_expr_depth())
+          ((cg_context.expr_depth + 2 > CGOptions::max_expr_depth())
+          && type->eType != eVector))
         return NULL;
     }
   }

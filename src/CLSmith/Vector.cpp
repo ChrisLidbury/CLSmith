@@ -199,7 +199,8 @@ const Type *Vector::PromoteTypeToVectorType(const Type *type, int size) {
   if (!size) size = GetRandomVectorLength(0);
   if (type->eType == eVector && type->vector_length_ == size) return type;
   auto it = vector_types_.find(std::make_pair(type->simple_type, size));
-  return it != vector_types_.end() ? it->second : NULL;
+  assert(it != vector_types_.end() && "Unknown vector type.");
+  return it->second;
 }
 
 const Type &Vector::DemoteVectorTypeToType(const Type *type) {

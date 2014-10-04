@@ -57,13 +57,21 @@ const Type& ConvertParameterType(
     }
     case kPromote:
       return *Vector::PromoteTypeToVectorType(&type, 0);
-    case kNarrow:
-      t = &Type::get_simple_type(
-          (eSimpleType)(type.simple_type - (type.SizeInBytes() > 1)));
+    case kNarrow: {
+      eSimpleType simple =
+          (eSimpleType)(type.simple_type - (type.SizeInBytes() > 1 ? 1 : 0));
+      if (simple == eInt || simple == eUInt)
+        simple = (eSimpleType)(simple - 1);
+      t = &Type::get_simple_type(simple);
       break;
+    }
     case kFlipNarrow:
       t = &ConvertParameterType(ConvertParameterType(type,
           kFlipSign), kNarrow);
+      break;
+    case kToUnsignNarrow:
+      t = &ConvertParameterType(ConvertParameterType(type,
+          kSignToUnsign), kNarrow);
       break;
     default: assert(false && "Unknown type conversion");
   }
@@ -95,6 +103,16 @@ void FunctionInvocationBuiltIn::Output(std::ostream& out) const {
   OutputFuncName(out);
   out << '(';
   for (size_t idx = 0; idx < param_value.size(); ++idx) {
+    // To prevent ambiguities for functions that take both vector and scalars,
+    // output a cast for scalar parameters. To prevent ambiguity, the type must
+    // be the exact expected type, but csmith may change it to a compatible
+    // type, so we must convert the return type.
+    if (param_value[idx]->get_type().eType == eSimple) {
+      const Type& cast_type = GetParameterType(idx);
+      out << "(";
+      cast_type.Output(out);
+      out << ")";
+    }
     param_value[idx]->Output(out);
     if (idx < param_value.size() - 1) out << ", ";
   }
@@ -135,7 +153,7 @@ enum FunctionInvocationIntegerBuiltIn::BuiltIn
   // Unsafe for any type.
   filter.add(kRotate);
   // Does not make sense to do Abs on an unsigned value.
-  if (!type.is_signed())
+  if (type.is_signed())
     filter.add(kAbs);
   // Vulnerable to overflow
   if (type.is_signed())
@@ -144,7 +162,10 @@ enum FunctionInvocationIntegerBuiltIn::BuiltIn
   // Cannot upsample to a char.
   if (type.simple_type == eChar || type.simple_type == eUChar)
     filter.add(kUpSample);
-  int rnd = rnd_upto(filter.get_max_prob());
+  // Can only do mad24 and mul24 on 32 bit types.
+  if (type.simple_type != eInt && type.simple_type != eUInt)
+    filter.add(kMad24).add(kMul24);
+  int rnd = rnd_upto(filter.get_max_prob(), &filter);
   enum BuiltIn func = (enum BuiltIn)filter.lookup(rnd);
 
   // Populate params based on the selected function.
@@ -169,7 +190,7 @@ void FunctionInvocationIntegerBuiltIn::InitTables() {
   using Internal::ParameterType::kDemoteChance;
   using Internal::ParameterType::kDemoteChance2;
   using Internal::ParameterType::kNarrow;
-  using Internal::ParameterType::kFlipNarrow;
+  using Internal::ParameterType::kToUnsignNarrow;
   (*integer_param_map)[kIdentity] = { kExact };
   (*integer_param_map)[kAbs]      = { kUnsignToSign };
   (*integer_param_map)[kAbsDiff]  = { kUnsignToSign, kUnsignToSign };
@@ -186,7 +207,7 @@ void FunctionInvocationIntegerBuiltIn::InitTables() {
   (*integer_param_map)[kMulHi]    = { kExact, kExact };
   (*integer_param_map)[kRotate]   = { kExact, kExact };
   (*integer_param_map)[kSubSat]   = { kExact, kExact };
-  (*integer_param_map)[kUpSample] = { kNarrow, kFlipNarrow };
+  (*integer_param_map)[kUpSample] = { kNarrow, kToUnsignNarrow };
   (*integer_param_map)[kPopCount] = { kExact };
   (*integer_param_map)[kMad24]    = { kExact, kExact, kExact };
   (*integer_param_map)[kMul24]    = { kExact, kExact };
@@ -203,6 +224,14 @@ FunctionInvocationIntegerBuiltIn *FunctionInvocationIntegerBuiltIn::clone()
 
 void FunctionInvocationIntegerBuiltIn::OutputFuncName(std::ostream& out) const {
   out << kIntegerNames[built_in_];
+}
+
+const Type& FunctionInvocationIntegerBuiltIn::GetParameterType(size_t idx)
+    const {
+  auto it = integer_param_map->find(built_in_);
+  assert(it != integer_param_map->end());
+  assert(it->second.size() > idx);
+  return Internal::ParameterType::ConvertParameterType(type_, it->second[idx]);
 }
 
 }  // namespace CLSmith
