@@ -53,8 +53,7 @@ DistributionTable *cl_expr_table = NULL;
     if (tt == kVector) {
       if (!CLOptions::vectors() ||
           (type->eType != eSimple && type->eType != eVector) ||
-          ((cg_context.expr_depth + 2 > CGOptions::max_expr_depth())
-          && type->eType != eVector))
+          (cg_context.expr_depth + 2 > CGOptions::max_expr_depth()))
         return NULL;
     }
   }

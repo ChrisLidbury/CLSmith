@@ -13,6 +13,7 @@
 #include "CGOptions.h"
 #include "Expression.h"
 #include "ExpressionFuncall.h"
+#include "ExpressionVariable.h"
 #include "ProbabilityTable.h"
 #include "random.h"
 #include "Type.h"
@@ -57,7 +58,7 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
     int remain = size;
     while (remain > 0) {
       num = rnd_upto(30);
-      if (remain == 1 || num < 10) {
+      if (remain <= 2 || num < 10) {
         // Create a simple constant value.
         exprs.emplace_back(Constant::make_random(
             &Vector::DemoteVectorTypeToType(type)));
@@ -65,7 +66,7 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
       } else if (num < 20) {
         // Create a sub-vector. The size must be smaller, else it should be
         // guarded to prevent infinite recursion.
-        int vec_size = Vector::GetRandomVectorLength(remain);
+        int vec_size = Vector::GetRandomVectorLength(remain - (remain == size));
         const Type *sub_vec_type =
             Vector::PromoteTypeToVectorType(type, vec_size);
         exprs.emplace_back(ExpressionVector::make_random(
@@ -80,16 +81,18 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
       }
     }
   }
-  //if (vec_expr_type == kVariable || vec_expr_type == kBuiltIn) {
+  else if (vec_expr_type == kVariable) {
     // Produce an entire vector.
-  //  vec_expr_type = kSIMD; // TODO
-  //}
-  else if (vec_expr_type == kSIMD) {
+    const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
+    exprs.emplace_back(ExpressionVariable::make_random(
+        cg_context, vec_type, qfer));
+  } else if (vec_expr_type == kSIMD) {
     // Produce an expression that performs a series of operations on vectors. We
     // borrow from csmith's expression generation where possible.
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(Expression::make_random(
         cg_context, vec_type, qfer, false, false, eFunction));
+    assert(exprs.back()->get_type().eType == eVector);
   } else /*kBuiltIn*/ {
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(new ExpressionFuncall(
@@ -99,8 +102,6 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
   // The expression has been produced, but we need to itemise according to the
   // size of the expected type.
   ExpressionVector *expr_vec = NULL;
-  // The expression type when queried will be the basic type.
-  //const Type& expr_type = Vector::DemoteVectorTypeToType(vec_type);
   if (size == itemise_to * 2) {
     // Use a suffix if the expected vector length is half of the produced vec.
     assert(suffix_table != NULL);
@@ -129,7 +130,7 @@ ExpressionVector *ExpressionVector::make_constant(const Type *type, int value) {
 void ExpressionVector::InitProbabilityTable() {
   vector_expr_table = new DistributionTable();
   vector_expr_table->add_entry(kLiteral, 10);
-  vector_expr_table->add_entry(kVector, 10);
+  vector_expr_table->add_entry(kVariable, 10);
   vector_expr_table->add_entry(kSIMD, 10);
   vector_expr_table->add_entry(kBuiltIn, 10);
   suffix_table = new DistributionTable();

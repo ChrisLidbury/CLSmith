@@ -183,7 +183,7 @@ FunctionInvocation *
 FunctionInvocation::make_random_binary(CGContext &cg_context, const Type* type)
 {
 	DEPTH_GUARD_BY_TYPE_RETURN(dtFunctionInvocationRandomBinary, NULL);
-	if (rnd_flipcoin(10) && Type::has_pointer_type()) {
+	if (rnd_flipcoin(10) && Type::has_pointer_type() && type->eType != eVector) {
 		ERROR_GUARD(NULL);
 		return make_random_binary_ptr_comparison(cg_context);
 	}
