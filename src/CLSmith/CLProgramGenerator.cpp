@@ -215,7 +215,7 @@ std::vector<unsigned int>* CLProgramGenerator::get_divisors(unsigned int val) {
   divisors->push_back(1); divisors->push_back(val);
   unsigned int i;
   for (i = 2; i < sqrt(val); i++) {
-    if (!(noThreads % i)) {
+    if (!(val % i)) {
       divisors->push_back(i);
       divisors->push_back(val / i);
     }
