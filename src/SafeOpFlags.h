@@ -52,6 +52,8 @@ enum SafeOpSize {
 
 class SafeOpFlags {
 public:
+	SafeOpFlags(bool op1, bool op2, bool is_func, SafeOpSize size);
+
 	static SafeOpFlags *make_random(SafeOpKind op_kind, eBinaryOps op = MAX_BINARY_OP);
 
 	static SafeOpFlags *make_dummy_flags();
@@ -95,8 +97,6 @@ private:
 	SafeOpFlags();
 
 	SafeOpFlags(const SafeOpFlags &flags);
-
-	SafeOpFlags(bool op1, bool op2, bool is_func, SafeOpSize size);
 
 	SafeOpFlags &operator=(const SafeOpFlags &flags); //unimplemented;
 };

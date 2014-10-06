@@ -91,7 +91,7 @@ Expression *ExpressionID::CreateFakeDivergentExpression(
   const Variable *var = offsets[id * 3 + dim];
   return new ExpressionFuncall(*new FunctionInvocationBinary(eSub,
       new ExpressionVariable(*var), new ExpressionID(id, dim),
-      SafeOpFlags::make_dummy_flags()));
+      new SafeOpFlags(false, false, true, sInt64)));
 }
 
 void ExpressionID::OutputIDType(std::ostream& out, IDType id_type) {
