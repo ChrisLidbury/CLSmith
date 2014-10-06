@@ -46,8 +46,13 @@ elif not os.path.exists("processTimeout.py"):
 dir = os.path.expanduser("~") + os.sep + sys.argv[1]
 
 if os.path.exists(dir):
-    print("Test directory already exists.")
-    sys.exit()
+    overwrt = raw_input("Test directory already exists. Type 'y' to overwrite: ")
+    if (overwrt == 'y'):
+      print("Deleting existing directory %s." % (dir))
+      shutil.rmtree(dir)
+    else:
+      print("Aborting test setup.")
+      sys.exit()
  
 os.mkdir(dir)
 if makeGen:
