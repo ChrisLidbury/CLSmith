@@ -54,6 +54,12 @@ void StatementAtomicResult::GenSpecialVals() {
               index = curr_index.size() - 1;
             }
           }
+          else if (!v->field_vars.empty()) {
+            for (Variable* fv : v->field_vars) {
+              StatementAtomicResult* sar_res = new StatementAtomicResult(fv, b);
+              b->stms.push_back(sar_res);
+            }
+          }
           else {
             StatementAtomicResult* sar_res = new StatementAtomicResult(v, b);
             b->stms.push_back(sar_res);

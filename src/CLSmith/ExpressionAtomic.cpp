@@ -85,14 +85,14 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
     itemized = GetLocalBuffer()->itemize(eaa_arr, Block::make_dummy_block(cg_context));
     GetLocalMems()->push_back(itemized);
   } else assert(0);
-  AtomicExprType atomic_type = rnd_flipcoin(33) ? kInc : (AtomicExprType) rnd_upto(kDec + 1);
+  AtomicExprType atomic_type = rnd_flipcoin(50) ? kInc : kAdd;
   free_counters->erase(std::remove(free_counters->begin(), free_counters->end(), rand_index), free_counters->end());
   switch(atomic_type) {
-    case kDec:
+//     case kDec:
     case kInc:
       return new ExpressionAtomic(atomic_type, itemized, eaa);
     case kAdd:
-    case kSub:
+//     case kSub:
       return new ExpressionAtomic(atomic_type, itemized, eaa, rnd_upto(10) + 1);
     default: assert(0); // should never get here.
   }
@@ -315,9 +315,8 @@ void ExpressionAtomic::OutputHashing(std::ostream& out) {
     eid_l->Output(out);
     out << ")" << std::endl;
     output_tab(out, 2);
-    out << "for (i = linear_group_id() * " << CLProgramGenerator::get_atomic_blocks_no() << 
-      "; i < (linear_group_id() + 1) * " << CLProgramGenerator::get_atomic_blocks_no() << 
-      "; i++)" << std::endl;
+    out << "for (i = 0; i < " << CLProgramGenerator::get_atomic_blocks_no() << 
+        "; i++)" << std::endl;
     output_tab(out, 3);
     out << "transparent_crc(";
     ExpressionAtomic::GetLocalSVBuffer()->Output(out);
