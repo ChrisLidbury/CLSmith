@@ -418,9 +418,14 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     sequence_input = (int *)malloc(sizeof(int) * max_dimen);
     for (i = 0; i < max_dimen; ++i) sequence_input[i] = 10 + i;
     cl_mem seq_input = clCreateBuffer(
-        context, CL_MEM_READ_ONLY, max_dimen * sizeof(cl_int), sequence_input, &err);
+        context, CL_MEM_READ_ONLY, max_dimen * sizeof(cl_int), NULL, &err);
     if (cl_error_check(err, "Error creating fake divergence buffer"))
       return 1;
+
+    err = clEnqueueWriteBuffer(com_queue, seq_input, CL_TRUE, 0, max_dimen * sizeof(cl_int), sequence_input, 0, NULL, NULL);
+    if (cl_error_check(err, "Error copying input to fake divergence buffer"))
+      return 1;
+
     err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &seq_input);
     if (cl_error_check(err, "Error setting kernel argument for fake divergence"))
       return 1;
