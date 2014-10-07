@@ -45,6 +45,7 @@ class StatementAtomicReduction : public CLStatement {
   static StatementAtomicReduction* make_random(CGContext& cg_context);
   
   static MemoryBuffer* get_local_rvar();
+  static MemoryBuffer* get_global_rvar();
   
   static void AddVarsToGlobals(Globals* globals);
   static void RecordBuffer();

@@ -1,4 +1,6 @@
+#include "CLSmith/CLProgramGenerator.h"
 #include "CLSmith/Globals.h"
+#include "CLSmith/ExpressionID.h"
 #include "CLSmith/StatementAtomicReduction.h"
 #include "CLSmith/StatementBarrier.h"
 
@@ -24,17 +26,9 @@ MemoryBuffer* global_reduction = NULL;
 StatementAtomicReduction* StatementAtomicReduction::make_random(CGContext &cg_context) {
   const Type* type = get_int_type();
   Expression* expr = Expression::make_random(cg_context, type);
-  vector<const Variable*> invalid_vars;
-  Variable* var = NULL;
-  while (var == NULL) {
-    var = VariableSelector::select(Effect::WRITE, cg_context, type, 
-        new CVQualifiers(std::vector<bool>({false}), 
-        std::vector<bool>({false})), invalid_vars, eDerefExact);
-    invalid_vars.push_back(var);
-  }
   const bool has_global = (const bool) rnd_upto(2);
   AtomicOp op = (AtomicOp) rnd_upto(kXor + 1);
-  MemoryLoc mem = (MemoryLoc) rnd_upto(kGlobal);
+  MemoryLoc mem = (MemoryLoc) rnd_upto(kGlobal + 1);
   return new StatementAtomicReduction(expr, has_global, 
                                       cg_context.get_current_block(), op, mem);
 }
@@ -50,10 +44,20 @@ Variable* StatementAtomicReduction::get_hash_buffer() {
 
 MemoryBuffer* StatementAtomicReduction::get_local_rvar() {
   if (local_reduction == NULL)
-    local_reduction = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
+    local_reduction = new MemoryBuffer(MemoryBuffer::kLocal,
         "l_atomic_reduction", &Type::get_simple_type(eUInt), 
-        Constant::make_int(0), {1});
+        Constant::make_int(0), new CVQualifiers(std::vector<bool> ({false}), 
+        std::vector<bool> ({true})), {1});
   return local_reduction;
+}
+
+MemoryBuffer* StatementAtomicReduction::get_global_rvar() {
+  if (global_reduction == NULL)
+    global_reduction = new MemoryBuffer(MemoryBuffer::kGlobal,
+        "g_atomic_reduction", &Type::get_simple_type(eUInt), 
+        Constant::make_int(0), new CVQualifiers(std::vector<bool> ({false}), 
+        std::vector<bool> ({true})), {CLProgramGenerator::get_groups()});
+  return global_reduction;
 }
 
 void StatementAtomicReduction::RecordBuffer() {
@@ -65,11 +69,16 @@ void StatementAtomicReduction::RecordBuffer() {
 
 void StatementAtomicReduction::AddVarsToGlobals(Globals* globals) {
   MemoryBuffer* local_red = get_local_rvar();
+  MemoryBuffer* global_red = get_global_rvar();
   if (local_red != NULL)
     globals->AddLocalMemoryBuffer(local_red);
+  if (global_red != NULL)
+    globals->AddGlobalMemoryBuffer(global_red);
 }
   
 void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent) const {
+  ExpressionID* lgrid = new ExpressionID(ExpressionID::kLinearGroup);
+  MemoryBuffer* itemized = get_global_rvar()->itemize({lgrid}, this->parent);
   output_tab(out, indent);
   out << "atomic_";
   switch (op_) {
@@ -82,23 +91,36 @@ void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent
     case (kOr)   : out << "or"  ; break;
     case (kXor)  : out << "xor" ; break;
   }
-  out << "(";
+  out << "(&";
   if (mem_loc_ == kLocal)
     out << get_local_rvar()->to_string();
-  else if (mem_loc_ == kGlobal)
-    out << "hi";
+  else if (mem_loc_ == kGlobal) {
+    out << itemized->to_string();
+  }
   else assert(0);
   out << ", ";
   expr_->Output(out);
-  if (add_global_)
-    out << " + linear_global_id()";
+  if (add_global_) {
+    out << " + ";
+    ExpressionID* lglid = new ExpressionID(ExpressionID::kLinearGlobal);
+    lglid->Output(out);
+  }
   out << ");" << std::endl;
   output_tab(out, indent);
   StatementBarrier::OutputBarrier(out); out << std::endl;
   output_tab(out, indent);
-  out << "if (linear_local_id() == 0)" << std::endl;
+  out << "if (" ;
+  ExpressionID* llid = new ExpressionID(ExpressionID::kLinearLocal);
+  llid->Output(out);
+  out << " == 0)" << std::endl;
   output_tab(out, indent + 1);
-  out << get_hash_buffer()->to_string() <<  " += " << get_local_rvar()->to_string() << ";" << std::endl;
+  out << get_hash_buffer()->to_string() <<  " += ";
+  if (mem_loc_ == kLocal)
+    out << get_local_rvar()->to_string();
+  else if (mem_loc_ == kGlobal)
+    out << itemized->to_string();
+  else assert(0);
+  out << ";" << std::endl;
   output_tab(out, indent);
   StatementBarrier::OutputBarrier(out); out << std::endl;
 }

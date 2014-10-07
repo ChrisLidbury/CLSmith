@@ -85,7 +85,7 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
     itemized = GetLocalBuffer()->itemize(eaa_arr, Block::make_dummy_block(cg_context));
     GetLocalMems()->push_back(itemized);
   } else assert(0);
-  AtomicExprType atomic_type = rnd_flipcoin(50) ? kInc : kAdd;
+  AtomicExprType atomic_type = rnd_flipcoin(100) ? kInc : kAdd;
   free_counters->erase(std::remove(free_counters->begin(), free_counters->end(), rand_index), free_counters->end());
   switch(atomic_type) {
 //     case kDec:
@@ -109,8 +109,9 @@ Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *
 
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
-    global_in_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
-      "g_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0),
+    global_in_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
+      "g_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
   }
@@ -119,8 +120,9 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
 
 MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
   if (global_sv_buf == NULL) {
-    global_sv_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
+    global_sv_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
       "g_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetSVMems()->push_back(global_sv_buf);
   }
@@ -129,8 +131,9 @@ MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
 
 MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
   if (local_in_buf == NULL)  {
-    local_in_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
+    local_in_buf = new MemoryBuffer(MemoryBuffer::kLocal,
       "l_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
     GetLocalMems()->push_back(local_in_buf);
   }
@@ -139,9 +142,11 @@ MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
 
 MemoryBuffer* ExpressionAtomic::GetLocalSVBuffer() {
   if (local_sv_buf == NULL) {
-    local_sv_buf = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
+    local_sv_buf = new MemoryBuffer(MemoryBuffer::kLocal,
       "l_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
+    
     GetLocalSVMems()->push_back(local_sv_buf);
   }
   return local_sv_buf;

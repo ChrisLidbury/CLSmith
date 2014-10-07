@@ -152,9 +152,11 @@ void CLProgramGenerator::InitRuntimeParameters() {
     currNo /= div;
   }
   assert(chosen_div.size() == no_dims);
+  noThreads = 1;
   for (unsigned int i = 0; i < no_dims; i++) {
     choose = rnd_upto(chosen_div.size());
     globalDim[i] = chosen_div[choose];
+    noThreads *= globalDim[i];
     chosen_div.erase(std::find(chosen_div.begin(), chosen_div.end(), chosen_div[choose]));
   }
   unsigned int curr_thr_p_grp;

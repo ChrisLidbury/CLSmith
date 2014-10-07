@@ -25,6 +25,8 @@ void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::
   out << "//";
   if (CLOptions::atomics())
     out << " --atomics " << CLProgramGenerator::get_atomic_blocks_no();
+  if (CLOptions::atomic_reductions())
+    out << " ---atomic_reductions";
   out << " -g ";
   for (std::vector<unsigned int>::iterator it = global_dims.begin(); it < global_dims.end(); it++) {
     out << *it;
@@ -120,8 +122,8 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   std::ostream& out = get_main_out();
   out << "__kernel void entry(__global ulong *result";
   if (CLOptions::atomics()) {
-    out << ", __global volatile int *g_atomic_input";
-    out << ", __global volatile int *g_special_values";
+    out << ", __global volatile uint *g_atomic_input";
+    out << ", __global volatile uint *g_special_values";
   }
   if (CLOptions::EMI())
     out << ", __global int *emi_input";

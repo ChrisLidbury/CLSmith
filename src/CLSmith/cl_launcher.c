@@ -48,8 +48,8 @@ bool inter_thread_comm = false;
 // Data to free.
 char *source_text = NULL;
 char *buf = NULL;
-int *init_atomic_vals = NULL;
-int *init_special_vals = NULL;
+cl_uint *init_atomic_vals = NULL;
+cl_uint *init_special_vals = NULL;
 size_t *local_size = NULL;
 size_t *global_size = NULL;
 char* local_dims = "";
@@ -367,9 +367,10 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   if (atomics) {
     // Create buffer to store counters for the atomic blocks
     int total_counters = atomic_counter_no * total_threads;
-    init_atomic_vals = (int*)malloc(sizeof(int) * total_counters);
-    init_special_vals = (int*)malloc(sizeof(int) * total_counters);
-    // TODO fill
+    init_atomic_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
+    init_special_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
+    
+    // Fill the created buffers in host memory
     int i;
     for (i = 0; i < total_counters; i++) {
       init_atomic_vals[i] = 0;
@@ -377,13 +378,13 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     }
     
     cl_mem atomic_input = clCreateBuffer(
-        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(int), init_atomic_vals, &err);
+        context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), init_atomic_vals, &err);
     if (cl_error_check(err, "Error creating atomic input buffer"))
       return 1;
     
     // Create buffer to store special values for the atomic blocks
     cl_mem special_values = clCreateBuffer(
-        context, CL_MEM_WRITE_ONLY, total_counters * sizeof(int), NULL, &err);
+        context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), init_special_vals, &err);
     if (cl_error_check(err, "Error creating special values input buffer"))
       return 1;
     
@@ -447,7 +448,6 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   
 
   // Create command to launch the kernel.
-  // For now, it is 1-dimensional
   err = clEnqueueNDRangeKernel(
       com_queue, kernel, work_dim, NULL, global_size, local_size, 0, NULL, NULL);
   if (cl_error_check(err, "Error enqueueing kernel"))
