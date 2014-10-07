@@ -67,6 +67,7 @@ for curr_file in dirlist:
   output.write("RESULTS FOR " + curr_file + "\n")  
   output.flush()
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
+  sys.stdout.flush()
   
   file_path = args.path + pathSeparator + curr_file
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
@@ -79,18 +80,21 @@ for curr_file in dirlist:
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
 
-  if "not found in device name" in run_prog_res[0]:
+  run_prog_out = '\n'.join(filter(lambda x: (not "PLUGIN" in x), run_prog_res[0].split("\n")))
+
+  if "not found in device name" in run_prog_out:
       print("Mismatch in device name (aborting all further runs)")
       sys.exit(1)
   
   if not run_prog_res[1] == 0:
-      output.write("run_error: %s\n" % (run_prog_res[0]))
+      output.write("run_error: %s\n" % (run_prog_out))
+      output.flush()
       continue
-  elif run_prog_res[0] == "Process timeout":
+  elif run_prog_out == "Process timeout":
       output.write("timeout\n")
+      output.flush()
       continue
-  
-  run_prog_out = run_prog_res[0]
+
   run_prog_out = run_prog_out.split(',')
   run_prog_out = filter(None, set(run_prog_out))
   
