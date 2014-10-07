@@ -25,8 +25,6 @@ parser.add_argument('-timeout', default = 150, type = int)
 parser.add_argument('-debug', dest = 'debug', action = 'store_true')
 parser.add_argument('-disable_opts', dest = 'disable_opts', action = 'store_true')
 
-parser.add_argument('flags', nargs='*')
-
 parser.add_argument('-resume', type=argparse.FileType('r'), default=None, help="Do not run tests that appear in an existing results file")
 
 parser.set_defaults(debug = False, disable_opts = False)
