@@ -47,12 +47,12 @@ StatementComm *StatementComm::make_random(CGContext& cg_context) {
   Expression *expr = Expression::make_random(
       cg_context, &Type::get_simple_type(eUInt));
   // rand_expr % 10
-  expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
-      expr, Constant::make_int(10), SafeOpFlags::make_dummy_flags()));
+  expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod, expr,
+      Constant::make_int(10), new SafeOpFlags(false, true, true, sInt32)));
   // tid % group_size
   Expression *expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
       new ExpressionVariable(*tid), Constant::make_int(group_size),
-      SafeOpFlags::make_dummy_flags()));
+      new SafeOpFlags(false, false, true, sInt32)));
   // permutations[rand_expr % 10][tid % group_size]
   expr = new ExpressionVariable(*permutations->itemize(
       std::vector<const Expression *>({expr, expr_}),
@@ -60,14 +60,11 @@ StatementComm *StatementComm::make_random(CGContext& cg_context) {
   // get_linear_group_id() * group_size
   expr_ = new ExpressionFuncall(*new FunctionInvocationBinary(eMul,
       new ExpressionID(ExpressionID::kLinearGroup),
-      Constant::make_int(group_size), SafeOpFlags::make_dummy_flags()));
+      Constant::make_int(group_size),
+      new SafeOpFlags(false, false, true, sInt32)));
   // (get_linear_group_id() * group_size) + permutations[rand_expr % 10][tid % group_size]
   expr = new ExpressionFuncall(*new FunctionInvocationBinary(eAdd,
-      expr_, expr, SafeOpFlags::make_dummy_flags()));
-  // permutations[rand_expr % 10][(get_linear_group_id() * group_size) + tid]
-  //expr = new ExpressionVariable(*permutations->itemize(
-  //    std::vector<const Expression *>({expr, expr_}),
-  //    cg_context.get_current_block()));
+      expr_, expr, new SafeOpFlags(false, false, true, sInt32)));
   StatementAssign *st_ass = StatementAssign::make_possible_compound_assign(
       cg_context, *new Lhs(*tid), eSimpleAssign, *expr);
   return new StatementComm(cg_context.get_current_block(),

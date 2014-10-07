@@ -5,6 +5,17 @@ import sys
 import os
 import argparse
 from processTimeout import WorkerThread
+import tempfile
+import zipfile
+import shutil
+
+# nb: extractall is unsafe if you pass in archives from untrusted sources
+def unzip(path, fname):
+  oldpath = os.getcwd()
+  os.chdir(path)
+  zf = zipfile.ZipFile(fname, 'r')
+  zf.extractall()
+  os.chdir(oldpath)
 
 clLauncherExecutable = "cl_launcher"
 pathSeparator = os.sep
@@ -20,12 +31,11 @@ parser.add_argument('-cl_device_idx', default = 0, type = int)
 parser.add_argument('-device_name_contains', default = "")
 
 parser.add_argument('-path', default = "CLSmithTests/")
+parser.add_argument('-zipfile', type=argparse.FileType('r'), default=None, help="Zipfile containing tests to run")
 parser.add_argument('-output', default = "Result.csv")
 parser.add_argument('-timeout', default = 150, type = int)
 parser.add_argument('-debug', dest = 'debug', action = 'store_true')
 parser.add_argument('-disable_opts', dest = 'disable_opts', action = 'store_true')
-
-parser.add_argument('flags', nargs='*')
 
 parser.add_argument('-resume', type=argparse.FileType('r'), default=None, help="Do not run tests that appear in an existing results file")
 
@@ -43,6 +53,11 @@ if os.path.isfile(args.output):
     print("Overwriting file %s." % args.output)
 #"""
 output = open(args.output, 'w')
+
+if args.zipfile:
+  args.path = tempfile.mkdtemp(os.getcwd())
+  print("Creating temporary directory [%s]" % args.path)
+  unzip(args.path, args.zipfile)
 
 if not os.path.exists(args.path):
   print("Given path %s does not exist!" % (args.path))
@@ -103,3 +118,7 @@ for curr_file in dirlist:
       output.flush()
   output.write("\n")
 #"""
+
+if args.zipfile:
+  print("Removing temporary directory [%s]" % args.path)
+  shutil.rmtree(args.path)
