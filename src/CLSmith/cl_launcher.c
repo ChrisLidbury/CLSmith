@@ -38,8 +38,12 @@ char* device_name_given = "";
 bool debug_build = false;
 bool disable_opts = false;
 
+// Kernel parameters.
 bool atomics = false;
 int atomic_counter_no = 0;
+bool emi = false;
+bool fake_divergence = false;
+bool inter_thread_comm = false;
 
 // Data to free.
 char *source_text = NULL;
@@ -50,11 +54,14 @@ size_t *local_size = NULL;
 size_t *global_size = NULL;
 char* local_dims = "";
 char* global_dims = "";
+int *sequence_input = NULL;
 
 // Other parameters
 cl_platform_id *platform;
 cl_device_id *device;
 int total_threads = 1;
+int l_dim = 1;
+int g_dim = 1;
 
 int run_on_platform_device(cl_platform_id *, cl_device_id *, cl_uint);
 void 
@@ -117,7 +124,6 @@ int main(int argc, char **argv) {
   
   // TODO function this
   // Parsing thread and group dimension information
-  int l_dim = 1, g_dim = 1;
   if (local_dims == "") {
     printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
     local_size = (size_t*)malloc(sizeof(size_t));
@@ -234,6 +240,9 @@ int main(int argc, char **argv) {
     free(init_atomic_vals);
     free(init_special_vals);
   }
+  if (emi) {
+    free(sequence_input);
+  }
 
   return run_err;
 }
@@ -335,8 +344,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
         program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
     if (cl_error_check(err, "Error getting build info"))
       return 1;
-    //else
-      //printf("clBuildProgram status: %d.\n", status);
+
   }
  
   // Create the kernel 
@@ -351,7 +359,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
   
   // Set the buffers as arguments
-  err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &result);
+  unsigned kernel_arg = 0;
+  err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &result);
   if (cl_error_check(err, "Error setting kernel argument 0"))
     return 1;
   
@@ -378,11 +387,56 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     if (cl_error_check(err, "Error creating special values input buffer"))
       return 1;
     
-    err = clSetKernelArg(kernel, 1, sizeof(cl_mem), &atomic_input);
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &atomic_input);
     if (cl_error_check(err, "Error setting atomic input array argument"))
       return 1;
-    err = clSetKernelArg(kernel, 2, sizeof(cl_mem), &special_values);
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &special_values);
     if (cl_error_check(err, "Error setting special values array argument"))
+      return 1;
+  }
+
+  if (emi) {
+    // Create input buffer for EMI.
+    int emi_values[1024];
+    int i;
+    for (i = 0; i < 1024; ++i) emi_values[i] = 1024 - i;
+    cl_mem emi_input = clCreateBuffer(
+        context, CL_MEM_READ_ONLY, 1024 * sizeof(cl_int), &emi_values, &err);
+    if (cl_error_check(err, "Error creating emi buffer"))
+      return 1;
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &emi_input);
+    if (cl_error_check(err, "Error setting kernel argument for emi"))
+      return 1;
+  }
+
+  if (fake_divergence) {
+    // Create input for fake divergence.
+    size_t max_dimen = global_size[0];
+    int i;
+    for (i = 1; i < g_dim; ++i)
+      if (global_size[i] > max_dimen) max_dimen = global_size[i];
+    sequence_input = (int *)malloc(sizeof(int) * max_dimen);
+    for (i = 0; i < max_dimen; ++i) sequence_input[i] = 10 + i;
+    cl_mem seq_input = clCreateBuffer(
+        context, CL_MEM_READ_ONLY, max_dimen * sizeof(cl_int), sequence_input, &err);
+    if (cl_error_check(err, "Error creating fake divergence buffer"))
+      return 1;
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &seq_input);
+    if (cl_error_check(err, "Error setting kernel argument for fake divergence"))
+      return 1;
+  }
+
+  if (inter_thread_comm) {
+    // Create input for inter thread communication.
+    size_t linear_local = local_size[0];
+    int i;
+    for (i = 1; i < l_dim; ++i) linear_local *= local_size[i];
+    cl_mem inter_thread = clCreateBuffer(
+        context, CL_MEM_READ_WRITE, linear_local * sizeof(cl_long), NULL, &err);
+    if (cl_error_check(err, "Error creating fake inter thread comm buffer"))
+      return 1;
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &inter_thread);
+    if (cl_error_check(err, "Error setting kernel argument for inter thread comm"))
       return 1;
   }
   
@@ -486,6 +540,18 @@ int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "--atomics")) {
     atomics = true;
     atomic_counter_no = atoi(val);
+    return 1;
+  }
+  if (!strcmp(arg, "---emi")) {
+    emi = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---fake_divergence")) {
+    fake_divergence = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---inter_thread_comm")) {
+    inter_thread_comm = true;
     return 1;
   }
   if (!strcmp(arg, "---debug")) {

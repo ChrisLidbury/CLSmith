@@ -77,7 +77,7 @@ StatementIf::make_random(CGContext &cg_context)
         // If the appropriate flag is set, there is a chance of condition 
         // generated to be a atomic expression; however, do not generate
         // another atomic expression within an atomic block
-        bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(10);
+        bool build_atomic = CLSmith::CLOptions::atomics() && !cg_context.get_atomic_context() && rnd_flipcoin(30);
         static int thru = 0;
         thru++;
         if (build_atomic) {
