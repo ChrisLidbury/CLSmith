@@ -109,8 +109,9 @@ void FunctionInvocationBuiltIn::Output(std::ostream& out) const {
     // type, so we must convert the return type.
     if (param_value[idx]->get_type().eType == eSimple) {
       const Type& cast_type = GetParameterType(idx);
+      const Type& simple_cast_type = Vector::DemoteVectorTypeToType(&cast_type);
       out << "(";
-      cast_type.Output(out);
+      simple_cast_type.Output(out);
       out << ")";
     }
     param_value[idx]->Output(out);
