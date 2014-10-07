@@ -29,6 +29,7 @@ parser.add_argument('-cl_launcher', default = "." + pathSeparator + clLauncherEx
 parser.add_argument('-cl_platform_idx', default = 0, type = int)
 parser.add_argument('-cl_device_idx', default = 0, type = int)
 parser.add_argument('-device_name_contains', default = "")
+parser.add_argument('-cl_launcher_opt', action = 'append', default = [], help="Extra flags for cl_launcher")
 
 parser.add_argument('-path', default = "CLSmithTests/")
 parser.add_argument('-zipfile', type=argparse.FileType('r'), default=None, help="Zipfile containing tests to run")
@@ -55,7 +56,7 @@ if os.path.isfile(args.output):
 output = open(args.output, 'w')
 
 if args.zipfile:
-  args.path = tempfile.mkdtemp(os.getcwd())
+  args.path = tempfile.mkdtemp(dir=os.getcwd())
   print("Creating temporary directory [%s]" % args.path)
   unzip(args.path, args.zipfile)
 
@@ -92,6 +93,8 @@ for curr_file in dirlist:
       cmd += " ---disable_opts"
   if (args.debug):
       cmd += " ---debug"
+  for f in args.cl_launcher_opt:
+      cmd += " %s" % f
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
 
