@@ -1191,10 +1191,24 @@ VariableSelector::SelectLoopCtrlVar(const CGContext &cg_context, const vector<co
 			len--;
 		}
 	}
-	Variable* var = choose_var(vars, Effect::WRITE, cg_context, type, 0, eConvert, invalid_vars, true);
+	Variable* var;
+	if (cg_context.get_atomic_context()) {
+          var = choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, type, 0, eConvert, invalid_vars, true);
+	}
+	else {
+          var = choose_var(vars, Effect::WRITE, cg_context, type, 0, eConvert, invalid_vars, true);
+        }
 	ERROR_GUARD(NULL);
 	if (var == NULL) {
+          if (cg_context.get_atomic_context()) {
+              var = GenerateNewParentLocal(*cg_context.get_current_block(), 
+                  Effect::WRITE, cg_context, type,
+                  new CVQualifiers(std::vector<bool> ({false}), 
+                                   std::vector<bool> ({false})));
+          }
+          else {
 		var = GenerateNewGlobal(Effect::WRITE, cg_context, type, 0);
+          }
 	}
 	return var;
 }

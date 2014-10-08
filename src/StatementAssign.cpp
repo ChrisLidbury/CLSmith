@@ -52,6 +52,7 @@
 #include "CompatibleChecker.h"
 #include "Constant.h"
 #include "VectorFilter.h"
+#include "VariableSelector.h"
 
 #include "random.h"
 
@@ -132,7 +133,7 @@ StatementAssign::make_random(CGContext &cg_context, const Type* type, const CVQu
 		e = Constant::make_int(1);
 		// if we are creating standalone statements like x++, any qualifers fit
 		if (qf == NULL) qfer.wildcard = true;
-	}
+        }
 	else if (CGOptions::strict_volatile_rule()) {
 		if (type->is_volatile_struct_union())
 			return NULL;
@@ -185,6 +186,15 @@ StatementAssign::make_random(CGContext &cg_context, const Type* type, const CVQu
 	lhs = Lhs::make_random(lhs_cg_context, type, &qfer, op != eSimpleAssign, need_no_rhs(op));
 	if (qf) CGOptions::match_exact_qualifiers(prev_flag); // restore flag
 	ERROR_GUARD_AND_DEL2(NULL, e, lhs);
+        
+        if (cg_context.get_atomic_context() && type->eType == ePointer) {
+          vector<const Variable*> dummy;
+          Variable* var = VariableSelector::choose_var(cg_context.get_current_block()->local_vars, Effect::WRITE, cg_context, type, qf,  eDerefExact, dummy);
+          if (var == NULL)
+              var = VariableSelector::select(Effect::WRITE, cg_context, type, qf, dummy, eDerefExact, eNewValue);
+          assert(var);
+          e = new ExpressionVariable(*var);
+        }
 
 	// typecast, if needed.
 	e->check_and_set_cast(type);
