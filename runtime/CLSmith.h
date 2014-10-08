@@ -9,7 +9,7 @@ transparent_crc_no_string (uint64_t *crc64_context, uint64_t val)
   *crc64_context += val;
 }
 
-#define transparent_crc_ (A, B, C, D) transparent_crc_no_string (A, B)
+#define transparent_crc_(A, B, C, D) transparent_crc_no_string(A, B)
 
 inline __attribute__((always_inline)) uint32_t
 get_linear_group_id (void)
