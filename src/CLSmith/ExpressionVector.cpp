@@ -80,8 +80,7 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
         --remain;
       }
     }
-  }
-  else if (vec_expr_type == kVariable) {
+  } else if (vec_expr_type == kVariable) {
     // Produce an entire vector.
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(ExpressionVariable::make_random(

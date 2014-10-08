@@ -34,11 +34,15 @@ MemoryBuffer *permutations;
 // Each permutation.
 std::vector<int> *permute_values[kPermCount];
 // Local buffer that holds the intermediate values.
-MemoryBuffer *values;
+MemoryBuffer *local_values;
+// Global buffer that holds the intermediate values.
+MemoryBuffer *global_values;
 // Variable that holds the random thread ID.
 Variable *tid;
-// Variable used in random expressions throughout the program.
-MemoryBuffer *var;
+// Local Variable used in random expressions throughout the program.
+MemoryBuffer *local_var;
+// Global Variable used in random expressions throughout the program.
+MemoryBuffer *global_var;
 }  // namespace
 
 StatementComm *StatementComm::make_random(CGContext& cg_context) {
@@ -82,8 +86,11 @@ void StatementComm::InitBuffers() {
   permutations = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kConst,
       "permutations", &Type::get_simple_type(eUInt), NULL,
       {kPermCount, perm_size});
-  values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal, "comm_values",
-      &Type::get_simple_type(eLongLong), Constant::make_int(1),
+  local_values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
+      "l_comm_values", &Type::get_simple_type(eLongLong), Constant::make_int(1),
+      {CLProgramGenerator::get_threads_per_group()});
+  global_values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kGlobal,
+      "g_comm_values", &Type::get_simple_type(eLongLong), Constant::make_int(1),
       {CLProgramGenerator::get_total_threads()});
   // The initial value of the tid will come from the first permutation.
   // Lots of memory leaks here, probably not worth cleaning.
@@ -94,10 +101,17 @@ void StatementComm::InitBuffers() {
   tid = Variable::CreateVariable("tid", &Type::get_simple_type(eUInt), init,
       new CVQualifiers(std::vector<bool>({false}), std::vector<bool>({false})));
   // The variable that will be accessed throughout the program randomly.
-  var = values->itemize(std::vector<const Expression *>({
+  global_var = global_values->itemize(std::vector<const Expression *>({
       new ExpressionVariable(*tid)}), new Block(NULL, 0));  // leak
-  if (CLOptions::inter_thread_comm())
-    VariableSelector::GetGlobalVariables()->push_back(var);
+  Expression *expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
+      new ExpressionVariable(*tid), Constant::make_int(perm_size),
+      new SafeOpFlags(false, true, true, sInt32)));
+  local_var = local_values->itemize(std::vector<const Expression *>({expr}),
+      new Block(NULL, 0));  // leak
+  if (CLOptions::inter_thread_comm()) {
+    VariableSelector::GetGlobalVariables()->push_back(local_var);
+    VariableSelector::GetGlobalVariables()->push_back(global_var);
+  }
 }
 
 void StatementComm::OutputPermutations(std::ostream& out) {
@@ -115,14 +129,16 @@ void StatementComm::OutputPermutations(std::ostream& out) {
 }
 
 void StatementComm::AddVarsToGlobals(Globals *globals) {
-  assert(values != NULL && tid != NULL);
-  globals->AddGlobalMemoryBuffer(values);
+  assert(global_values != NULL && local_values != NULL && tid != NULL);
+  globals->AddLocalMemoryBuffer(local_values);
+  globals->AddGlobalMemoryBuffer(global_values);
   globals->AddGlobalVariable(tid);
 }
 
 void StatementComm::HashCommValues(std::ostream& out) {
-  assert(values != NULL);
-  values->hash(out);
+  assert(global_values != NULL && local_values != NULL);
+  local_values->hash(out);
+  global_values->hash(out);
 }
 
 void StatementComm::Output(std::ostream& out, FactMgr *fm, int indent) const {

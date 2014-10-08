@@ -130,7 +130,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   if (CLOptions::fake_divergence())
     out << ", __global int *sequence_input";
   if (CLOptions::inter_thread_comm())
-    out << ", __global long *comm_values";
+    out << ", __global long *g_comm_values";
   out << ") {" << std::endl;
   globals.OutputArrayControlVars(out);
   globals.OutputBufferInits(out);
