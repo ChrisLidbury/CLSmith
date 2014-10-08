@@ -41,6 +41,7 @@ bool disable_opts = false;
 // Kernel parameters.
 bool atomics = false;
 int atomic_counter_no = 0;
+bool atomic_reductions = false;
 bool emi = false;
 bool fake_divergence = false;
 bool inter_thread_comm = false;
@@ -50,6 +51,7 @@ char *source_text = NULL;
 char *buf = NULL;
 cl_uint *init_atomic_vals = NULL;
 cl_uint *init_special_vals = NULL;
+cl_int *global_reduction_target = NULL;
 size_t *local_size = NULL;
 size_t *global_size = NULL;
 char* local_dims = "";
@@ -60,6 +62,7 @@ int *sequence_input = NULL;
 cl_platform_id *platform;
 cl_device_id *device;
 int total_threads = 1;
+int no_groups = 1;
 int l_dim = 1;
 int g_dim = 1;
 
@@ -170,8 +173,10 @@ int main(int argc, char **argv) {
   
   // Calculating total number of work-units for future use
   int i;
-  for (i = 0; i < l_dim; i++)
+  for (i = 0; i < l_dim; i++) {
     total_threads *= global_size[i];
+    no_groups *= global_size[i] / local_size[i];
+  }
   
   // Platform ID, the index in the array of platforms.
   if (platform_index < 0) {
@@ -239,6 +244,9 @@ int main(int argc, char **argv) {
   if (atomics) {
     free(init_atomic_vals);
     free(init_special_vals);
+  }
+  if (atomic_reductions) {
+    free(global_reduction_target);
   }
   if (emi) {
     free(sequence_input);
@@ -378,13 +386,15 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     }
     
     cl_mem atomic_input = clCreateBuffer(
-        context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), init_atomic_vals, &err);
+        context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        init_atomic_vals, &err);
     if (cl_error_check(err, "Error creating atomic input buffer"))
       return 1;
     
     // Create buffer to store special values for the atomic blocks
     cl_mem special_values = clCreateBuffer(
-        context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), init_special_vals, &err);
+        context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        init_special_vals, &err);
     if (cl_error_check(err, "Error creating special values input buffer"))
       return 1;
     
@@ -393,6 +403,21 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
       return 1;
     err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &special_values);
     if (cl_error_check(err, "Error setting special values array argument"))
+      return 1;
+  }
+  
+  if (atomic_reductions) {
+    global_reduction_target = (cl_int*)malloc(sizeof(cl_int) * no_groups);
+    int i;
+    for (i = 0; i < no_groups; i++) global_reduction_target = 0;
+    
+    cl_mem atomic_reduction_vars = clCreateBuffer(
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, no_groups * sizeof(cl_int),
+        global_reduction_target, &err);
+    if (cl_error_check(err, "Error creating atomic reduction variable input buffer"))
+      return 1;
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), atomic_reduction_vars);
+    if (cl_error_check(err, "Error setting atomic reduction input argument"))
       return 1;
   }
 
@@ -500,7 +525,9 @@ int parse_file_args(const char* filename) {
   if (!strncmp(arg_buf, "//", 2)) {
     char* tok = strtok(arg_buf, " ");
     while (tok) {
-      if (!strncmp(tok, "-", 1))
+      if (!strncmp(tok, "---", 3))
+        parse_arg(tok, NULL);
+      else if (!strncmp(tok, "-", 1))
         parse_arg(tok, strtok(NULL, " "));
       tok = strtok(NULL, " ");
     }
@@ -545,6 +572,10 @@ int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "--atomics")) {
     atomics = true;
     atomic_counter_no = atoi(val);
+    return 1;
+  }
+  if (!strcmp(arg, "---atomic_reductions")) {
+    atomic_reductions = true;
     return 1;
   }
   if (!strcmp(arg, "---emi")) {

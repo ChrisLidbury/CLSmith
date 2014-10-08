@@ -301,14 +301,19 @@ void ExpressionAtomic::OutputHashing(std::ostream& out) {
     eid_g->Output(out);
     out << ")" << std::endl;
     output_tab(out, 2);
-    out << "for (i = 0 ; i <= " << CLProgramGenerator::get_threads() << " * " << 
-      CLProgramGenerator::get_atomic_blocks_no() << "; i++)" << std::endl;
+    out << "for (i = 0 ; i <= " << CLProgramGenerator::get_atomic_blocks_no() 
+        << "; i++)" << std::endl;
     output_tab(out, 3);
     out << "transparent_crc(";
     ExpressionAtomic::GetSVBuffer()->Output(out);
-    out << "[i], \"";
+    out << "[i + " << CLProgramGenerator::get_atomic_blocks_no() << " * ";
+    ExpressionID* lgrid = new ExpressionID(ExpressionID::kLinearGroup);
+    lgrid->Output(out);
+    out << "], \"";
     ExpressionAtomic::GetSVBuffer()->Output(out);
-    out << "[i]\", print_hash_value);" << std::endl;
+    out << "[i + " << CLProgramGenerator::get_atomic_blocks_no() << " * ";
+    lgrid->Output(out);
+    out << "]\", print_hash_value);" << std::endl;
   }
   if (ExpressionAtomic::HasLocalSVMems()) {
     output_tab(out, 1);

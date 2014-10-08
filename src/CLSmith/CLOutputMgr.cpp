@@ -125,6 +125,9 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
     out << ", __global volatile uint *g_atomic_input";
     out << ", __global volatile uint *g_special_values";
   }
+  if (CLOptions::atomic_reductions()) {
+    out << ", __global volatile int *g_atomic_reduction";
+  }
   if (CLOptions::EMI())
     out << ", __global int *emi_input";
   if (CLOptions::fake_divergence())

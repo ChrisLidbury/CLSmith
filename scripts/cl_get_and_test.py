@@ -94,7 +94,7 @@ for curr_file in dirlist:
   if (args.debug):
       cmd += " ---debug"
   for f in args.cl_launcher_opt:
-      cmd += " %s" % f
+      cmd += " %s" % (f)
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
 
