@@ -90,18 +90,7 @@ void CLProgramGenerator::goGenerator() {
   // Once the global struct is created, we add the global memory buffers.
   // Adding global memory buffers to do with atomic expressions.
   if (CLOptions::atomics()) {
-    for (MemoryBuffer *mb : *ExpressionAtomic::GetLocalMems()) {
-      globals->AddLocalMemoryBuffer(mb);
-    }
-    for (MemoryBuffer *mb : *ExpressionAtomic::GetLocalSVMems()) {
-      globals->AddLocalMemoryBuffer(mb);
-    }
-    for (MemoryBuffer *mb : *ExpressionAtomic::GetGlobalMems()) {
-      globals->AddGlobalMemoryBuffer(mb);
-    }
-    for (MemoryBuffer *mb : *ExpressionAtomic::GetSVMems()) {
-      globals->AddGlobalMemoryBuffer(mb);
-    }
+    ExpressionAtomic::AddVarsToGlobals(globals);
   }
   
   // Add the reduction variables for atomic reductions to the global struct

@@ -857,7 +857,14 @@ VariableSelector::make_init_value(Effect::Access access, const CGContext &cg_con
 	const Type* type = t->ptr_type;
 	assert(type);
 
-	vector<Variable*> vars = find_all_visible_vars(b);
+	vector<Variable*> vars;
+        if (cg_context.get_atomic_context()) {
+          if (b)
+            vars = b->local_vars;
+        }
+        else {
+          vars = find_all_visible_vars(b);
+        }
 	vector<const Variable*> dummy;
 	
 	Variable *var = NULL;
@@ -883,7 +890,7 @@ VariableSelector::make_init_value(Effect::Access access, const CGContext &cg_con
 		CVQualifiers qfer_deref = qfer.random_loose_qualifiers(no_volatile, access, cg_context);
 		qfer_deref.remove_qualifiers(1);
 		qfer_deref.accept_stricter = false; 
-		bool use_local = (b != 0 && type->eType == ePointer && !qfer_deref.is_volatile());
+		bool use_local = (b != 0 && (type->eType == ePointer || cg_context.get_atomic_context()) && !qfer_deref.is_volatile());
 		const Type* tt = use_local ? Type::random_type_from_type(type, true, true) : Type::random_type_from_type(type, false, true);
 		ERROR_GUARD(NULL);
 		// create a local if it's not a volatile, and it's a pointer, and block is specified

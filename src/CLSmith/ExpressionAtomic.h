@@ -10,6 +10,7 @@
 
 #include "CLSmith/CLExpression.h"
 #include "CLSmith/ExpressionAtomicAccess.h"
+#include "CLSmith/Globals.h"
 #include "CLSmith/MemoryBuffer.h"
 
 #include <set>
@@ -81,6 +82,9 @@ class ExpressionAtomic : public CLExpression {
   
   // Return the number of maximum atomic blocks for the current program
   static int get_atomic_blocks_no(void);
+  
+  // Add required variables to the global buffer
+  static void AddVarsToGlobals(Globals* globals);
   
   // Since all the p arguments of the atomic expressions come from the global
   // array, it must be held in the struct, for global access. Here we save all

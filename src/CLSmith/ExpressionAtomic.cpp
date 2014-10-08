@@ -107,6 +107,25 @@ Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *
   return new ExpressionFuncall(*fi);
 }
 
+void ExpressionAtomic::AddVarsToGlobals(Globals* globals) {
+  if (HasLocalSVMems()) {
+    for (MemoryBuffer *mb : *ExpressionAtomic::GetLocalMems()) {
+      globals->AddLocalMemoryBuffer(mb);
+    }
+    for (MemoryBuffer *mb : *ExpressionAtomic::GetLocalSVMems()) {
+      globals->AddLocalMemoryBuffer(mb);
+    }
+  }
+  if (HasSVMems()) {
+    for (MemoryBuffer *mb : *ExpressionAtomic::GetGlobalMems()) {
+      globals->AddGlobalMemoryBuffer(mb);
+    }
+    for (MemoryBuffer *mb : *ExpressionAtomic::GetSVMems()) {
+      globals->AddGlobalMemoryBuffer(mb);
+    }
+  }
+}
+
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
     global_in_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
@@ -114,6 +133,7 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
+    GetSVBuffer();
   }
   return global_in_buf;
 }
@@ -136,6 +156,7 @@ MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
     GetLocalMems()->push_back(local_in_buf);
+    GetLocalSVBuffer();
   }
   return local_in_buf;
 }
@@ -166,7 +187,7 @@ std::vector<MemoryBuffer*>* ExpressionAtomic::GetGlobalMems() {
 std::vector<MemoryBuffer*>* ExpressionAtomic::GetSVMems() {
   if (global_sv == NULL) {
     global_sv = new std::vector<MemoryBuffer*>();
-    GetSVBuffer(); // call once to ensure reference is constructed
+//     GetSVBuffer(); // call once to ensure reference is constructed
   }
   return global_sv;
 }
@@ -180,7 +201,7 @@ std::vector<MemoryBuffer*>* ExpressionAtomic::GetLocalMems() {
 std::vector<MemoryBuffer*>* ExpressionAtomic::GetLocalSVMems() {
   if (local_sv == NULL) {
     local_sv = new std::vector<MemoryBuffer*>();
-    GetLocalSVBuffer(); // call once to ensure reference is constructed
+//     GetLocalSVBuffer(); // call once to ensure reference is constructed
   }
   return local_sv;
 }
