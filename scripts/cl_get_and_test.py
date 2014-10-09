@@ -98,7 +98,8 @@ for curr_file in dirlist:
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
 
-  run_prog_out = '\n'.join(filter(lambda x: (not "PLUGIN" in x), run_prog_res[0].split("\n")))
+  run_prog_out = run_prog_res[0].decode('unicode_escape')
+  run_prog_out = '\n'.join(filter(lambda x: (not "PLUGIN" in x), run_prog_out.split("\n")))
 
   if "not found in device name" in run_prog_out:
       print("Mismatch in device name (aborting all further runs)")
