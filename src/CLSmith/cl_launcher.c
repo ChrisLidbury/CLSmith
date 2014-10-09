@@ -80,22 +80,24 @@ int parse_file_args(const char* filename);
 void print_help() {
   printf("Usage: ./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\n");
   printf("\n");
-  printf("Possible flags are:\n");
-  printf("  -f FILE --filename FILE                          Test file (required)\n");
-  printf("  -p IDX  --platform_idx IDX                       Target platform (required)\n");
-  printf("  -d IDX  --device_idx IDX                         Target device (required)\n");
+  printf("Required flags are:\n");
+  printf("  -f FILE --filename FILE                   Test file\n");
+  printf("  -p IDX  --platform_idx IDX                Target platform\n");
+  printf("  -d IDX  --device_idx IDX                  Target device\n");
   printf("\n");
-  printf("  -b N    --binary N                               ???\n");
-  printf("  -l N    --locals N                               ???\n");
-  printf("  -g N    --groups N                               ???\n");
-  printf("          --atomics                                Test uses atomic sections\n");
-  printf("                             ---atomic_reductions  Test uses atomic reductions\n");
-  printf("                             ---emi                Test uses EMI\n");
-  printf("                             ---fake_divergence    Test uses EMI\n");
-  printf("                             ---inter_thread_comm  Test uses inter-thread communication\n");
-  printf("                             ---debug              Print debug info\n");
-  printf("                             ---bin                ???\n");
-  printf("                             ---disable_opts       Disable OpenCL compile optimisations\n");
+  printf("Optional flags are:\n");
+  printf("  -b N    --binary N                        ???\n");
+  printf("  -l N    --locals N                        ???\n");
+  printf("  -g N    --groups N                        ???\n");
+  printf("  -n NAME --name NAME                       Ensure the device name contains this string\n");
+  printf("          --atomics                         Test uses atomic sections\n");
+  printf("                      ---atomic_reductions  Test uses atomic reductions\n");
+  printf("                      ---emi                Test uses EMI\n");
+  printf("                      ---fake_divergence    Test uses EMI\n");
+  printf("                      ---inter_thread_comm  Test uses inter-thread communication\n");
+  printf("                      ---debug              Print debug info\n");
+  printf("                      ---bin                ???\n");
+  printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
 }
 
 int main(int argc, char **argv) {
