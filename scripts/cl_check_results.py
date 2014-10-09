@@ -138,7 +138,7 @@ output.write("""
     <body>
   """)
 
-max_count = 1
+max_count = 20
 output.write("<div class=\"fixed-table-container\">\n")
 output.write("<div class=\"header-background\"></div>\n")
 output.write("<div class=\"fixed-table-container-inner\">\n")
