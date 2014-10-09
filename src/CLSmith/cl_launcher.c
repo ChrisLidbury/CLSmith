@@ -77,6 +77,27 @@ int cl_error_check(cl_int, const char *);
 int parse_arg(char* arg, char* val);
 int parse_file_args(const char* filename);
 
+void print_help() {
+  printf("Usage: ./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\n");
+  printf("\n");
+  printf("Possible flags are:\n");
+  printf("  -f FILE --filename FILE                          Test file (required)\n");
+  printf("  -p IDX  --platform_idx IDX                       Target platform (required)\n");
+  printf("  -d IDX  --device_idx IDX                         Target device (required)\n");
+  printf("\n");
+  printf("  -b N    --binary N                               ???\n");
+  printf("  -l N    --locals N                               ???\n");
+  printf("  -g N    --groups N                               ???\n");
+  printf("          --atomics                                Test uses atomic sections\n");
+  printf("                             ---atomic_reductions  Test uses atomic reductions\n");
+  printf("                             ---emi                Test uses EMI\n");
+  printf("                             ---fake_divergence    Test uses EMI\n");
+  printf("                             ---inter_thread_comm  Test uses inter-thread communication\n");
+  printf("                             ---debug              Print debug info\n");
+  printf("                             ---bin                ???\n");
+  printf("                             ---disable_opts       Disable OpenCL compile optimisations\n");
+}
+
 int main(int argc, char **argv) {
 
 #ifdef _MSC_VER
@@ -88,7 +109,8 @@ int main(int argc, char **argv) {
 
   // Parse the input. Expect three parameters.
   if (argc < 4) {
-    printf("Expected at least three arguments \"./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\"\n");
+    printf("Expected at least three arguments\n");
+    print_help();
     return 1;
   }
   
@@ -565,6 +587,10 @@ int parse_file_args(const char* filename) {
 }
 
 int parse_arg(char* arg, char* val) {
+  if (!strcmp(arg, "-h") || !strcmp(arg, "--help")) {
+    print_help();
+    exit(0);
+  }
   if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
     file = val;
     return 2;
