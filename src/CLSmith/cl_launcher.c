@@ -93,7 +93,7 @@ void print_help() {
   printf("          --atomics                         Test uses atomic sections\n");
   printf("                      ---atomic_reductions  Test uses atomic reductions\n");
   printf("                      ---emi                Test uses EMI\n");
-  printf("                      ---fake_divergence    Test uses EMI\n");
+  printf("                      ---fake_divergence    Test uses fake divergence\n");
   printf("                      ---inter_thread_comm  Test uses inter-thread communication\n");
   printf("                      ---debug              Print debug info\n");
   printf("                      ---bin                ???\n");
@@ -125,6 +125,10 @@ int main(int argc, char **argv) {
   char* next_arg;
   while (++arg_no < argc) {
     curr_arg = argv[arg_no];
+    if (!strcmp(curr_arg, "-h") || !strcmp(curr_arg, "--help")) {
+      print_help();
+      exit(0);
+    }
     if (strncmp(curr_arg, "---", 3)) {
       if (++arg_no >= argc) {
         printf("Found option %s with no value.\n", curr_arg);
@@ -589,10 +593,6 @@ int parse_file_args(const char* filename) {
 }
 
 int parse_arg(char* arg, char* val) {
-  if (!strcmp(arg, "-h") || !strcmp(arg, "--help")) {
-    print_help();
-    exit(0);
-  }
   if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
     file = val;
     return 2;
