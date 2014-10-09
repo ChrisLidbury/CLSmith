@@ -58,6 +58,7 @@ size_t *global_size = NULL;
 char* local_dims = "";
 char* global_dims = "";
 int *sequence_input = NULL;
+cl_long *comm_vals = NULL;
 
 // Other parameters
 cl_platform_id *platform;
@@ -279,6 +280,9 @@ int main(int argc, char **argv) {
   }
   if (emi) {
     free(sequence_input);
+  }
+  if (inter_thread_comm) {
+    free(comm_vals);
   }
 
   return run_err;
@@ -514,11 +518,11 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
   if (inter_thread_comm) {
     // Create input for inter thread communication.
-    size_t linear_local = local_size[0];
+    comm_vals = malloc(sizeof(cl_long) * total_threads);
     int i;
-    for (i = 1; i < l_dim; ++i) linear_local *= local_size[i];
+    for (i = 0; i < total_threads; ++i) comm_vals[i] = 1;
     cl_mem inter_thread = clCreateBuffer(
-        context, CL_MEM_READ_WRITE, linear_local * sizeof(cl_long), NULL, &err);
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_threads * sizeof(cl_long), comm_vals, &err);
     if (cl_error_check(err, "Error creating fake inter thread comm buffer"))
       return 1;
     err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &inter_thread);
