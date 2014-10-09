@@ -27,6 +27,12 @@ void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::
     out << " --atomics " << CLProgramGenerator::get_atomic_blocks_no();
   if (CLOptions::atomic_reductions())
     out << " ---atomic_reductions";
+  if (CLOptions::fake_divergence())
+    out << " ---fake_divergence";
+  if (CLOptions::inter_thread_comm())
+    out << " ---inter_thread_comm";
+  if (CLOptions::EMI())
+    out << " ---emi";
   out << " -g ";
   for (std::vector<unsigned int>::iterator it = global_dims.begin(); it < global_dims.end(); it++) {
     out << *it;
