@@ -463,14 +463,15 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   if (atomic_reductions) {
     global_reduction_target = (cl_int*)malloc(sizeof(cl_int) * no_groups);
     int i;
-    for (i = 0; i < no_groups; i++) global_reduction_target = 0;
+    for (i = 0; i < no_groups; i++) 
+      global_reduction_target[i] = 0;
     
     cl_mem atomic_reduction_vars = clCreateBuffer(
         context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, no_groups * sizeof(cl_int),
         global_reduction_target, &err);
     if (cl_error_check(err, "Error creating atomic reduction variable input buffer"))
       return 1;
-    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), atomic_reduction_vars);
+    err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &atomic_reduction_vars);
     if (cl_error_check(err, "Error setting atomic reduction input argument"))
       return 1;
   }

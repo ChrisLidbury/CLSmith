@@ -66,7 +66,9 @@ ExpressionVariable::make_random(CGContext &cg_context, const Type* type, const C
 	do {
 		const Variable* var = 0; 
 		// try to use one of must_read_vars in CGContext 
-		var = VariableSelector::select_must_use_var(Effect::READ, cg_context, type, qfer);  
+		var = VariableSelector::select_must_use_var(Effect::READ, cg_context, type, qfer);
+                if ((var == NULL || var->is_global()) && cg_context.get_atomic_context())
+                  var = VariableSelector::select(Effect::READ, cg_context, type, qfer, dummy, eDerefExact, eNewValue);
 		if (var == NULL) {
 			var = VariableSelector::select(Effect::READ, cg_context, type, qfer, dummy, eFlexible);
 		}
