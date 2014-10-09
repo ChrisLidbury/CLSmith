@@ -393,7 +393,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
         program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &bin_size, NULL);
     if (cl_error_check(err, "Error getting binary info"))
       return 1;
-    unsigned char *bin = malloc(bin_size);
+    unsigned char *bin = (unsigned char*)malloc(bin_size);
     if (bin == NULL) {
       printf("Failed to malloc %ld bytes\n", bin_size);
       return 1;
@@ -518,7 +518,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
   if (inter_thread_comm) {
     // Create input for inter thread communication.
-    comm_vals = malloc(sizeof(cl_long) * total_threads);
+    comm_vals = (cl_long*)malloc(sizeof(cl_long) * total_threads);
     int i;
     for (i = 0; i < total_threads; ++i) comm_vals[i] = 1;
     cl_mem inter_thread = clCreateBuffer(
