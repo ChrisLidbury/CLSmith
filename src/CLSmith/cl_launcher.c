@@ -37,6 +37,7 @@ int platform_index = 0;
 char* device_name_given = "";
 bool debug_build = false;
 bool disable_opts = false;
+bool output_binary = false;
 
 // Kernel parameters.
 bool atomics = false;
@@ -346,13 +347,38 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
       free(err_code);
     }
     return 1;
-  } else {
-    cl_build_status status;
-    err = clGetProgramBuildInfo(
-        program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
-    if (cl_error_check(err, "Error getting build info"))
-      return 1;
+  }
+  cl_build_status status;
+  err = clGetProgramBuildInfo(
+      program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
+  if (cl_error_check(err, "Error getting build info"))
+    return 1;
 
+  // If specified, output the binary.
+  if (output_binary) {
+    size_t bin_size;
+    err = clGetProgramInfo(
+        program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &bin_size, NULL);
+    if (cl_error_check(err, "Error getting binary info"))
+      return 1;
+    unsigned char *bin = malloc(bin_size);
+    if (bin == NULL) {
+      printf("Failed to malloc %ld bytes\n", bin_size);
+      return 1;
+    }
+    err = clGetProgramInfo(
+        program, CL_PROGRAM_BINARIES, sizeof(unsigned char *), &bin, NULL);
+    if (cl_error_check(err, "Error getting binary"))
+      return 1;
+    FILE *bin_out = fopen("out.bin", "wb");
+    if (bin_out == NULL) {
+      printf("Could not open output file \"out.bin\"");
+      return 1;
+    }
+    fwrite(bin, sizeof(unsigned char *), bin_size, bin_out);
+    fclose(bin_out);
+    free(bin);
+    return 0;
   }
  
   // Create the kernel 
@@ -592,6 +618,10 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "---debug")) {
     debug_build = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---bin")) {
+    output_binary = true;
     return 1;
   }
   if (!strcmp(arg, "---disable_opts")) {
