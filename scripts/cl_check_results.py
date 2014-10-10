@@ -82,7 +82,7 @@ for program_name in vote.keys():
   temp_sample = []
   for r in sample[program_name]:
     r = r.strip()
-    if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x"):
+    if r.startswith(("timeout", "Inconclusive", "run_error", "0x")):
       temp_sample.append(r)
     else:
       temp_sample.append("0x" + r)
