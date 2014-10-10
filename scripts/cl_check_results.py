@@ -200,6 +200,8 @@ for program_name in sample.keys():
             color = " style=\"background-color:red;\""
         if results[platform_name][program_name][0].startswith("run_error"):
           color = " style=\"background-color:blue;\""
+        elif results[platform_name][program_name][0].startswith("timeout"):
+          color = " style=\"background-color:cadetblue;\""
         output.write("<td " + color + ">")
         curr_count = 0
         for result in results[platform_name][program_name]:
