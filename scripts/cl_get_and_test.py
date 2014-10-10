@@ -67,16 +67,22 @@ if args.resume:
     if "RESULTS FOR" in l:
       already_processed.append(l.split()[-1])
 
-file_list = os.listdir(args.path)
+full_file_list = os.listdir(args.path)
+file_list = sorted([f for f in os.listdir(args.path) if not f.endswith(".args")])
 file_index = 0
-dirlist = sorted(os.listdir(args.path))
-for curr_file in dirlist:
+for curr_file in file_list:
   file_index += 1
 
   if curr_file in already_processed:
       print("Skipping kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
       continue
 
+  check_args = os.path.splitext(curr_file)[0] + ".args"
+  if not check_args in full_file_list:
+    check_args = ""
+  else:
+    check_args = args.path + pathSeparator + check_args
+    
   lines = os.popen("wc -l " + args.path + pathSeparator + curr_file).readline().split()[0]
   output.write("RESULTS FOR " + curr_file + " (" + lines + ")\n")  
   output.flush()
@@ -87,6 +93,8 @@ for curr_file in dirlist:
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
   if (args.device_name_contains):
       cmd += " -n " + args.device_name_contains
+  if (check_args):
+      cmd += " -a " + check_args
   if (args.flags):
       cmd += " " + " ".join(args.flags)
   run_prog = WorkerThread(args.timeout, cmd)
