@@ -1203,8 +1203,8 @@ VariableSelector::SelectLoopCtrlVar(const CGContext &cg_context, const vector<co
           if (cg_context.get_atomic_context()) {
               var = GenerateNewParentLocal(*cg_context.get_current_block(), 
                   Effect::WRITE, cg_context, type,
-                  new CVQualifiers(std::vector<bool> ({false}), 
-                                   std::vector<bool> ({false})));
+                  new CVQualifiers(std::vector<bool> (1, false), 
+                                   std::vector<bool> (1, false)));
           }
           else {
 		var = GenerateNewGlobal(Effect::WRITE, cg_context, type, 0);

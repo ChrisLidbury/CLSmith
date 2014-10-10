@@ -33,8 +33,8 @@ static const unsigned int max_threads_per_group = 256;
 static const unsigned int no_dims = 3;
 static unsigned int noThreads;
 static unsigned int noGroups = 1;
-static std::vector<unsigned int> globalDim (no_dims, 1);
-static std::vector<unsigned int> localDim (no_dims, 1);
+static std::vector<unsigned int> globalDim;
+static std::vector<unsigned int> localDim;
 
 void CLProgramGenerator::goGenerator() {
   // Initialise probabilies.
@@ -130,7 +130,8 @@ void CLProgramGenerator::goGenerator() {
 
 void CLProgramGenerator::InitRuntimeParameters() {
   noThreads = rnd_upto(max_no_threads - min_no_threads) + min_no_threads;
-//   noGroups = rnd_upto(10000);
+  globalDim = std::vector<unsigned int> (no_dims, 1);
+  localDim = std::vector<unsigned int> (no_dims, 1);
   std::vector<unsigned int> chosen_div;
   std::vector<unsigned int> divisors;
   int choose, currNo = noThreads, div;
