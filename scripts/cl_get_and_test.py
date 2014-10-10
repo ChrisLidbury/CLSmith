@@ -62,7 +62,7 @@ if args.zipfile:
 
 if not os.path.exists(args.path):
   print("Given path %s does not exist!" % (args.path))
-  exit(1);
+  exit(1)
 
 already_processed = []
 if args.resume:
@@ -80,7 +80,8 @@ for curr_file in dirlist:
       print("Skipping kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
       continue
 
-  output.write("RESULTS FOR " + curr_file + "\n")  
+  lines = os.popen("wc -l " + args.path + pathSeparator + curr_file).readline().split()[0]
+  output.write("RESULTS FOR " + curr_file + " (" + lines + ")\n")  
   output.flush()
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   sys.stdout.flush()

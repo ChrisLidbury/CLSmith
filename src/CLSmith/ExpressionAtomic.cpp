@@ -129,7 +129,7 @@ void ExpressionAtomic::AddVarsToGlobals(Globals* globals) {
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
     global_in_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
-      "g_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      "g_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0), 
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
@@ -141,7 +141,7 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
   if (global_sv_buf == NULL) {
     global_sv_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
-      "g_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      "g_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0), 
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetSVMems()->push_back(global_sv_buf);
@@ -152,7 +152,7 @@ MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
 MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
   if (local_in_buf == NULL)  {
     local_in_buf = new MemoryBuffer(MemoryBuffer::kLocal,
-      "l_atomic_input", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      "l_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0), 
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
     GetLocalMems()->push_back(local_in_buf);
@@ -164,7 +164,7 @@ MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetLocalSVBuffer() {
   if (local_sv_buf == NULL) {
     local_sv_buf = new MemoryBuffer(MemoryBuffer::kLocal,
-      "l_special_values", &Type::get_simple_type(eInt), Constant::make_int(0), 
+      "l_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0), 
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
     

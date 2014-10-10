@@ -32,11 +32,16 @@ for filename in files:
 
 sample = dict()
 vote = dict()
+lines = dict()
 
 for platform_name, full_results in contents.items():
   for result in full_results:
     if result.startswith("RESULTS FOR"):
       program_name = result.replace("RESULTS FOR", "").strip()
+      if "(" in program_name and program_name not in lines:
+        no_lines = program_name.split("(")[1].split(")")[0]
+        program_name = program_name.split("(")[0].strip()
+        lines[program_name] = no_lines
     else:
       results[platform_name][program_name] = filter(None, result.split(','))
       if program_name in vote.keys():
@@ -65,17 +70,20 @@ for program_name in vote.keys():
     curr_res = curr_res[0]
   sample[program_name] = filter(None, curr_res.split(','))
   
-ordered_sample = collections.OrderedDict(sorted(sample.items()))
-ordered_contents = collections.OrderedDict(sorted(contents.items()))
+sample = collections.OrderedDict(sorted(sample.items()))
+contents = collections.OrderedDict(sorted(contents.items()))
+results = collections.OrderedDict(sorted(results.items()))
 
 samplefile = open(sample_file_name, 'w')    
-for program_name, result in ordered_sample.items():
+for program_name, result in sample.items():
     samplefile.write("SAMPLE RESULT FOR %s\n%s\n" % (program_name, result))
 samplefile.close() 
         
 output = open(output_file_name, 'w')
 
 cell_width = 200
+max_count = 20
+
 output.write("""
 <!doctype html>
   <head>
@@ -117,13 +125,15 @@ output.write("""
     }
     
     table {
+      table-layout: fixed;
       word-wrap: break-word;
       height: 100%;
       overflow-x: hidden;
-      overflow-y: auto;
-      padding-bottom: 15px;\n""")
+      overflow-y: auto;\n""")
 output.write("      width: " + `(len(contents) + 2) * cell_width` + "px;")
+output.write("      padding-bottom: " + `max_count * 30` + "px;")
 output.write("""
+     padding-right: 35px;
     }
     
     td {
@@ -138,7 +148,6 @@ output.write("""
     <body>
   """)
 
-max_count = 20
 output.write("<div class=\"fixed-table-container\">\n")
 output.write("<div class=\"header-background\"></div>\n")
 output.write("<div class=\"fixed-table-container-inner\">\n")
@@ -147,18 +156,21 @@ output.write("<tr><th><div class=\"th-inner\">Program</div></th><th><div class=\
 for platform_name in contents.keys():
     output.write("<th><div class=\"th-inner\">" + platform_name + "</div></th>\n")
 output.write("</tr>\n")
-for program_name in ordered_sample.keys():
-    output.write("<tr><td align=\"center\">" + program_name + "</td>")
+for program_name in sample.keys():
+    output.write("<tr><td align=\"center\">" + program_name)
+    if program_name in lines:
+      output.write("</br>Lines: " + lines[program_name])
+    output.write("</td>")
     color = ""
-    if ordered_sample[program_name] == ["Inconclusive"]:
+    if sample[program_name] == ["Inconclusive"]:
       color = " style=\"background-color:yellow;\""
     output.write("<td " + color + ">")
     curr_count = 0
-    for result in ordered_sample[program_name]:
+    for result in sample[program_name]:
       if (curr_count > max_count):
         output.write("<br/>...")
         break
-      output.write(result)
+      output.write(result + "<br/>")
       curr_count += 1
     output.write("</td>")
     for platform_name in results.keys():
@@ -176,7 +188,7 @@ for program_name in ordered_sample.keys():
           if (curr_count > max_count):
             output.write("<br/>...")
             break
-          output.write(result)
+          output.write(result + "<br/>")
           curr_count += 1
         output.write("</td>")
     output.write("</tr>\n")
