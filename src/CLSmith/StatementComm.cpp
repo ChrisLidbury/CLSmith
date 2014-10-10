@@ -94,16 +94,25 @@ void StatementComm::InitBuffers() {
       {CLProgramGenerator::get_total_threads()});
   // The initial value of the tid will come from the first permutation.
   // Lots of memory leaks here, probably not worth cleaning.
-  ExpressionVariable *init = new ExpressionVariable(*permutations->itemize(  // leak
+  // get_linear_group_id() * group_size
+  Expression *expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMul,
+      new ExpressionID(ExpressionID::kLinearGroup),
+      Constant::make_int(perm_size),
+      new SafeOpFlags(false, false, true, sInt32)));
+  // permutations[0][get_linear_group_id()]
+  ExpressionVariable *expr_ = new ExpressionVariable(*permutations->itemize(  // leak
       std::vector<const Expression *>({
       Constant::make_int(0), new ExpressionID(ExpressionID::kLinearLocal)}),
       new Block(NULL, 0)));  // leak
-  tid = Variable::CreateVariable("tid", &Type::get_simple_type(eUInt), init,
+  // get_linear_group_id() * group_size + permutations[0][get_linear_group_id()]
+  expr = new ExpressionFuncall(*new FunctionInvocationBinary(eAdd,
+      expr, expr_, new SafeOpFlags(false, false, true, sInt32)));
+  tid = Variable::CreateVariable("tid", &Type::get_simple_type(eUInt), expr,
       new CVQualifiers(std::vector<bool>({false}), std::vector<bool>({false})));
   // The variable that will be accessed throughout the program randomly.
   global_var = global_values->itemize(std::vector<const Expression *>({
       new ExpressionVariable(*tid)}), new Block(NULL, 0));  // leak
-  Expression *expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
+  expr = new ExpressionFuncall(*new FunctionInvocationBinary(eMod,
       new ExpressionVariable(*tid), Constant::make_int(perm_size),
       new SafeOpFlags(false, true, true, sInt32)));
   local_var = local_values->itemize(std::vector<const Expression *>({expr}),

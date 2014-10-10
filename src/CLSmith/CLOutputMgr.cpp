@@ -156,6 +156,11 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   globals.GetGlobalStructVar().Output(out);
   out << ");" << std::endl;
 
+  // Block all threads after, to prevent hashing stale values.
+  output_tab(out, 1);
+  StatementBarrier::OutputBarrier(out);
+  out << std::endl;
+
   // Handle hashing and outputting.
   output_tab(out, 1);
   out << "uint64_t crc64_context = 0xFFFFFFFFFFFFFFFFUL;" << std::endl;
