@@ -99,7 +99,7 @@ void print_help() {
   printf("                      ---fake_divergence    Test uses fake divergence\n");
   printf("                      ---inter_thread_comm  Test uses inter-thread communication\n");
   printf("                      ---debug              Print debug info\n");
-  printf("                      ---bin                ???\n");
+  printf("                      ---bin                Output disassembly of kernel in out.bin\n");
   printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
 }
 
@@ -152,12 +152,13 @@ int main(int argc, char **argv) {
   }
   
   // Parse arguments found in the given source file
-  if (!args_file) {
-    if (!parse_file_args(args_file)) {
+  if (args_file == NULL) {
+    if (!parse_file_args(file)) {
       printf("Failed parsing file for arguments.\n");
       return 1;
     }
-  } 
+  }
+  // Parse arguments in defined args file
   else {
     if (!parse_file_args(args_file)) {
       printf("Failed parsing given arguments file.\n");
