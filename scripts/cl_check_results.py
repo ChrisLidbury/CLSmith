@@ -1,3 +1,5 @@
+# TODO ignore fully coherent rows
+
 import subprocess
 import sys
 import glob
@@ -44,6 +46,14 @@ for platform_name, full_results in contents.items():
         lines[program_name] = no_lines
     else:
       results[platform_name][program_name] = filter(None, result.split(','))
+      temp_results = []
+      for r in results[platform_name][program_name]:
+        r = r.strip()
+        if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x"):
+          temp_results.append(r)
+        else:
+          temp_results.append("0x" + r)
+      results[platform_name][program_name] = temp_results
       if program_name in vote.keys():
         if result in vote[program_name].keys():
           vote[program_name][result] = vote[program_name][result] + 1
@@ -69,6 +79,14 @@ for program_name in vote.keys():
   else:
     curr_res = curr_res[0]
   sample[program_name] = filter(None, curr_res.split(','))
+  temp_sample = []
+  for r in sample[program_name]:
+    r = r.strip()
+    if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x"):
+      temp_sample.append(r)
+    else:
+      temp_sample.append("0x" + r)
+  sample[program_name] = temp_sample
   
 sample = collections.OrderedDict(sorted(sample.items()))
 contents = collections.OrderedDict(sorted(contents.items()))
