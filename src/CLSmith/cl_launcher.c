@@ -31,6 +31,7 @@ int runtime_check_handler(int errorType, const char *filename, int linenumber, c
 
 // User input.
 const char *file;
+const char *args_file = NULL;
 size_t binary_size = 0;
 int device_index = 0;
 int platform_index = 0;
@@ -87,10 +88,11 @@ void print_help() {
   printf("  -d IDX  --device_idx IDX                  Target device\n");
   printf("\n");
   printf("Optional flags are:\n");
-  printf("  -b N    --binary N                        ???\n");
-  printf("  -l N    --locals N                        ???\n");
-  printf("  -g N    --groups N                        ???\n");
+  printf("  -b N    --binary N                        Compiles the kernel to binary, allocating N bytes\n");
+  printf("  -l N    --locals N                        A string with comma-separated values representing the number of work-units per group per dimension\n");
+  printf("  -g N    --groups N                        Same as -l, but representing the total number of work-units per dimension\n");
   printf("  -n NAME --name NAME                       Ensure the device name contains this string\n");
+  printf("  -a FILE --args FILE                       Look for file-defined arguments in this file, rather than the test file\n");
   printf("          --atomics                         Test uses atomic sections\n");
   printf("                      ---atomic_reductions  Test uses atomic reductions\n");
   printf("                      ---emi                Test uses EMI\n");
@@ -150,15 +152,23 @@ int main(int argc, char **argv) {
   }
   
   // Parse arguments found in the given source file
-  if (!parse_file_args(file)) {
-    printf("Failed parsing file for arguments.\n");
-    return 1;
+  if (!args_file) {
+    if (!parse_file_args(args_file)) {
+      printf("Failed parsing file for arguments.\n");
+      return 1;
+    }
+  } 
+  else {
+    if (!parse_file_args(args_file)) {
+      printf("Failed parsing given arguments file.\n");
+      return 1;
+    }
   }
   
   // TODO function this
   // Parsing thread and group dimension information
   if (local_dims == "") {
-    printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
+//     printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
     local_size = (size_t*)malloc(sizeof(size_t));
     local_size[0] = DEF_LOCAL_SIZE;
   } else {
@@ -175,7 +185,7 @@ int main(int argc, char **argv) {
     }
   }
   if (global_dims == "") {
-    printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
+//     printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
     global_size = (size_t*)malloc(sizeof(size_t));
     global_size[0] = DEF_GLOBAL_SIZE;
   } else {
@@ -601,6 +611,10 @@ int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
     file = val;
     return 2;
+  }
+  if (!strcmp(arg, "-a") || !strcmp(arg, "--args")) {
+    args_file = val;
+    return 1;
   }
   if (!strcmp(arg, "-d") || !strcmp(arg, "--device_idx")) {
     device_index = atoi(val);
