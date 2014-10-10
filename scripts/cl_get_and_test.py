@@ -29,18 +29,15 @@ parser.add_argument('-cl_launcher', default = "." + pathSeparator + clLauncherEx
 parser.add_argument('-cl_platform_idx', default = 0, type = int)
 parser.add_argument('-cl_device_idx', default = 0, type = int)
 parser.add_argument('-device_name_contains', default = "")
-parser.add_argument('-cl_launcher_opt', action = 'append', default = [], help="Extra flags for cl_launcher")
 
 parser.add_argument('-path', default = "CLSmithTests/")
 parser.add_argument('-zipfile', type=argparse.FileType('r'), default=None, help="Zipfile containing tests to run")
 parser.add_argument('-output', default = "Result.csv")
 parser.add_argument('-timeout', default = 150, type = int)
-parser.add_argument('-debug', dest = 'debug', action = 'store_true')
-parser.add_argument('-disable_opts', dest = 'disable_opts', action = 'store_true')
 
 parser.add_argument('-resume', type=argparse.FileType('r'), default=None, help="Do not run tests that appear in an existing results file")
 
-parser.set_defaults(debug = False, disable_opts = False)
+parser.add_argument('flags', nargs='*')
 
 args = parser.parse_args()
 
@@ -90,12 +87,8 @@ for curr_file in dirlist:
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
   if (args.device_name_contains):
       cmd += " -n " + args.device_name_contains
-  if (args.disable_opts):
-      cmd += " ---disable_opts"
-  if (args.debug):
-      cmd += " ---debug"
-  for f in args.cl_launcher_opt:
-      cmd += " %s" % (f)
+  if (args.flags):
+      cmd += " " + " ".join(args.flags)
   run_prog = WorkerThread(args.timeout, cmd)
   run_prog_res = run_prog.start()
 
