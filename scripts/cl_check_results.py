@@ -44,6 +44,7 @@ for platform_name, full_results in contents.items():
         no_lines = program_name.split("(")[1].split(")")[0]
         program_name = program_name.split("(")[0].strip()
         lines[program_name] = no_lines
+      program_name = program_name.rsplit(".", 1)[0]
     else:
       results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
