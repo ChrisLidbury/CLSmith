@@ -73,7 +73,9 @@ void ExpressionAtomic::InitAtomics() {
 // TODO make if from switch (+ other functions too)
 ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Type *type) {
   assert(type->eType == eSimple && type->simple_type == eInt);
-  const int rand_index = free_counters->at(rnd_upto(no_atomic_blocks));
+  if (free_counters->empty())
+    return NULL;
+  const int rand_index = free_counters->at(rnd_upto(free_counters->size()));
   const ExpressionAtomicAccess::AtomicMemAccess mem = (ExpressionAtomicAccess::AtomicMemAccess) rnd_upto(2);
   const ExpressionAtomicAccess* eaa = new ExpressionAtomicAccess(rand_index, mem);
   std::vector<const Expression*> eaa_arr (1, eaa);
