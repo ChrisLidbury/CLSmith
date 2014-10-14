@@ -37,7 +37,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     }
     // Only generate atomic reductions if they are set.
     if (st == kReduction) {
-      if (!CLOptions::atomic_reductions()) return NULL;
+      if (!CLOptions::atomic_reductions() || cg_context.get_atomic_context()) return NULL;
     }
     // Fake divergence must also be set.
     if (st == kFakeDiverge) {

@@ -7,6 +7,7 @@
 #include "Expression.h"
 #include "ExpressionFuncall.h"
 #include "Function.h"
+#include "Type.h"
 #include "Variable.h"
 
 #include <map>
@@ -28,7 +29,7 @@ void StatementAtomicResult::GenSpecialVals() {
         StatementAtomicResult* sar_decl = new StatementAtomicResult(b);
         b->stms.push_back(sar_decl);
         for (Variable* v : b->local_vars) {
-          if (v->get_collective() != v)
+          if (v->get_collective() != v || v->type->eType == ePointer)
             continue;
           ArrayVariable* av = dynamic_cast<ArrayVariable*>(v);
           if (av != 0) {
