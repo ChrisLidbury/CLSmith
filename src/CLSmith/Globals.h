@@ -140,8 +140,7 @@ class Globals {
 
  private:
   std::vector<Variable *> global_vars_;
-  std::vector<MemoryBuffer *> local_buffers_;
-  std::vector<MemoryBuffer *> global_buffers_;
+  std::vector<MemoryBuffer *> buffers_;
   // Type class generated lazily, needs all the global variables to have been
   // added before creation.
   std::unique_ptr<Type> struct_type_;

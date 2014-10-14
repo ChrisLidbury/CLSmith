@@ -26,7 +26,7 @@ Globals *globals_inst = NULL;  // Singleton instance.
 
 void Globals::AddLocalMemoryBuffer(MemoryBuffer *buffer) {
   assert(buffer->GetMemorySpace() == MemoryBuffer::kLocal);
-  local_buffers_.push_back(buffer);
+  buffers_.push_back(buffer);
   if (buffer->collective) return;
   buffer->OutputDef(buff_init_, 1);
   output_tab(struct_buff_init_, 2);
@@ -38,7 +38,7 @@ void Globals::AddLocalMemoryBuffer(MemoryBuffer *buffer) {
 
 void Globals::AddGlobalMemoryBuffer(MemoryBuffer *buffer) {
   assert(buffer->GetMemorySpace() == MemoryBuffer::kGlobal);
-  global_buffers_.push_back(buffer);
+  buffers_.push_back(buffer);
   if (buffer->collective) return;
   output_tab(struct_buff_init_, 2);
   buffer->Output(struct_buff_init_);
@@ -69,13 +69,7 @@ void Globals::OutputStructDefinition(std::ostream& out) {
     var->OutputDecl(out);
     out << ";" << std::endl;
   }
-  for (MemoryBuffer *buffer : local_buffers_) {
-    if (buffer->collective) continue;
-    output_tab(out, 1);
-    buffer->OutputAliasDecl(out);
-    out << ";" << std::endl;
-  }
-  for (MemoryBuffer *buffer : global_buffers_) {
+  for (MemoryBuffer *buffer : buffers_) {
     if (buffer->collective) continue;
     output_tab(out, 1);
     buffer->OutputAliasDecl(out);
@@ -166,35 +160,29 @@ void Globals::ModifyGlobalVariableReferences() {
   // variables.
   // Variable::is_global() is unreliable.
   for (Variable *var : *VariableSelector::GetAllVariables())
-    if (var->name.find("g_") == 0 && std::find(global_buffers_.begin(), global_buffers_.end(), var) == global_buffers_.end()) { //?
+    if (var->name.find("g_") == 0 && std::find(buffers_.begin(), buffers_.end(), var) == buffers_.end()) { //?
       *const_cast<std::string *>(&var->name) =
           struct_var_->name + "->" + var->name;
       if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
     }
 
-  // Now add to the local buffers.
-  for (MemoryBuffer *buffer : local_buffers_)
+  // Now add to the buffers.
+  for (MemoryBuffer *buffer : buffers_)
     *const_cast<std::string *>(&buffer->name) =
-        struct_var_->name + "->" + buffer->name;
-        
-  // Now add to the global buffers. 
-  for (MemoryBuffer *buffer : global_buffers_)
-    *const_cast<std::string *>(&buffer->name) =
-        struct_var_->name + "->" + buffer->name;       
+        struct_var_->name + "->" + buffer->name;    
 }
 
 void Globals::OutputArrayControlVars(std::ostream& out) const {
   size_t max_dim = Variable::GetMaxArrayDimension(global_vars_);
-  for (MemoryBuffer *buf : local_buffers_)
-    max_dim = std::max(max_dim, buf->get_dimension());
-  for (MemoryBuffer *buf : global_buffers_)
+  for (MemoryBuffer *buf : buffers_)
     max_dim = std::max(max_dim, buf->get_dimension());
   std::vector<const Variable *>& ctrl_vars = Variable::get_new_ctrl_vars();
   OutputArrayCtrlVars(ctrl_vars, out, max_dim, 1);
 }
 
 void Globals::HashLocalBuffers(std::ostream& out) const {
-  for (MemoryBuffer *buffer : local_buffers_) buffer->hash(out);
+  for (MemoryBuffer *buffer : buffers_)
+    if (buffer->GetMemorySpace() == MemoryBuffer::kLocal) buffer->hash(out);
 }
 
 const Type& Globals::GetGlobalStructPtrType() {
