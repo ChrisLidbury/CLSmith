@@ -68,7 +68,7 @@ Expression *
 ExpressionFuncall::make_random(CGContext &cg_context, const Type* type, const CVQualifiers* qfer)
 {
 	Expression *e = 0; 
-	bool std_func = ExpressionFunctionProbability(cg_context);
+	bool std_func = cg_context.get_atomic_context() ? true : ExpressionFunctionProbability(cg_context);
 	ERROR_GUARD(NULL);
     // unary/binary "functions" produce scalar types only
 	if (type && ((type->eType != eSimple && type->eType != eVector) || type->simple_type == eVoid))
