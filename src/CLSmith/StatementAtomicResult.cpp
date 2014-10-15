@@ -33,32 +33,36 @@ void StatementAtomicResult::GenSpecialVals() {
             continue;
           ArrayVariable* av = dynamic_cast<ArrayVariable*>(v);
           if (av != 0) {
-            StatementAtomicResult* sar_res = new StatementAtomicResult(av, b);
-            b->stms.push_back(sar_res);
+            if (av->isVector) {
+              std::vector<unsigned int> accesses = av->get_sizes();
+              std::vector<int> curr_index (accesses.size(), 0);
+              for (unsigned int i = 0; i < accesses.size(); i++) {
+                accesses[i]--;
+                curr_index[i] = accesses[i];
+              }
+              int index = accesses.size() - 1;
+              Variable* itemized;
+              while (true) {
+                while (curr_index[index] >= 0) {
+                  itemized = av->itemize(curr_index);
+                  StatementAtomicResult* sar_res = new StatementAtomicResult(itemized, b);
+                  b->stms.push_back(sar_res);
+                  curr_index[index]--;
+                }
+                do {
+                  curr_index[index] = accesses[index];
+                  index--;
+                } while (curr_index[index] == 0);
+                if (index < 0) break;
+                curr_index[index]--;
+                index = curr_index.size() - 1;
+              }
+            } 
+            else {
+              StatementAtomicResult* sar_res = new StatementAtomicResult(av, b);
+              b->stms.push_back(sar_res);
+            }
           }
-//             for (unsigned int i = 0; i < accessess.size(), 0) {
-//             std::vector<unsigned int> accesses = av->get_sizes();
-//             std::vector<int> curr_index (accesses.size(), 0);
-//             for (unsigned int i = 0; i < accesses.size(); i++) {
-//               accesses[i]--;
-//               curr_index[i] = accesses[i];
-//             }
-//             int index = accesses.size() - 1;
-//             while (true) {
-//               while (curr_index[index] >= 0) {
-//                 StatementAtomicResult* sar_res = new StatementAtomicResult(av->itemize(curr_index), b);
-//                 b->stms.push_back(sar_res);
-//                 curr_index[index]--;
-//               }
-//               do {
-//                 curr_index[index] = accesses[index];
-//                 index--;
-//               } while (curr_index[index] == 0);
-//               if (index < 0) break;
-//               curr_index[index]--;
-//               index = curr_index.size() - 1;
-//             }
-//           }
           else if (!v->field_vars.empty()) {
             for (Variable* fv : v->field_vars) {
               StatementAtomicResult* sar_res = new StatementAtomicResult(fv, b);
