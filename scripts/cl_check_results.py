@@ -40,11 +40,11 @@ for platform_name, full_results in contents.items():
   for result in full_results:
     if result.startswith("RESULTS FOR"):
       program_name = result.replace("RESULTS FOR", "").strip()
-      if "(" in program_name and program_name not in lines:
-        no_lines = program_name.split("(")[1].split(")")[0]
-        program_name = program_name.split("(")[0].strip()
+      extension = program_name.rsplit(".")[1]
+      program_name = program_name.rsplit(".", 1)[0].strip()
+      if "(" in extension and program_name not in lines:
+        no_lines = extension.split("(")[1].split(")")[0]
         lines[program_name] = no_lines
-      program_name = program_name.rsplit(".", 1)[0]
     else:
       results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
@@ -203,6 +203,8 @@ for program_name in sample.keys():
           color = " style=\"background-color:blue;\""
         elif results[platform_name][program_name][0].startswith("timeout"):
           color = " style=\"background-color:cadetblue;\""
+        elif results[platform_name][program_name][0].startswith("N/A"):
+	  color = " style=\"background-color:olivedrab;\""
         output.write("<td " + color + ">")
         curr_count = 0
         for result in results[platform_name][program_name]:

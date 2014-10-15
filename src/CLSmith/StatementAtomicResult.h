@@ -19,18 +19,22 @@ class StatementAtomicResult : public CLStatement {
  public:
   enum AtomicResultType {
     kAddVar = 0,
+    kAddArrVar,
     kSetSpVal,
     kDecl
   };
   
   StatementAtomicResult (Variable* var, Block* b) : CLStatement(kAtomic, b), 
-    var_(var), access_(NULL), result_type_(kAddVar), type_(Type::get_simple_type(eInt)) {}
+    var_(var), av_(NULL), access_(NULL), result_type_(kAddVar), type_(Type::get_simple_type(eInt)) {}
+    
+  StatementAtomicResult (ArrayVariable* av, Block* b) : CLStatement(kAtomic, b),
+    var_(NULL), av_(av), access_(NULL), result_type_(kAddArrVar), type_(Type::get_simple_type(eInt)) {}
     
   StatementAtomicResult (const ExpressionAtomicAccess* access, Block* b) : CLStatement(kAtomic, b), 
-    var_(NULL), access_(access), result_type_(kSetSpVal), type_(Type::get_simple_type(eInt)) {}
+    var_(NULL), av_(NULL), access_(access), result_type_(kSetSpVal), type_(Type::get_simple_type(eInt)) {}
     
   StatementAtomicResult (Block* b) : CLStatement(kAtomic, b),
-    var_(NULL), access_(NULL), result_type_(kDecl), type_(Type::get_simple_type(eInt)) {}
+    var_(NULL), av_(NULL), access_(NULL), result_type_(kDecl), type_(Type::get_simple_type(eInt)) {}
   
   static void InitResults(void);
   static void DefineLocalResultVar(std::ostream& out);
@@ -46,6 +50,7 @@ class StatementAtomicResult : public CLStatement {
   
 private:
   Variable* var_;
+  ArrayVariable* av_;
   const ExpressionAtomicAccess* access_;
   
   AtomicResultType result_type_;
