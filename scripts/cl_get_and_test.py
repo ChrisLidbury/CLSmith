@@ -82,9 +82,11 @@ for curr_file in file_list:
     check_args = ""
   else:
     check_args = args.path + pathSeparator + check_args
-    
-  lines = os.popen("wc -l " + args.path + pathSeparator + curr_file).readline().split()[0]
-  output.write("RESULTS FOR " + curr_file + " (" + lines + ")\n")  
+
+  lines = ""
+  if sys.platform != "win32":
+    lines = " (" + os.popen("wc -l " + args.path + pathSeparator + curr_file).readline().split()[0] + ")"
+  output.write("RESULTS FOR " + curr_file + lines + "\n")
   output.flush()
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   sys.stdout.flush()
