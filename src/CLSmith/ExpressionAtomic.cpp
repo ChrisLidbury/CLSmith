@@ -63,7 +63,7 @@ static std::vector<int>* free_counters = NULL;
 
 void ExpressionAtomic::InitAtomics() {
   no_atomic_blocks = rnd_upto(100); //rnd_upto(CLSmith::CLProgramGenerator::get_threads() / CLSmith::CLProgramGenerator::get_groups()) + 1;
-  free_counters = new vector<int>(CLProgramGenerator::get_groups() * no_atomic_blocks, 0);
+  free_counters = new vector<int>(no_atomic_blocks, 0);
   block_vars = new std::stack<std::map<int, std::vector<Variable*>*>*>();
   atomic_parent = new std::stack<Block*>();
   std::iota(free_counters->begin(), free_counters->end(), 0);
