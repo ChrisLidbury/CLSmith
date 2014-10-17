@@ -324,7 +324,7 @@ void ExpressionAtomic::OutputHashing(std::ostream& out) {
     eid_g->Output(out);
     out << ")" << std::endl;
     output_tab(out, 2);
-    out << "for (i = 0 ; i <= " << CLProgramGenerator::get_atomic_blocks_no() 
+    out << "for (i = 0 ; i < " << CLProgramGenerator::get_atomic_blocks_no() 
         << "; i++)" << std::endl;
     output_tab(out, 3);
     out << "transparent_crc(";
