@@ -36,11 +36,11 @@ class ExpressionID : public CLExpression {
   };
 
   explicit ExpressionID(IDType type) : CLExpression(kID),
-      id_type_(type), dimension_(0),
+      id_type_(type), dimension_(0), fake_div_(false),
       type_(Type::get_simple_type(eULongLong)) {
   }
   ExpressionID(IDType type, int dimension) : CLExpression(kID),
-      id_type_(type), dimension_(dimension),
+      id_type_(type), dimension_(dimension), fake_div_(false),
       type_(Type::get_simple_type(eULongLong)) {
   }
   ExpressionID(ExpressionID&& other) = default;
@@ -64,7 +64,7 @@ class ExpressionID : public CLExpression {
 
   // Create an expression that has uniform value across work items, but the
   // compiler assumes is non-uniform.
-  static Expression *CreateFakeDivergentExpression(
+  static ExpressionID *CreateFakeDivergentExpression(
       const CGContext& cg_context, const Type& type);
 
   // Outputs the name of the type of identifier (e.g. 'local' for get_local_id).
@@ -83,14 +83,29 @@ class ExpressionID : public CLExpression {
   void Output(std::ostream& out) const;
 
   // Both local and global IDs are always divergent.
-  bool IsDivergent() const { return true; }
+  bool IsDivergent() const { return !fake_div_; }
 
- private:
+  // Is this a fake divergent expression.
+  bool IsFakeDivergence() const { return fake_div_; }
+
+ protected:
   IDType id_type_;
   int dimension_;
+  // If fake_divergent, output in a mcro that expands to a constexpr.
+  bool fake_div_;
   const Type& type_;
 
   DISALLOW_COPY_AND_ASSIGN(ExpressionID);
+};
+
+// Small extension to ExpressionID for outputting a fake divergent expression.
+class ExpressionIDFakeDiverge : public ExpressionID {
+ public:
+  using ExpressionID::ExpressionID;
+  void Output(std::ostream& out) const;
+  // Output a macro that will expand FAKE_DIVERGE to either the constexpr
+  // (get_* - offset) or the constant that the constexpr evaluates to.
+  static void OutputFakeDivergenceMacro(std::ostream& out);
 };
 
 }  // namespace CLSmith

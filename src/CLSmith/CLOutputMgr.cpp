@@ -4,9 +4,10 @@
 #include <fstream>
 #include <sstream>
 
-  #include "CLSmith/CLOptions.h"
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/CLProgramGenerator.h"
 #include "CLSmith/ExpressionAtomic.h"
+#include "CLSmith/ExpressionID.h"
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/StatementComm.h"
@@ -92,6 +93,9 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "#define VECTOR(X , Y) VECTOR_(X, Y)\n"
       "#define VECTOR_(X, Y) X##Y\n"
       << std::endl;
+
+  // Macro for expanding FAKE_DIVERGE.
+  ExpressionIDFakeDiverge::OutputFakeDivergenceMacro(out);
 
   // Permuation buffers for inter-thread comm.
   if (CLOptions::inter_thread_comm())

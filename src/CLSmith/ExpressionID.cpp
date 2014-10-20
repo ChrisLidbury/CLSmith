@@ -82,16 +82,15 @@ int ExpressionID::GetGenerationProbability(
   return prob > 5 ? 5 : 0;
 }
 
-Expression *ExpressionID::CreateFakeDivergentExpression(
+ExpressionID *ExpressionID::CreateFakeDivergentExpression(
     const CGContext& cg_context, const Type& type) {
   assert(sequence_input != NULL);
   if (type.eType != eSimple || type.is_signed()) return NULL;
   IDType id = (IDType)rnd_upto(3);
   int dim = rnd_upto(3);
-  const Variable *var = offsets[id * 3 + dim];
-  return new ExpressionFuncall(*new FunctionInvocationBinary(eSub,
-      new ExpressionVariable(*var), new ExpressionID(id, dim),
-      new SafeOpFlags(false, false, true, sInt64)));
+  ExpressionID *expr_id = new ExpressionIDFakeDiverge(id, dim);
+  expr_id->fake_div_ = true;
+  return expr_id;
 }
 
 void ExpressionID::OutputIDType(std::ostream& out, IDType id_type) {
@@ -112,6 +111,22 @@ void ExpressionID::Output(std::ostream& out) const {
   out << "_id(";
   if (id_type_ <= kGroup) out << dimension_;
   out << ")";
+}
+
+void ExpressionIDFakeDiverge::Output(std::ostream& out) const {
+  out << "FAKE_DIVERGE(";
+  ExpressionID::Output(out);
+  out << ", ";
+  offsets[id_type_ * 3 + dimension_]->Output(out);
+  out << ", 10)";
+}
+
+void ExpressionIDFakeDiverge::OutputFakeDivergenceMacro(std::ostream& out) {
+  out << "#ifndef NO_FAKE_DIVERGENCE" << std::endl;
+  out << "#define FAKE_DIVERGE(x, y, z) (x - y)" << std::endl;
+  out << "#else" << std::endl;
+  out << "#define FAKE_DIVERGE(x, y, z) (z)" << std::endl;
+  out << "#endif" << std::endl;
 }
 
 }  // namespace CLSmith
