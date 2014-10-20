@@ -45,8 +45,7 @@ for platform_name, full_results in contents.items():
       if "(" in extension and program_name not in lines:
         no_lines = extension.split("(")[1].split(")")[0]
         lines[program_name] = no_lines
-    elif program_name == "5123":
-#    else:
+    else:
       results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
       for r in results[platform_name][program_name]:
