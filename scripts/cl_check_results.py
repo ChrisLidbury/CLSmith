@@ -45,7 +45,8 @@ for platform_name, full_results in contents.items():
       if "(" in extension and program_name not in lines:
         no_lines = extension.split("(")[1].split(")")[0]
         lines[program_name] = no_lines
-    else:
+    elif program_name == "5123":
+#    else:
       results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
       for r in results[platform_name][program_name]:
@@ -55,13 +56,14 @@ for platform_name, full_results in contents.items():
         else:
           temp_results.append("0x" + r)
       results[platform_name][program_name] = temp_results
+      temp_results = ",".join(temp_results)
       if program_name in vote.keys():
-        if result in vote[program_name].keys():
-          vote[program_name][result] = vote[program_name][result] + 1
+        if temp_results in vote[program_name].keys():
+          vote[program_name][temp_results] = vote[program_name][temp_results] + 1
         else:
-          vote[program_name][result] = 1
+          vote[program_name][temp_results] = 1
       else:
-        vote[program_name] = {result:1}
+        vote[program_name] = {temp_results:1}
         sample[program_name] = []
     
 for program_name in vote.keys():
