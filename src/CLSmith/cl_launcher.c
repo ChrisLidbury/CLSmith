@@ -132,22 +132,16 @@ int main(int argc, char **argv) {
       print_help();
       exit(0);
     }
-    if (strncmp(curr_arg, "---", 3)) {
-      if (++arg_no >= argc) {
-        printf("Found option %s with no value.\n", curr_arg);
-        return 1;
-      }
-      next_arg = argv[arg_no];
+    if (!strcmp(curr_arg, "-f") || !strcmp(curr_arg, "--filename")) {
+      file = argv[++arg_no];
     }
-    parse_ret = parse_arg(curr_arg, next_arg);
-    if (!parse_ret)
-      return 1;
-    if (parse_ret == 2)
-      req_arg++;
+    if (!strcmp(curr_arg, "-a") || !strcmp(curr_arg, "--args")) {
+      args_file = argv[++arg_no];
+    }
   }
   
-  if (req_arg != 3) {
-    printf("Require file (-f), device index (-d) and platform index (-p) arguments!\n");
+  if (!file) {
+    printf("Require file (-f) argument!\n");
     return 1;
   }
   
@@ -164,6 +158,28 @@ int main(int argc, char **argv) {
       printf("Failed parsing given arguments file.\n");
       return 1;
     }
+  }
+  
+  arg_no = 0;
+  while (++arg_no < argc) {
+    curr_arg = argv[arg_no];
+    if (strncmp(curr_arg, "---", 3)) {
+      if (++arg_no >= argc) {
+        printf("Found option %s with no value.\n", curr_arg);
+        return 1;
+      }
+      next_arg = argv[arg_no];
+    }
+    parse_ret = parse_arg(curr_arg, next_arg);
+    if (!parse_ret)
+      return 1;
+    if (parse_ret == 2)
+      req_arg++;
+  }
+  
+  if (req_arg != 2) {
+    printf("Require device index (-d) and platform index (-p) arguments!\n");
+    return 1;
   }
   
   // TODO function this
@@ -211,6 +227,12 @@ int main(int argc, char **argv) {
     printf("Cannot have more than 3 dimensions!\n");
     return 1;
   }
+  int d;
+  for (d = 1; d < l_dim; d++)
+    if (local_size[d] > global_size[d]) {
+      printf("Local dimension %d greater than global dimension!\n", d);
+      return 1;
+    }
   
   // Calculating total number of work-units for future use
   int i;
@@ -295,7 +317,7 @@ int main(int argc, char **argv) {
   if (inter_thread_comm) {
     free(comm_vals);
   }
-
+  
   return run_err;
 }
 
@@ -610,11 +632,9 @@ int parse_file_args(const char* filename) {
 
 int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
-    file = val;
-    return 2;
+    return 1;
   }
   if (!strcmp(arg, "-a") || !strcmp(arg, "--args")) {
-    args_file = val;
     return 1;
   }
   if (!strcmp(arg, "-d") || !strcmp(arg, "--device_idx")) {
