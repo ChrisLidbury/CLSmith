@@ -11,14 +11,14 @@ namespace CLSmith {
   type CLOptions::name##_ = init; \
   type CLOptions::name() { return name##_; } \
   void CLOptions::name(type x) { name##_ = x; }
+DEFINE_CLFLAG(atomic_reductions, bool, false)
 DEFINE_CLFLAG(atomics, bool, false)
 DEFINE_CLFLAG(barriers, bool, false)
 DEFINE_CLFLAG(divergence, bool, false)
-DEFINE_CLFLAG(EMI, bool, false)
-DEFINE_CLFLAG(EMI_p_compound, int, 10)
-DEFINE_CLFLAG(EMI_p_leaf, int, 50)
-DEFINE_CLFLAG(EMI_p_lift, int, 10)
-DEFINE_CLFLAG(atomic_reductions, bool, false)
+DEFINE_CLFLAG(emi, bool, false)
+DEFINE_CLFLAG(emi_p_compound, int, 10)
+DEFINE_CLFLAG(emi_p_leaf, int, 50)
+DEFINE_CLFLAG(emi_p_lift, int, 10)
 DEFINE_CLFLAG(fake_divergence, bool, false)
 DEFINE_CLFLAG(group_divergence, bool, false)
 DEFINE_CLFLAG(inter_thread_comm, bool, false)
@@ -29,14 +29,14 @@ DEFINE_CLFLAG(vectors, bool, false)
 #undef DEFINE_CLFLAG
 
 void CLOptions::set_default_settings() {
+  atomic_reductions_ = false;
   atomics_ = false;
   barriers_ = false;
   divergence_ = false;
-  EMI_ = false;
-  EMI_p_compound_ = 10;
-  EMI_p_leaf_ = 50;
-  EMI_p_lift_ = 10;
-  atomic_reductions_ = false;
+  emi_ = false;
+  emi_p_compound_ = 10;
+  emi_p_leaf_ = 50;
+  emi_p_lift_ = 10;
   fake_divergence_ = false;
   group_divergence_ = false;
   inter_thread_comm_ = false;

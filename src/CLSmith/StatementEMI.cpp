@@ -66,19 +66,19 @@ void StatementEMI::PruneBlock(Block *block) {
   // As lifting is checked if compound fails, p = (1 - p_compound) * p_lift.
   // So, p_adj = p_lift / (1 - p_compound).
   const int p_lift_adj =
-      CLOptions::EMI_p_compound() == 100 ? CLOptions::EMI_p_lift() : 100 * (
-      ((float)CLOptions::EMI_p_lift() / 100) /
-      (1.0f - ((float)CLOptions::EMI_p_compound() / 100)));
+      CLOptions::emi_p_compound() == 100 ? CLOptions::emi_p_lift() : 100 * (
+      ((float)CLOptions::emi_p_lift() / 100) /
+      (1.0f - ((float)CLOptions::emi_p_compound() / 100)));
 
   for (Statement *st : block->stms) {
     eStatementType st_type = st->eType;
     // If it is a leaf.
     if (st_type != eIfElse && st_type != eFor) {
-      if (rnd_flipcoin(CLOptions::EMI_p_leaf())) del_stms.push_back(st);
+      if (rnd_flipcoin(CLOptions::emi_p_leaf())) del_stms.push_back(st);
       continue;
     }
     // Is a compound statement.
-    if (rnd_flipcoin(CLOptions::EMI_p_compound())) {
+    if (rnd_flipcoin(CLOptions::emi_p_compound())) {
       del_stms.push_back(st);
       continue;
     }

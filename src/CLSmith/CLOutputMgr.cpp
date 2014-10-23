@@ -32,7 +32,7 @@ void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::
     out << " ---fake_divergence";
   if (CLOptions::inter_thread_comm())
     out << " ---inter_thread_comm";
-  if (CLOptions::EMI())
+  if (CLOptions::emi())
     out << " ---emi";
   out << " -g ";
   for (std::vector<unsigned int>::iterator it = global_dims.begin(); it < global_dims.end(); it++) {
@@ -142,7 +142,7 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   if (CLOptions::atomic_reductions()) {
     out << ", __global volatile int *g_atomic_reduction";
   }
-  if (CLOptions::EMI())
+  if (CLOptions::emi())
     out << ", __global int *emi_input";
   if (CLOptions::fake_divergence())
     out << ", __global int *sequence_input";

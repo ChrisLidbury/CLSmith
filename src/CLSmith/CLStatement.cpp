@@ -33,7 +33,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     }
     // Only use EMI blocks if they are enabled and we are not already in one.
     if (st == kEMI) {
-      if (!CLOptions::EMI() || cg_context.get_emi_context()) return NULL;
+      if (!CLOptions::emi() || cg_context.get_emi_context()) return NULL;
     }
     // Only generate atomic reductions if they are set.
     if (st == kReduction) {

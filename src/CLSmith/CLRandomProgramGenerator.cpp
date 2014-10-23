@@ -41,12 +41,9 @@ int main(int argc, char **argv) {
       if (!ParseIntArg(argv[idx], &g_Seed)) return -1;
       continue;
     }
-    
-    if (!strcmp(argv[idx], "--output_file") ||
-        !strcmp(argv[idx], "-o")) {
-      ++idx;
-      if (!CheckArgExists(idx, argc)) return -1;
-      CLSmith::CLOptions::output(argv[idx]);
+
+    if (!strcmp(argv[idx], "--atomic_reductions")) {
+      CLSmith::CLOptions::atomic_reductions(true);
       continue;
     }
 
@@ -65,40 +62,35 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    if (!strcmp(argv[idx], "--EMI")) {
-      CLSmith::CLOptions::EMI(true);
-      continue;
-    }
-    
-    if (!strcmp(argv[idx], "--atomic_reductions")) {
-      CLSmith::CLOptions::atomic_reductions(true);
+    if (!strcmp(argv[idx], "--emi")) {
+      CLSmith::CLOptions::emi(true);
       continue;
     }
 
-    if (!strcmp(argv[idx], "--EMI_p_compound")) {
+    if (!strcmp(argv[idx], "--emi_p_compound")) {
       ++idx;
       if (!CheckArgExists(idx, argc)) return -1;
       unsigned long value;
       if (!ParseIntArg(argv[idx], &value)) return -1;
-      CLSmith::CLOptions::EMI_p_compound(value);
+      CLSmith::CLOptions::emi_p_compound(value);
       continue;
     }
 
-    if (!strcmp(argv[idx], "--EMI_p_leaf")) {
+    if (!strcmp(argv[idx], "--emi_p_leaf")) {
       ++idx;
       if (!CheckArgExists(idx, argc)) return -1;
       unsigned long value;
       if (!ParseIntArg(argv[idx], &value)) return -1;
-      CLSmith::CLOptions::EMI_p_leaf(value);
+      CLSmith::CLOptions::emi_p_leaf(value);
       continue;
     }
 
-    if (!strcmp(argv[idx], "--EMI_p_lift")) {
+    if (!strcmp(argv[idx], "--emi_p_lift")) {
       ++idx;
       if (!CheckArgExists(idx, argc)) return -1;
       unsigned long value;
       if (!ParseIntArg(argv[idx], &value)) return -1;
-      CLSmith::CLOptions::EMI_p_lift(value);
+      CLSmith::CLOptions::emi_p_lift(value);
       continue;
     }
 
@@ -114,6 +106,14 @@ int main(int argc, char **argv) {
 
     if (!strcmp(argv[idx], "--inter_thread_comm")) {
       CLSmith::CLOptions::inter_thread_comm(true);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--output_file") ||
+        !strcmp(argv[idx], "-o")) {
+      ++idx;
+      if (!CheckArgExists(idx, argc)) return -1;
+      CLSmith::CLOptions::output(argv[idx]);
       continue;
     }
 

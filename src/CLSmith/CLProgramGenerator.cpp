@@ -70,7 +70,7 @@ void CLProgramGenerator::goGenerator() {
   }
 
   // If EMI block generation is set, prune them.
-  if (CLOptions::EMI())
+  if (CLOptions::emi())
     EMIController::GetEMIController()->PruneEMISections();
   
   // If atomic blocks are generated, add operations for the special values
@@ -98,7 +98,7 @@ void CLProgramGenerator::goGenerator() {
     StatementAtomicReduction::AddVarsToGlobals(globals);
 
   // Now add the input data for EMI sections if specified.
-  if (CLOptions::EMI())
+  if (CLOptions::emi())
     for (MemoryBuffer *mb :
         *EMIController::GetEMIController()->GetItemisedEMIInput())
       globals->AddGlobalMemoryBuffer(mb);
