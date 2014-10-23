@@ -14,7 +14,7 @@ all: generator launcher
 generator: $(SOURCES) $(BIN)
 
 launcher: cl_launcher.c
-	gcc -I/homes/$(USER)/OpenCL/ cl_launcher.c -g -o cl_launcher -lOpenCL
+	gcc -Wall -I/homes/$(USER)/OpenCL/ cl_launcher.c -g -o cl_launcher -lOpenCL
 
 $(BIN): $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o $@

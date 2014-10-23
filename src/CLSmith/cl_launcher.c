@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
   
   // TODO function this
   // Parsing thread and group dimension information
-  if (local_dims == "") {
+  if (strcmp(local_dims, "") == 0) {
 //     printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
     local_size = (size_t*)malloc(sizeof(size_t));
     local_size[0] = DEF_LOCAL_SIZE;
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
       tok = strtok(NULL, ",");
     }
   }
-  if (global_dims == "") {
+  if (strcmp(global_dims, "") == 0) {
 //     printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
     global_size = (size_t*)malloc(sizeof(size_t));
     global_size[0] = DEF_GLOBAL_SIZE;
