@@ -94,8 +94,12 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
       "#define VECTOR_(X, Y) X##Y\n"
       << std::endl;
 
+  // Macro for expanding GROUP_DIVERGE
+  ExpressionIDGroupDiverge::OutputGroupDivergenceMacro(out);
+  out << std::endl;
   // Macro for expanding FAKE_DIVERGE.
   ExpressionIDFakeDiverge::OutputFakeDivergenceMacro(out);
+  out << std::endl;
 
   // Permuation buffers for inter-thread comm.
   if (CLOptions::inter_thread_comm())

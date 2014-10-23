@@ -27,7 +27,7 @@ MemoryBuffer *sequence_input;
 Variable *offsets[9];
 }  // namespace
 
-Expression/*ID*/ *ExpressionID::make_random(CGContext& cg_context,
+ExpressionID *ExpressionID::make_random(CGContext& cg_context,
     const Type* type) {
   assert(type->eType == eSimple && !type->is_signed());
   enum GenType { kDiv, kGrp, kFake };
@@ -39,7 +39,7 @@ Expression/*ID*/ *ExpressionID::make_random(CGContext& cg_context,
   enum GenType gen = selector[rnd_upto(selector.size())];
   switch (gen) {
     case kDiv: return new ExpressionID(kGlobal);
-    case kGrp: return new ExpressionID(kGroup, rnd_upto(3));
+    case kGrp: return new ExpressionIDGroupDiverge(kGroup, rnd_upto(3));
     case kFake:
         return ExpressionID::CreateFakeDivergentExpression(cg_context, *type);
   }
@@ -88,9 +88,7 @@ ExpressionID *ExpressionID::CreateFakeDivergentExpression(
   if (type.eType != eSimple || type.is_signed()) return NULL;
   IDType id = (IDType)rnd_upto(3);
   int dim = rnd_upto(3);
-  ExpressionID *expr_id = new ExpressionIDFakeDiverge(id, dim);
-  expr_id->fake_div_ = true;
-  return expr_id;
+  return new ExpressionIDFakeDiverge(id, dim);
 }
 
 void ExpressionID::OutputIDType(std::ostream& out, IDType id_type) {
@@ -111,6 +109,19 @@ void ExpressionID::Output(std::ostream& out) const {
   out << "_id(";
   if (id_type_ <= kGroup) out << dimension_;
   out << ")";
+}
+
+void ExpressionIDGroupDiverge::Output(std::ostream& out) const {
+  assert(id_type_ == kGroup);
+  out << "GROUP_DIVERGE(" << dimension_ << ", 1)";
+}
+
+void ExpressionIDGroupDiverge::OutputGroupDivergenceMacro(std::ostream& out) {
+  out << "#ifndef NO_GROUP_DIVERGENCE" << std::endl;
+  out << "#define GROUP_DIVERGE(x, y) get_group_id(x)" << std::endl;
+  out << "#else" << std::endl;
+  out << "#define GROUP_DIVERGE(x, y) (y)" << std::endl;
+  out << "#endif" << std::endl;
 }
 
 void ExpressionIDFakeDiverge::Output(std::ostream& out) const {

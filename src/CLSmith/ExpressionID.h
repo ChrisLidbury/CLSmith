@@ -36,12 +36,10 @@ class ExpressionID : public CLExpression {
   };
 
   explicit ExpressionID(IDType type) : CLExpression(kID),
-      id_type_(type), dimension_(0), fake_div_(false),
-      type_(Type::get_simple_type(eULongLong)) {
+      id_type_(type), dimension_(0) {
   }
   ExpressionID(IDType type, int dimension) : CLExpression(kID),
-      id_type_(type), dimension_(dimension), fake_div_(false),
-      type_(Type::get_simple_type(eULongLong)) {
+      id_type_(type), dimension_(dimension) {
   }
   ExpressionID(ExpressionID&& other) = default;
   ExpressionID& operator=(ExpressionID&& other) = default;
@@ -49,7 +47,7 @@ class ExpressionID : public CLExpression {
 
   // Will just return a call to get_?_id(dim) at random based on what flags have
   // been set.
-  static Expression/*ID*/ *make_random(CGContext& cg_context, const Type* type);
+  static ExpressionID *make_random(CGContext& cg_context, const Type* type);
 
   // Initialise the static data used for divergence faking.
   static void Initialise();
@@ -72,8 +70,8 @@ class ExpressionID : public CLExpression {
 
   // Implementations of pure virtual methods in Expression. Most of these are
   // trivial, as the expression evaluates to a runtime constant.
-  Expression *clone() const { return new ExpressionID(id_type_); }
-  const Type &get_type() const { return type_; }
+  Expression *clone() const { return new ExpressionID(id_type_, dimension_); }
+  const Type &get_type() const { return Type::get_simple_type(eULongLong); }
   CVQualifiers get_qualifiers() const { return CVQualifiers(true, false); }
   void get_eval_to_subexps(std::vector<const Expression*>& subs) const {
     subs.push_back(this);
@@ -83,19 +81,23 @@ class ExpressionID : public CLExpression {
   void Output(std::ostream& out) const;
 
   // Both local and global IDs are always divergent.
-  bool IsDivergent() const { return !fake_div_; }
-
-  // Is this a fake divergent expression.
-  bool IsFakeDivergence() const { return fake_div_; }
+  bool IsDivergent() const { return true; }
 
  protected:
   IDType id_type_;
   int dimension_;
-  // If fake_divergent, output in a mcro that expands to a constexpr.
-  bool fake_div_;
-  const Type& type_;
 
   DISALLOW_COPY_AND_ASSIGN(ExpressionID);
+};
+
+// Small extension to ExpressionID for outputting get_group_id(dim) as a macro.
+class ExpressionIDGroupDiverge : public ExpressionID {
+ public:
+  using ExpressionID::ExpressionID;
+  void Output(std::ostream& out) const;
+  // Output a macro that expands GROUP_DIVERGE(dim) to either a call to
+  // get_group_id(dim) or a constant.
+  static void OutputGroupDivergenceMacro(std::ostream& out);
 };
 
 // Small extension to ExpressionID for outputting a fake divergent expression.
