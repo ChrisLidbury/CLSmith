@@ -177,7 +177,8 @@ Expression::make_random(CGContext &cg_context, const Type* type, const CVQualifi
 		VectorFilter filter(&Expression::exprTable_);
 		if (no_func || 
 			(!CGOptions::return_structs() && type->eType == eStruct) ||
-			(!CGOptions::return_unions() && type->eType == eUnion)) {
+			(!CGOptions::return_unions() && type->eType == eUnion) ||
+                        (cg_context.get_atomic_context())) {
 			filter.add(eFunction);
 		}
 		// struct constants can't be subexpressions (union constant can't either?) 

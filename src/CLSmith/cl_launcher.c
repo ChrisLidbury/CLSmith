@@ -465,7 +465,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   
   if (atomics) {
     // Create buffer to store counters for the atomic blocks
-    int total_counters = atomic_counter_no * total_threads;
+    int total_counters = atomic_counter_no * no_groups;
     init_atomic_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
     init_special_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
     
