@@ -519,7 +519,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     int i;
     for (i = 0; i < 1024; ++i) emi_values[i] = 1024 - i;
     cl_mem emi_input = clCreateBuffer(
-        context, CL_MEM_READ_ONLY, 1024 * sizeof(cl_int), &emi_values, &err);
+        context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, 1024 * sizeof(cl_int), &emi_values, &err);
     if (cl_error_check(err, "Error creating emi buffer"))
       return 1;
     err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &emi_input);
