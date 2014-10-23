@@ -182,4 +182,130 @@ safe_unsigned_math(uint16_t,UINT16_MAX)
 safe_unsigned_math(uint32_t,UINT32_MAX)
 safe_unsigned_math(uint64_t,UINT64_MAX)
 
+define(`logical_2',`
+
+#define LOGICAL_AND_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+          (($2)((left).s0 && (right).s0, (left).s1 && (right).s1));})
+        
+#define LOGICAL_OR_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+          (($2)((left).s0 || (right).s0, (left).s1 || (right).s1));})
+        
+#define LOGICAL_NOT_$1(_left) \
+        ({ $2 left = (_left) ; \
+          (($2)(!(left).s0, !(left).s1));})
+
+')
+
+logical_2(int8_t2,char2)
+logical_2(int16_t2,short2)
+logical_2(int32_t2,int2)
+logical_2(int64_t2,long2)
+logical_2(uint8_t2,uchar2)
+logical_2(uint16_t2,ushort2)
+logical_2(uint32_t2,uint2)
+logical_2(uint64_t2,ulong2)
+
+define(`logical_4',`
+
+#define LOGICAL_AND_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 && (right).s0, (left).s1 && (right).s1, \
+            (left).s2 && (right).s2, (left).s3 && (right).s3));})
+        
+#define LOGICAL_OR_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 || (right).s0, (left).s1 || (right).s1, \
+            (left).s2 || (right).s2, (left).s3 || (right).s3));})
+        
+#define LOGICAL_NOT_$1(_left) \
+        ({ $2 left = (_left) ; \
+              (($2)(!(left).s0, !(left).s1, !(left).s2, !(left).s3));})
+
+')
+
+logical_4(int8_t4,char4)
+logical_4(int16_t4,short4)
+logical_4(int32_t4,int4)
+logical_4(int64_t4,long4)
+logical_4(uint8_t4,uchar4)
+logical_4(uint16_t4,ushort4)
+logical_4(uint32_t4,uint4)
+logical_4(uint64_t4,ulong4)
+
+define(`logical_8',`
+
+#define LOGICAL_AND_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 && (right).s0, (left).s1 && (right).s1, \
+            (left).s2 && (right).s2, (left).s3 && (right).s3, \
+            (left).s4 && (right).s4, (left).s5 && (right).s5, \
+            (left).s6 && (right).s6, (left).s7 && (right).s7));})
+        
+#define LOGICAL_OR_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 || (right).s0, (left).s1 || (right).s1, \
+            (left).s2 || (right).s2, (left).s3 || (right).s3, \
+            (left).s4 || (right).s4, (left).s5 || (right).s5, \
+            (left).s6 || (right).s6, (left).s7 || (right).s7));})
+        
+#define LOGICAL_NOT_$1(_left) \
+        ({ $2 left = (_left) ; \
+            (($2)(!(left).s0, !(left).s1, !(left).s2, !(left).s3, \
+            !(left).s4, !(left).s5, !(left).s6, !(left).s7));})
+
+')
+
+logical_8(int8_t8,char8)
+logical_8(int16_t8,short8)
+logical_8(int32_t8,int8)
+logical_8(int64_t8,long8)
+logical_8(uint8_t8,uchar8)
+logical_8(uint16_t8,ushort8)
+logical_8(uint32_t8,uint8)
+logical_8(uint64_t8,ulong8)
+
+define(`logical_16',`
+
+#define LOGICAL_AND_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 && (right).s0, (left).s1 && (right).s1, \
+            (left).s2 && (right).s2, (left).s3 && (right).s3, \
+            (left).s4 && (right).s4, (left).s5 && (right).s5, \
+            (left).s6 && (right).s6, (left).s7 && (right).s7, \
+            (left).s8 && (right).s8, (left).s9 && (right).s9, \
+            (left).sa && (right).sa, (left).sb && (right).sb, \
+            (left).sc && (right).sc, (left).sd && (right).sd, \
+            (left).se && (right).se, (left).sf && (right).sf));})
+        
+#define LOGICAL_OR_$1(_left,_right) \
+        ({ $2 left = (_left); $2 right = (_right) ; \
+            (($2)((left).s0 || (right).s0, (left).s1 || (right).s1, \
+            (left).s2 || (right).s2, (left).s3 || (right).s3, \
+            (left).s4 || (right).s4, (left).s5 || (right).s5, \
+            (left).s6 || (right).s6, (left).s7 || (right).s7, \
+            (left).s8 || (right).s8, (left).s9 || (right).s9, \
+            (left).sa || (right).sa, (left).sb || (right).sb, \
+            (left).sc || (right).sc, (left).sd || (right).sd, \
+            (left).se || (right).se, (left).sf || (right).sf));})
+        
+#define LOGICAL_NOT_$1(_left) \
+        ({ $2 left = (_left) ; \
+            (($2)(!(left).s0, !(left).s1, !(left).s2, !(left).s3, \
+            !(left).s4, !(left).s5, !(left).s6, !(left).s7, \
+            !(left).s8, !(left).s9, !(left).sa, !(left).sb, \
+            !(left).sc, !(left).sd, !(left).se, !(left).sf));})
+
+')
+
+logical_16(int8_t16,char16)
+logical_16(int16_t16,short16)
+logical_16(int32_t16,int16)
+logical_16(int64_t16,long16)
+logical_16(uint8_t16,uchar16)
+logical_16(uint16_t16,ushort16)
+logical_16(uint32_t16,uint16)
+logical_16(uint64_t16,ulong16)
+
 #endif
