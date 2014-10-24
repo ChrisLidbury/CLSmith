@@ -50,6 +50,10 @@ print(result)
 if os.path.isfile(args.output):
     print("Overwriting file %s." % args.output)
 #"""
+if not os.path.isdir(os.path.dirname(args.output)):
+    print("Creating directory %s." % os.path.dirname(args.output))
+    os.makedirs(os.path.dirname(args.output))
+
 output = open(args.output, 'w')
 
 if args.zipfile:
