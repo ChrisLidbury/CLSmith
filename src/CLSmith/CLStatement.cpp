@@ -45,7 +45,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     }
     // Inter-thread communication must be set.
     if (st == kComm) {
-      if (!CLOptions::inter_thread_comm()) return NULL;
+      if (!CLOptions::inter_thread_comm() || cg_context.get_atomic_context()) return NULL;
     }
   }
 

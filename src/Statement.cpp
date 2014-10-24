@@ -166,7 +166,7 @@ bool StatementFilter::filter(int value) const
 		return true;
 	}
 
-	if ( (type == eBreak || type == eContinue) && !(cg_context_.flags & IN_LOOP) ) {
+	if ( (type == eBreak || type == eContinue) && !(cg_context_.flags & IN_LOOP) && !cg_context_.get_atomic_context()) {
 		return true;
 	}
 
