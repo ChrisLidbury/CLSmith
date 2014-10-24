@@ -3,6 +3,7 @@
 
 #include <CL/cl.h>
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,7 @@ char* device_name_given = "";
 bool debug_build = false;
 bool disable_opts = false;
 bool output_binary = false;
+bool set_device_from_name = false;
 
 // Kernel parameters.
 bool atomics = false;
@@ -101,6 +103,62 @@ void print_help() {
   printf("                      ---debug              Print debug info\n");
   printf("                      ---bin                Output disassembly of kernel in out.bin\n");
   printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
+  printf("                      ---set_device_from_name\n");
+  printf("                                            Ignore target platform -p and device -d\n");
+  printf("                                            Instead try to find a matching platform/device based on the device name\n");
+}
+
+/*
+ * Try to set platform-id and device-id based on the device name.
+ * Returns bool if successful match is found or not.
+ */
+bool setPlatformDeviceFromDeviceName() {
+  cl_int err;
+  cl_uint num_platforms;
+  unsigned p, d;
+  err = clGetPlatformIDs(0, NULL, &num_platforms);
+  if (cl_error_check(err, "clGetPlatformIDs (num platforms) error"))
+    exit(1);
+  cl_platform_id *platforms = (cl_platform_id *)malloc(sizeof(cl_platform_id)*num_platforms);
+  assert(platforms);
+  err = clGetPlatformIDs(num_platforms, platforms, NULL);
+  if (cl_error_check(err, "clGetPlatformIDs (platforms) error"))
+    exit(1);
+  bool match = false;
+  for (p=0; !match && p<num_platforms; ++p) {
+    cl_platform_id platform = platforms[p];
+    cl_uint num_devices;
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+    if (cl_error_check(err, "clGetDeviceIDs (num devices) error"))
+      exit(1);
+    cl_device_id *devices = (cl_device_id *)malloc(sizeof(cl_device_id)*num_devices);
+    assert(devices);
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, num_devices, devices, NULL);
+    if (cl_error_check(err, "clGetDeviceIDs (devices) error"))
+      exit(1);
+    for (d=0; !match && d<num_devices; ++d) {
+      cl_device_id device = devices[d];
+      char name[65536];
+      size_t size;
+      err = clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(name), name, &size);
+      if (cl_error_check(err, "clGetDeviceInfo (name) error"))
+        exit(1);
+      assert(size < sizeof(name));
+      if (strstr(name, device_name_given)) {
+        if ((platform_index != p) || (device_index != d)) {
+          if (debug_build) {
+            printf("Set platform %d and device %d to match %s\n", p, d, device_name_given);
+          }
+          platform_index = p;
+          device_index = d;
+          match = true;
+        }
+      }
+    }
+    free(devices);
+  }
+  free(platforms);
+  return match;
 }
 
 int main(int argc, char **argv) {
@@ -251,6 +309,17 @@ int main(int argc, char **argv) {
   if (device_index < 0) {
     printf("Could not parse device id \"%s\"\n", argv[3]);
     return 1;
+  }
+
+  if (set_device_from_name) {
+    if (strcmp(device_name_given, "") == 0) {
+      printf("Must give '-n NAME' to use --set_device_from_name\n");
+      return 1;
+    }
+    if (!setPlatformDeviceFromDeviceName()) {
+      printf("No matching platform or device found for name %s\n", device_name_given);
+      return 1;
+    }
   }
 
   // Query the OpenCL API for the given platform ID.
@@ -666,6 +735,10 @@ int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "--atomics")) {
     atomics = true;
     atomic_counter_no = atoi(val);
+    return 1;
+  }
+  if (!strcmp(arg, "---set_device_from_name")) {
+    set_device_from_name = true;
     return 1;
   }
   if (!strcmp(arg, "---atomic_reductions")) {
