@@ -144,14 +144,17 @@ bool setPlatformDeviceFromDeviceName() {
       if (cl_error_check(err, "clGetDeviceInfo (name) error"))
         exit(1);
       assert(size < sizeof(name));
-      if (strstr(name, device_name_given)) {
+      if (debug_build) {
+        printf("At platform %d and device %d with name [%s]]\n", p, d, name);
+      }
+      if (strstr(name, device_name_given) != NULL) {
+        match = true;
         if ((platform_index != p) || (device_index != d)) {
           if (debug_build) {
             printf("Set platform %d and device %d to match %s\n", p, d, device_name_given);
           }
           platform_index = p;
           device_index = d;
-          match = true;
         }
       }
     }

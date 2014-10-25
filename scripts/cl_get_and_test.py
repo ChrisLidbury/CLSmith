@@ -109,8 +109,16 @@ for curr_file in file_list:
   run_prog_out = run_prog_res[0].decode('unicode_escape')
   run_prog_out = '\n'.join(filter(lambda x: (not "PLUGIN" in x), run_prog_out.split("\n")))
 
-  if "not found in device name" in run_prog_out:
+  if "not found in device name" in run_prog_out or "No matching platform or device found" in run_prog_out:
       print("Mismatch in device name (aborting all further runs)")
+      print(run_prog_out)
+      try:
+          os.remove(args.output)
+      except IOError:
+          pass
+      if args.zipfile:
+          print("Removing temporary directory [%s]" % args.path)
+          shutil.rmtree(args.path)
       sys.exit(1)
   
   if not run_prog_res[1] == 0:
