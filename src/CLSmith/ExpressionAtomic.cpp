@@ -102,9 +102,12 @@ ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Typ
 
 Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *type) {
   assert(type->eType == eSimple && type->simple_type == eInt);
-  ExpressionAtomic *eAtomic = make_random(cg_context, type);
-  FunctionInvocationBinary *fi = new FunctionInvocationBinary(eCmpEq, eAtomic,
-                                  Constant::make_int(rnd_upto(10)), NULL);
+  ExpressionAtomic *expr_atomic = make_random(cg_context, type);
+  if (!expr_atomic)
+    return NULL;
+  FunctionInvocationBinary *fi = new FunctionInvocationBinary(eCmpEq, expr_atomic,
+                                  Constant::make_int(rnd_upto(10)), 
+                                  SafeOpFlags::make_dummy_flags());
   MakeBlockVars(cg_context.get_current_block());
   return new ExpressionFuncall(*fi);
 }

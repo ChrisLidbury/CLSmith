@@ -99,6 +99,11 @@ StatementIf::make_random(CGContext &cg_context)
         Expression *expr = build_atomic ?
           CLSmith::ExpressionAtomic::make_condition(cg_context, get_int_type()) :
           Expression::make_random(cg_context, get_int_type(), NULL, false, !CGOptions::const_as_condition());
+        if (!expr) {
+          build_atomic = false;
+          cg_context.set_atomic_context(false);
+          expr = Expression::make_random(cg_context, get_int_type(), NULL, false, !CGOptions::const_as_condition());
+        }
           
 	ERROR_GUARD(NULL);
 	// func_1 hacking, re-analyze for multiple function calls
@@ -138,6 +143,7 @@ StatementIf::make_random(CGContext &cg_context)
 	si->set_accumulated_effect_after_block(eff, if_true, cg_context);
 	si->set_accumulated_effect_after_block(eff, if_false, cg_context);
         if (build_atomic) {
+          std::cout << expr->to_string() << std::endl;
           CLSmith::StatementAtomicResult::RecordIfID(if_true->stm_id, expr);
           CLSmith::ExpressionAtomic::DelBlockVars();
           cg_context.set_atomic_context(false);
