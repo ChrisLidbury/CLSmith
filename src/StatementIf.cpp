@@ -143,7 +143,6 @@ StatementIf::make_random(CGContext &cg_context)
 	si->set_accumulated_effect_after_block(eff, if_true, cg_context);
 	si->set_accumulated_effect_after_block(eff, if_false, cg_context);
         if (build_atomic) {
-          std::cout << expr->to_string() << std::endl;
           CLSmith::StatementAtomicResult::RecordIfID(if_true->stm_id, expr);
           CLSmith::ExpressionAtomic::DelBlockVars();
           cg_context.set_atomic_context(false);
