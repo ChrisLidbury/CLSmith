@@ -126,9 +126,9 @@ void ExpressionIDGroupDiverge::OutputGroupDivergenceMacro(std::ostream& out) {
 
 void ExpressionIDFakeDiverge::Output(std::ostream& out) const {
   out << "FAKE_DIVERGE(";
-  ExpressionID::Output(out);
-  out << ", ";
   offsets[id_type_ * 3 + dimension_]->Output(out);
+  out << ", ";
+  ExpressionID::Output(out);
   out << ", 10)";
 }
 
