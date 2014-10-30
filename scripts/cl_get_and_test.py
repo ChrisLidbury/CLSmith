@@ -69,7 +69,7 @@ already_processed = []
 if args.resume:
   for l in args.resume:
     if "RESULTS FOR" in l:
-      already_processed.append(l.split()[-1])
+      already_processed.append(l.split()[-2])
 
 full_file_list = os.listdir(args.path)
 file_list = sorted([f for f in os.listdir(args.path) if not f.endswith(".args")])
