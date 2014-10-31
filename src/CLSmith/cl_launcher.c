@@ -461,18 +461,14 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Add optimisation to options later.
-  char* options = NULL;
-  size_t opt_size;
-  FILE* opt_str = open_memstream(&options, &opt_size);
-  fprintf(opt_str, "-w -I.");
+  char* options = (char*)malloc(sizeof(char)*256);
+  sprintf(options, "-w -I.");
   if (disable_opts)
-    fprintf(opt_str, " -cl-opt-disable");
+    sprintf(options, "%s -cl-opt-disable", options);
   if (disable_group)
-    fprintf(opt_str, " -D NO_GROUP_DIVERGENCE");
+    sprintf(options, "%s -D NO_GROUP_DIVERGENCE", options);
   if (disable_fake)
-    fprintf(opt_str, " -D NO_FAKE_DIVERGENCE");
-  fclose(opt_str);
-  printf("%s\n", options);
+    sprintf(options, "%s -D NO_FAKE_DIVERGENCE", options);
   
   err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
   if (cl_error_check(err, "Error building program")) {
@@ -495,6 +491,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     }
     return 1;
   }
+  free(options);
+  
   cl_build_status status;
   err = clGetProgramBuildInfo(
       program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
