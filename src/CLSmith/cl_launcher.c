@@ -39,6 +39,8 @@ int platform_index = 0;
 char* device_name_given = "";
 bool debug_build = false;
 bool disable_opts = false;
+bool disable_fake = false;
+bool disable_group = false;
 bool output_binary = false;
 bool set_device_from_name = false;
 
@@ -103,6 +105,8 @@ void print_help() {
   printf("                      ---debug              Print debug info\n");
   printf("                      ---bin                Output disassembly of kernel in out.bin\n");
   printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
+  printf("                      ---disable_group      Disable group divergence feature\n");
+  printf("                      ---disable_fake       Disable fake divergence feature\n");
   printf("                      ---set_device_from_name\n");
   printf("                                            Ignore target platform -p and device -d\n");
   printf("                                            Instead try to find a matching platform/device based on the device name\n");
@@ -457,13 +461,19 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Add optimisation to options later.
-  char* options;
-  if (!disable_opts) {
-    options = "-w -I.";
-  }
-  else {
-    options = "-w -I. -cl-opt-disable";
-  }
+  char* options = NULL;
+  size_t opt_size;
+  FILE* opt_str = open_memstream(&options, &opt_size);
+  fprintf(opt_str, "-w -I.");
+  if (disable_opts)
+    fprintf(opt_str, " -cl-opt-disable");
+  if (disable_group)
+    fprintf(opt_str, " -D NO_GROUP_DIVERGENCE");
+  if (disable_fake)
+    fprintf(opt_str, " -D NO_FAKE_DIVERGENCE");
+  fclose(opt_str);
+  printf("%s\n", options);
+  
   err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
   if (cl_error_check(err, "Error building program")) {
     if (debug_build) {      
@@ -770,6 +780,14 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "---disable_opts")) {
     disable_opts = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---disable_fake")) {
+    disable_fake = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---disable_group")) {
+    disable_group = true;
     return 1;
   }
   printf("Failed parsing arg %s.", arg);
