@@ -77,12 +77,10 @@ void StatementEMI::PruneBlock(Block *block) {
       if (rnd_flipcoin(CLOptions::emi_p_leaf())) del_stms.push_back(st);
       continue;
     }
-    // Is a compound statement.
-    if (rnd_flipcoin(CLOptions::emi_p_compound())) {
-      del_stms.push_back(st);
-      continue;
-    }
-    // Even if we lift, the block should still be pruned.
+    // Nested blocks will be pruned regardless of pruning to ensure the random
+    // number generator is called the same number of times, otherwise later code
+    // that depends on it will produce a different output.
+    // Pruning should still be done when lifting.
     if (st_type == eIfElse) {
       StatementIf *st_if = dynamic_cast<StatementIf *>(st);
       assert(st_if != NULL);
@@ -94,8 +92,16 @@ void StatementEMI::PruneBlock(Block *block) {
       assert(st_for != NULL);
       PruneBlock(const_cast<Block *>(st_for->get_body()));
     }
+    // Call BOTH flip_coins, the prevent the RNG from going out of sync.
+    bool do_compound = rnd_flipcoin(CLOptions::emi_p_compound());
+    bool do_lift = rnd_flipcoin(p_lift_adj);
+    // Is a compound statement.
+    if (do_compound) {
+      del_stms.push_back(st);
+      continue;
+    }
     // Lift case.
-    if (!rnd_flipcoin(p_lift_adj)) continue;
+    if (!do_lift) continue;
     lift_stms.push_back(st);
     /*if (st_type != eFor) continue;
     // Go through the block deleting cont/break, unless there is a for loop.

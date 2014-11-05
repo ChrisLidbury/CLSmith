@@ -158,7 +158,7 @@ void Vector::hash(std::ostream& out) const {
 
 std::string Vector::build_initializer_str(
     const std::vector<std::string>& init_strings) const {
-  static unsigned long seed = 0xAB;
+  /*static*/ unsigned long seed = 0xAB;
   std::string ret;
   ret.reserve(1000);
   // Print the raw vector type without qualifiers.
@@ -169,10 +169,10 @@ std::string Vector::build_initializer_str(
   ret.append("(");
   for (unsigned idx = 0; idx < sizes[0]; ++idx) {
     unsigned long rnd_index = ((seed * seed + (idx + 7) * (idx + 13)) * 487);
-    if (seed >= 0x7AB) seed = 0xAB;
+    if (/*++*/seed >= 0x7AB) seed = 0xAB;
     unsigned items_left = sizes[0] - idx;
     // Print a nested vector with 50% probability.
-    if (items_left > kSizes[0] && rnd_upto(2) == 1) {
+    if (items_left > kSizes[0] && rnd_index % 500 >= 250) {
       int max_size_idx = 3;
       while (kSizes[max_size_idx] > items_left - 1) --max_size_idx;
       int size = kSizes[rnd_index % (max_size_idx + 1)];
