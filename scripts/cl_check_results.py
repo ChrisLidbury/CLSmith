@@ -50,13 +50,16 @@ for platform_name, full_results in contents.items():
       temp_results = []
       for r in results[platform_name][program_name]:
         r = r.strip()
-        if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x"):
+        if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x") or \
+              "error" in r.lower():
           temp_results.append(r)
         else:
           temp_results.append("0x" + r)
       results[platform_name][program_name] = temp_results
       temp_results = ",".join(temp_results)
       if program_name in vote.keys():
+        if "error" in temp_results.lower():
+          continue
         if temp_results in vote[program_name].keys():
           vote[program_name][temp_results] = vote[program_name][temp_results] + 1
         else:
@@ -150,7 +153,7 @@ output.write("""
       height: 100%;
       overflow-x: hidden;
       overflow-y: auto;\n""")
-output.write("      width: " + `(len(contents) + 2) * cell_width` + "px;")
+output.write("      width: " + `(len(contents) + 2) * (cell_width + 100)` + "px;")
 output.write("      padding-bottom: " + `max_count * 30` + "px;")
 output.write("""
      padding-right: 35px;
@@ -200,12 +203,15 @@ for program_name in sample.keys():
         if not sample[program_name] == ["Inconclusive"]:
           if not set(results[platform_name][program_name]) == set(sample[program_name]):
             color = " style=\"background-color:red;\""
-        if results[platform_name][program_name][0].startswith("run_error"):
+        if results[platform_name][program_name][0].startswith("run_error") \
+            or "error" in results[platform_name][program_name][0].lower():
           color = " style=\"background-color:blue;\""
         elif results[platform_name][program_name][0].startswith("timeout"):
           color = " style=\"background-color:cadetblue;\""
         elif results[platform_name][program_name][0].startswith("N/A"):
 	  color = " style=\"background-color:olivedrab;\""
+	elif "Error" in results[platform_name][program_name][0]:
+	  color = " style=\"background-color:saddlebrown;\""
         output.write("<td " + color + ">")
         curr_count = 0
         for result in results[platform_name][program_name]:
