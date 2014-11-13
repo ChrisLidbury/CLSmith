@@ -23,7 +23,7 @@ class StatementAtomicReduction : public CLStatement {
     kSub,
 //     kInc,
 //     kDec,
-    kXchg,
+//     kXchg,
 //     kCmpxchg,
     kMin,
     kMax, 
