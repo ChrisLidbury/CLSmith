@@ -46,20 +46,26 @@ for platform_name, full_results in contents.items():
         no_lines = extension.split("(")[1].split(")")[0]
         lines[program_name] = no_lines
     else:
-      results[platform_name][program_name] = filter(None, result.split(','))
+      if program_name in results[platform_name]:
+        results[platform_name][program_name].append(result)
+        continue
+      else: 
+        results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
       for r in results[platform_name][program_name]:
+        normal_result = True
         r = r.strip()
-        if r.startswith("timeout") or r.startswith("run_error") or r.startswith("0x") or \
-              "error" in r.lower():
+        for c in r:
+          if c not in "0123456789abcdef":
+            normal_result = False
+            break
+        if r.startswith("0x") or not normal_result:
           temp_results.append(r)
         else:
           temp_results.append("0x" + r)
       results[platform_name][program_name] = temp_results
       temp_results = ",".join(temp_results)
       if program_name in vote.keys():
-        if "error" in temp_results.lower():
-          continue
         if temp_results in vote[program_name].keys():
           vote[program_name][temp_results] = vote[program_name][temp_results] + 1
         else:
@@ -72,7 +78,7 @@ for program_name in vote.keys():
   curr_max = -1
   curr_res = []
   for result, votes in vote[program_name].items():
-    if result.startswith("run_error") or result.startswith("timeout"):
+    if not result.startswith("0x"):
       continue
     if votes > curr_max and votes > 2:
       curr_max = votes
@@ -80,18 +86,10 @@ for program_name in vote.keys():
     elif votes == curr_max:
       curr_res.append(result)
   if len(curr_res) != 1:
-    curr_res = "Inconclusive"
+    curr_res = ["Inconclusive"]
   else:
-    curr_res = curr_res[0]
-  sample[program_name] = filter(None, curr_res.split(','))
-  temp_sample = []
-  for r in sample[program_name]:
-    r = r.strip()
-    if r.startswith(("timeout", "Inconclusive", "run_error", "0x")):
-      temp_sample.append(r)
-    else:
-      temp_sample.append("0x" + r)
-  sample[program_name] = temp_sample
+    curr_res = curr_res[0].split(",")
+  sample[program_name] = curr_res
   
 sample = collections.OrderedDict(sorted(sample.items()))
 contents = collections.OrderedDict(sorted(contents.items()))
