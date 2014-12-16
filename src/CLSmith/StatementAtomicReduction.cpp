@@ -84,7 +84,6 @@ void StatementAtomicReduction::Output(std::ostream& out, FactMgr* fm, int indent
   switch (op_) {
     case (kAdd)  : out << "add" ; break;
     case (kSub)  : out << "sub" ; break;
-    case (kXchg) : out << "xchg"; break;
     case (kMin)  : out << "min" ; break;
     case (kMax)  : out << "max" ; break;
     case (kAnd)  : out << "and" ; break;
