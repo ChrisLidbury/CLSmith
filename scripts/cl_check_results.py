@@ -162,6 +162,10 @@ output.write("""
 output.write("      width: " + `cell_width` + "px;")
 output.write("""
     }
+
+    tr:nth-child(even) {
+      background-color: #BBB;
+    }
     
     </style>
     
