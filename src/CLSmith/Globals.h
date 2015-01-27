@@ -36,6 +36,7 @@
 #include <ostream>
 #include <sstream>
 #include <vector>
+#include <string>
 
 #include "CommonMacros.h"
 
@@ -137,6 +138,11 @@ class Globals {
   // Helper for modifying global variable references. Recursively adds the
   // global struct to the members of struct and union variables.
   void ModifyGlobalAggregateVariableReferences(Variable *var);
+  
+  // A special step to fix the issue of not adding the global struct to global
+  // variable indices for arrays of structs (in CSmith, the name of the variable
+  // is set to contain the index, rather than it being an itemized variable)
+  void FixStructArrays(Variable *field_var, size_t pos);
 
  private:
   std::vector<Variable *> global_vars_;

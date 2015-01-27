@@ -109,6 +109,9 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
   out << "// Seed: " << seed << std::endl;
   out << std::endl;
   out << "#include \"CLSmith.h\"" << std::endl;
+  if (CLOptions::embedded()) {
+    out << "#include \"CLSmith_embedded.h\"" << std::endl << std::endl;
+  }
   out << std::endl;
 }
 

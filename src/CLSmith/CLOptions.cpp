@@ -15,6 +15,7 @@ DEFINE_CLFLAG(atomic_reductions, bool, false)
 DEFINE_CLFLAG(atomics, bool, false)
 DEFINE_CLFLAG(barriers, bool, false)
 DEFINE_CLFLAG(divergence, bool, false)
+DEFINE_CLFLAG(embedded, bool, false)
 DEFINE_CLFLAG(emi, bool, false)
 DEFINE_CLFLAG(emi_p_compound, int, 10)
 DEFINE_CLFLAG(emi_p_leaf, int, 50)
@@ -33,6 +34,7 @@ void CLOptions::set_default_settings() {
   atomics_ = false;
   barriers_ = false;
   divergence_ = false;
+  embedded_ = false;
   emi_ = false;
   emi_p_compound_ = 10;
   emi_p_leaf_ = 50;
@@ -65,8 +67,14 @@ void CLOptions::ResolveCGOptions() {
 
   // Setting for small programs.
   if (small_) {
-    // Limit number of functions to no more than 5.
-    CGOptions::max_funcs(5);
+    // Limit number of functions to no more than 3.
+    CGOptions::max_funcs(3);
+    CGOptions::max_blk_depth(3);
+    CGOptions::max_expr_depth(5);
+    CGOptions::max_block_size(20);
+    CGOptions::max_array_dimensions(3);
+    CGOptions::max_array_length_per_dimension(5);
+    CGOptions::max_array_length(7);
   }
 
   // Barrier specific stuff.
@@ -88,6 +96,12 @@ void CLOptions::ResolveCGOptions() {
     // Cannot have goto in atomic blocks; greedily stop all gotos from being 
     // generated.
     CGOptions::gotos(false);
+  }
+
+  // If we generate for an embedded profile, disable long long generation.
+  if (embedded_) {
+    CGOptions::longlong(false);
+    CGOptions::use_struct(false);
   }
 }
 

@@ -1,3 +1,5 @@
+/*TODO Work in progress - currently does not handle pointer references */
+
 #include "CLVariable.h"
 
 #include "Block.h"
@@ -125,14 +127,58 @@ void CLVariable::ParseUnusedVars() {
     Block* b = find_block_by_id((*it).first);
     std::vector<Variable*> lv = b->local_vars;
     std::vector<Variable*> to_del;
+    std::vector<const Variable*> ref_vars;
     for (Variable* v : lv) {
+      std::cout << "VAR______ " << v->name << std::endl;
+      v->init->get_referenced_ptrs(ref_vars);
+      for (const Variable* rv : ref_vars)
+        std::cout << "LIVE " << rv->name << std::endl;
       if (v->get_collective() != v)
         continue;
+      bool is_live = false;
+      for (const Variable* rf : ref_vars)
+        if (!v->name.compare(rf->name))
+          is_live = true;
+      if (is_live)
+        continue;
       if ((*it).second->find(v) == (*it).second->end()) {
+        std::cout << "ADDING TO DEL " << v->name << std::endl;
         to_del.push_back(v);
       }
+      std::cout << "DONE ______________" << std::endl;
     }
+    
+    for (const Variable* rv : ref_vars) {
+      std::cout << "SEARCH " << rv->name << std::endl;
+      if (std::find(to_del.begin(), to_del.end(), rv) != to_del.end())
+        std::cout << "YES" << std::endl;
+      else std::cout << "NO" << std::endl;
+    }
+    
+//     for (Variable* v : lv) {
+//       std::vector<const Variable*> ptrs;
+//       v->init->get_referenced_ptrs(ptrs);
+//       for (const Variable* rv : ptrs) {
+//         std::vector<Variable*> live;
+//         for (Variable* dv : to_del) {
+//           if (dv->name.compare(rv->name)) {
+//             live.push_back(dv);
+//           }
+//         }
+//         for (Variable* liv : live) {
+//           std::cout << "LIVE " << liv->name << std::endl;
+//           to_del.erase(std::remove(to_del.begin(), to_del.end(), liv), to_del.end());
+//         }
+//       }
+//       std::cout << "PTRS FOR EXPR " << v->init->to_string();
+//       std::cout << " VARNAME " << v->name << std::endl;
+//       for (const Variable* cv : ptrs)
+//         std::cout << cv->name << std::endl;
+//       std::cout << "DONE____" << std::endl;
+//     }
+    
     for (Variable* v : to_del) {
+      std::cout << "DELETING " << v->name << std::endl;
       b->local_vars.erase(std::remove(b->local_vars.begin(), b->local_vars.end(), v), b->local_vars.end());
     }
   }
@@ -203,7 +249,7 @@ Block* b) {
     // if NULL, search all blocks for variable (for gotos and so)
 //     assert (b != NULL && b->parent != NULL);
     if (b->parent == NULL) {
-      std::cout << "failed " << var->to_string() << std::endl;
+//      std::cout << "failed " << var->to_string() << std::endl;
       return;
     }
     b = b->parent;

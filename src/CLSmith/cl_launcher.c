@@ -27,6 +27,12 @@ int runtime_check_handler(int errorType, const char *filename, int linenumber, c
 }
 #endif
 
+#ifdef EMBEDDED
+  typedef cl_uint RES_TYPE;
+#else
+  typedef cl_ulong RES_TYPE;
+#endif
+
 #define DEF_LOCAL_SIZE 32
 #define DEF_GLOBAL_SIZE 1024
 
@@ -109,7 +115,7 @@ void print_help() {
   printf("                      ---disable_fake       Disable fake divergence feature\n");
   printf("                      ---set_device_from_name\n");
   printf("                                            Ignore target platform -p and device -d\n");
-  printf("                                            Instead try to find a matching platform/device based on the device name\n");
+  printf("                                            Instead try to find a matching platform/device based on the device name\n"); 
 }
 
 /*
@@ -238,12 +244,11 @@ int main(int argc, char **argv) {
     parse_ret = parse_arg(curr_arg, next_arg);
     if (!parse_ret)
       return 1;
-    if (parse_ret == 2)
-      req_arg++;
+    req_arg += parse_ret - 1;
   }
   
-  if (req_arg != 2) {
-    printf("Require device index (-d) and platform index (-p) arguments!\n");
+  if (req_arg < 2) {
+    printf("Require device index (-d) and platform index (-p) arguments, or device name (-n)!\n");
     return 1;
   }
   
@@ -533,7 +538,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
   // Create the buffer that will have the results.
   cl_mem result = clCreateBuffer(
-      context, CL_MEM_WRITE_ONLY, total_threads * sizeof(cl_ulong), NULL, &err);
+      context, CL_MEM_WRITE_ONLY, total_threads * sizeof(RES_TYPE), NULL, &err);
   if (cl_error_check(err, "Error creating output buffer"))
     return 1;
   
@@ -656,9 +661,9 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Read back the reults of each thread.
-  cl_ulong * c = (cl_ulong*)malloc(sizeof(cl_ulong)*total_threads);
+  RES_TYPE * c = (RES_TYPE*)malloc(sizeof(RES_TYPE)*total_threads);
   err = clEnqueueReadBuffer(
-      com_queue, result, CL_TRUE, 0, total_threads * sizeof(cl_ulong), c, 0, NULL, NULL);
+      com_queue, result, CL_TRUE, 0, total_threads * sizeof(RES_TYPE), c, 0, NULL, NULL);
   if (cl_error_check(err, "Error reading output buffer"))
     return 1;
 
@@ -668,6 +673,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     printf(
 #ifdef _MSC_VER
     "%I64x,"
+#elif EMBEDDED
+    "%#"PRIx32","
 #else
     "%#"PRIx64","
 #endif  
@@ -741,7 +748,7 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "-n") || !strcmp(arg, "--name")) {
     device_name_given = val;
-    return 1;
+    return 3;
   }
   if (!strcmp(arg, "--atomics")) {
     atomics = true;

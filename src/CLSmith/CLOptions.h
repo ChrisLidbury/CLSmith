@@ -21,6 +21,7 @@ class CLOptions {
   DEFINE_CLFLAG(atomics, bool)
   DEFINE_CLFLAG(barriers, bool)
   DEFINE_CLFLAG(divergence, bool)
+  DEFINE_CLFLAG(embedded, bool)
   DEFINE_CLFLAG(emi, bool)
   DEFINE_CLFLAG(emi_p_compound, int)
   DEFINE_CLFLAG(emi_p_leaf, int)

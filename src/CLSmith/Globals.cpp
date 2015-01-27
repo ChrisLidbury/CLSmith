@@ -58,6 +58,12 @@ void Globals::ReleaseGlobals() {
 }
 
 void Globals::OutputStructDefinition(std::ostream& out) {
+  
+//   /* TO DEL */
+//   for (Variable *v : *VariableSelector::GetAllVariables())
+//     std::cout << v->name << std::endl;
+//   /* TO DEL */
+  
   if (!struct_type_) CreateGlobalStruct();
   struct_type_->Output(out);
   out << " {" << std::endl;
@@ -159,12 +165,20 @@ void Globals::ModifyGlobalVariableReferences() {
   // fix, we add a method in the VariableSelector that give us the list of all
   // variables.
   // Variable::is_global() is unreliable.
-  for (Variable *var : *VariableSelector::GetAllVariables())
-    if (var->name.find("g_") == 0 && std::find(buffers_.begin(), buffers_.end(), var) == buffers_.end()) { //?
+  for (Variable *var : *VariableSelector::GetAllVariables()) {
+    if (var->name.find("g_") == 0 && std::find(buffers_.begin(), buffers_.end(), var) == buffers_.end()) { 
       *const_cast<std::string *>(&var->name) =
           struct_var_->name + "->" + var->name;
       if (var->is_aggregate()) ModifyGlobalAggregateVariableReferences(var);
     }
+    if (var->name.find("l_") == 0 && var->is_aggregate()) {
+      for (Variable *field_var : var->field_vars) {
+        if (field_var->name.find("[") != std::string::npos) {
+          FixStructArrays(field_var, field_var->name.find("["));
+        }
+      }
+    }
+  }
 
   // Now add to the buffers.
   for (MemoryBuffer *buffer : buffers_)
@@ -228,6 +242,22 @@ void Globals::ModifyGlobalAggregateVariableReferences(Variable *var) {
         struct_var_->name + "->" + field_var->name;
     if (field_var->is_aggregate())
       ModifyGlobalAggregateVariableReferences(field_var);
+    if (field_var->name.find("[") != std::string::npos)
+      FixStructArrays(field_var, field_var->name.find("["));
+  }
+}
+
+void Globals::FixStructArrays(Variable *field_var, size_t pos) {
+  while (pos < field_var->name.length()) {
+    pos = field_var->name.find("g_", pos);
+    if (pos == std::string::npos)
+      break;
+    if (field_var->name.compare(pos - 2, 2, "->")) {
+      string to_insert = struct_var_->name + "->";
+      const_cast<std::string *>(&field_var->name)->insert(pos, to_insert);
+      pos += to_insert.length();
+    }
+    else pos++;
   }
 }
 
