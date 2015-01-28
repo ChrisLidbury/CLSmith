@@ -1,6 +1,5 @@
 #include "CLSmith/StatementAtomicResult.h"
 #include "CLSmith/ExpressionAtomic.h"
-#include "CLSmith/ExpressionAtomicAccess.h"
 #include "CLSmith/CLStatement.h"
 
 #include "Block.h"

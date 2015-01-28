@@ -1,5 +1,4 @@
 #include "CLSmith/ExpressionAtomic.h"
-#include "CLSmith/ExpressionAtomicAccess.h"
 #include "CLSmith/ExpressionID.h"
 #include "CLSmith/StatementAtomicResult.h"
 #include "CLSmith/StatementBarrier.h"
@@ -377,6 +376,25 @@ string ExpressionAtomic::GetOpName() const {
     case kXor:     return "atomic_xor";
     default:       assert(0); // should never get here.
   }
+}
+
+void ExpressionAtomicAccess::Output(std::ostream& out) const {
+  if (mem_ == kGlobal) {
+    out << ExpressionAtomic::get_atomic_blocks_no() << " * ";
+    ExpressionID* g_access = new ExpressionID(ExpressionID::kLinearGroup);
+    g_access->Output(out);
+    out << " + " << constant_;
+  } else if (mem_ == kLocal) {
+    out << constant_;
+  }
+}
+
+bool ExpressionAtomicAccess::is_global() const {
+  return mem_ == kGlobal;
+}
+
+bool ExpressionAtomicAccess::is_local() const {
+  return mem_ == kLocal;
 }
 
 }

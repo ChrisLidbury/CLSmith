@@ -4,7 +4,7 @@
 #define _CLSMITH_STATEMENTATOMICRESULT_H_
 
 #include "CLSmith/CLStatement.h"
-#include "CLSmith/ExpressionAtomicAccess.h"
+#include "CLSmith/ExpressionAtomic.h"
 
 #include <vector>
 
