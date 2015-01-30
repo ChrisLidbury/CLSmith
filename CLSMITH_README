@@ -1,0 +1,15 @@
+CLSmith - A random generator of OpenCL C programs.
+
+Christopher Lidbury, Alastair Donaldson, Andrei Lascu, Nathan Chong
+{christopher.lidbury10,alastair.donaldson,andrei.lascu10,n.chong10}@imperial.ac.uk
+
+Imperial College London, Department of Computing
+http://www3.imperial.ac.uk/computing
+
+More information about discussions and where to post bug reports to come.
+
+The OpenCL C part of the generator is largely kept in its own part, leaving
+csmith as intact as possible (with some modifications made to allow CLSmith to
+inject functionctionality into csmith or to pass control to CLSmith). Keeping
+csmith and CLSmith separate turned out to be very tricky and probably not worth
+the effort.
