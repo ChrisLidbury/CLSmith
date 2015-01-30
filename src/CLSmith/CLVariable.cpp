@@ -1,4 +1,6 @@
-/*TODO Work in progress - currently does not handle pointer references */
+/*TODO Work in progress 
+    * currently does not handle pointer references 
+    * rewrite to see if we can use FunctionWalker */
 
 #include "CLVariable.h"
 

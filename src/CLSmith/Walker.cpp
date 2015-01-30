@@ -111,6 +111,7 @@ bool BlockWalker::AdvanceSelector(Statement *statement) {
     case eBreak:    return WalkerImpl<eBreak>::Advance(statement);
     case eGoto:     return WalkerImpl<eGoto>::Advance(statement);
     case eArrayOp:  return WalkerImpl<eArrayOp>::Advance(statement);
+    case eCLStatement: return WalkerImpl<eCLStatement>::Advance(statement); 
     default: assert(false && "Invalid statement.");
   }
 }

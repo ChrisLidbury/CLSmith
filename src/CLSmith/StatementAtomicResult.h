@@ -1,4 +1,6 @@
-// TODO
+/* TODO
+    * move into a new StatementAtomic class
+*/
 
 #ifndef _CLSMITH_STATEMENTATOMICRESULT_H_
 #define _CLSMITH_STATEMENTATOMICRESULT_H_

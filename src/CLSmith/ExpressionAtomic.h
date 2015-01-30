@@ -33,11 +33,11 @@ class ExpressionAtomicAccess : public CLExpression {
   ExpressionAtomicAccess (const int constant, const AtomicMemAccess mem) : CLExpression(kAtomic),
     constant_(constant), mem_(mem), type_(Type::get_simple_type(eInt)) {}
     
-  // TODO
+  // Functions to check whether the access is local or global memory
   bool is_global(void) const;
   bool is_local(void) const;
     
-  // TODO
+  // Get the offset constant for the memory access
   int get_counter(void) const {return this->constant_;};
   
   // Pure virtual methods from Expression
@@ -97,7 +97,7 @@ class ExpressionAtomic : public CLExpression {
 //     val_(val), cmp_(cmp), atomic_type_(type), type_(Type::get_simple_type(eInt)) {}
     
 
-  // TODO
+  // Get the access object
   const ExpressionAtomicAccess* get_access(void) const {return this->access_;} ;
     
   // Generates a random atomic expression; all expressions have equal chance of 
@@ -136,7 +136,8 @@ class ExpressionAtomic : public CLExpression {
   static bool HasSVMems();
   static bool HasLocalSVMems();
   
-  // TODO
+  // Return a list of Variables visible in the given block; we use this to reuse
+  // reuse variables from parent blocks in their children
   static std::vector<Variable *>* GetBlockVars(Block* b);
   
   // Called in Block::make_random(); whenever we create a block within an atomic
@@ -144,14 +145,16 @@ class ExpressionAtomic : public CLExpression {
   // part of a collective) into the block_vars vector
   static void InsertBlockVars(std::vector<Variable*> local_vars, std::vector<Variable*>* blk_vars);
   
-  // TODO
+  // Record the given variable in the internal representation for block 
+  // variables
   static void AddBlockVar(Variable* v);
   static void AddBlockVar(const Variable* v);
   
-  // TODO
+  // Create a new structure for holding block variables; this should be called
+  // once per a new parent atomic block
   static void GenBlockVars(Block* curr);
   
-  // TODO
+  // Remove variables from our block variables; used when leaving a child block
   static void RemoveBlockVars(Block* b);
   static void DelBlockVars();
   

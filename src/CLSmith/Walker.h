@@ -47,7 +47,7 @@ struct TypeList;
 // All of the statement types that will be traversed by the Walker.
 typedef TypeList<eAssign, eBlock, eFor, eIfElse,
                  eInvoke, eReturn, eContinue, eBreak,
-                 eGoto, eArrayOp> StatementList;
+                 eGoto, eArrayOp, eCLStatement> StatementList;
 
 // Base of the Walker hierarchy. Everything that the Walker depends on should be
 // here.
