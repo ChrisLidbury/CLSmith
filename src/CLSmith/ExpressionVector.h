@@ -1,4 +1,18 @@
-// SIMD expressions.
+// Vector based expressions.
+// Expressions are produced such that an intermediate rvalue vector is produced,
+// which is then transformed into the expected return type.
+// The intermediate vector is produced by a sequence of sub-expressions (e.g.
+// scalar, result of binary operation on two premade vectors, etc).
+// Once the intermediate vector is made, it can be transformed into a scalar or
+// vector of different length by itemising.
+//
+// Example: Calling make_random with return type 'int':
+//
+// (5, 10, 1 + 2, some_vec.x)  Intermediate int4 made from four sub-expresisons.
+// (5, 10, 1 + 2, some_vec.x).w  Itemised to give the requested 'int'.
+//
+// TODO: Shares (and copies) some functionality in Vector (especially
+//  outputting). Either remove or put in Vector.
 
 #ifndef _CLSMITH_EXPRESSIONVECTOR_H_
 #define _CLSMITH_EXPRESSIONVECTOR_H_

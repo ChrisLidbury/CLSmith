@@ -58,12 +58,6 @@ void Globals::ReleaseGlobals() {
 }
 
 void Globals::OutputStructDefinition(std::ostream& out) {
-  
-//   /* TO DEL */
-//   for (Variable *v : *VariableSelector::GetAllVariables())
-//     std::cout << v->name << std::endl;
-//   /* TO DEL */
-  
   if (!struct_type_) CreateGlobalStruct();
   struct_type_->Output(out);
   out << " {" << std::endl;
@@ -242,6 +236,7 @@ void Globals::ModifyGlobalAggregateVariableReferences(Variable *var) {
         struct_var_->name + "->" + field_var->name;
     if (field_var->is_aggregate())
       ModifyGlobalAggregateVariableReferences(field_var);
+    // TODO: Use methods in Variable to detect this.
     if (field_var->name.find("[") != std::string::npos)
       FixStructArrays(field_var, field_var->name.find("["));
   }

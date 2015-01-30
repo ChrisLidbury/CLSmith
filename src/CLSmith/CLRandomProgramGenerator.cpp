@@ -24,7 +24,7 @@ bool ParseIntArg(const char *arg, unsigned long *value) {
   bool res = sscanf(arg, "%lu", value);
   if (!res) std::cout << "Expected integer arg for " << arg << std::endl;
   return res;
-  }
+}
 
 int main(int argc, char **argv) {
   g_Seed = platform_gen_seed();

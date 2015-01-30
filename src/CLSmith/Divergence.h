@@ -3,9 +3,10 @@
 // point, but not all of them.
 // This will 'overestimate' the program's divergence, that is, any point that is
 // divergent will be found, but we may also mark points that are not divergent
-// as being divergent.
+// as being divergent (not sound but complete).
 // Marking is done on a per block/per scope level basis, either a block is all
-// convergent or all divergent.
+// convergent or all divergent. Some blocks will be split into sub-blocks to
+// help prevent overestimating.
 // See the report on what properties we use to do this.
 //
 // Future possible improvements:
@@ -30,6 +31,13 @@
 // - Split sub-blocks on returns.
 // - Implement gotos.
 // - When arrays are fixed, implement them.
+//
+// At the moment, this code is largely unusable, it was created right at the
+// beginning of the project and was not properly finished (Sub blocks are not
+// used, some bits are missing, arrays must be disabled, no proper testing,
+// etc). There is also no interaction with any of the CLStatements or
+// CLExpressions, as they were added after this. A lot of work will be required
+// to bring this up to scratch.
 
 #ifndef _CLSMITH_DIVERGENCE_H_
 #define _CLSMITH_DIVERGENCE_H_

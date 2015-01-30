@@ -25,7 +25,8 @@ class CLOutputMgr : public OutputMgr {
   ~CLOutputMgr() { out_.close(); }
   
   // Outputs information regarding the runtime to be read by the host code
-  void OutputRuntimeInfo(std::vector<unsigned int> threads, std::vector<unsigned int> groups);
+  void OutputRuntimeInfo(const std::vector<unsigned int>& threads,
+                         const std::vector<unsigned int>& groups);
 
   // Inherited from OutputMgr. Outputs comments, #defines and forward
   // declarations.

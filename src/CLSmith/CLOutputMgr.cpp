@@ -21,8 +21,10 @@ namespace CLSmith {
 CLOutputMgr::CLOutputMgr() : out_(CLOptions::output()) {
 }
 
-void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::vector<unsigned int> local_dims) {
-  std::ostream &out = get_main_out();
+void CLOutputMgr::OutputRuntimeInfo(
+    const std::vector<unsigned int>& global_dims,
+    const std::vector<unsigned int>& local_dims) {
+  std::ostream& out = get_main_out();
   out << "//";
   if (CLOptions::atomics())
     out << " --atomics " << CLProgramGenerator::get_atomic_blocks_no();
@@ -35,13 +37,15 @@ void CLOutputMgr::OutputRuntimeInfo(std::vector<unsigned int> global_dims, std::
   if (CLOptions::emi())
     out << " ---emi";
   out << " -g ";
-  for (std::vector<unsigned int>::iterator it = global_dims.begin(); it < global_dims.end(); it++) {
+  for (std::vector<unsigned int>::const_iterator it = global_dims.begin();
+      it < global_dims.end(); it++) {
     out << *it;
     if (it + 1 != global_dims.end())
       out << ",";
   }
   out << " -l ";
-  for (std::vector<unsigned int>::iterator it = local_dims.begin(); it < local_dims.end(); it++) {
+  for (std::vector<unsigned int>::const_iterator it = local_dims.begin();
+      it < local_dims.end(); it++) {
     out << *it;
     if (it + 1 != local_dims.end())
       out << ",";
@@ -53,7 +57,8 @@ void CLOutputMgr::OutputHeader(int argc, char *argv[], unsigned long seed) {
   // Redefine platform independent scalar C types to platform independent scalar
   // OpenCL types.
   std::ostream &out = get_main_out();
-  OutputRuntimeInfo(CLProgramGenerator::get_global_dims(), CLProgramGenerator::get_local_dims());
+  OutputRuntimeInfo(CLProgramGenerator::get_global_dims(),
+                    CLProgramGenerator::get_local_dims());
   out <<
       "#define int64_t long\n"
       "#define uint64_t ulong\n"

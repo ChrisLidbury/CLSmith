@@ -27,6 +27,9 @@
 // TODO Proper const/mutable of the created struct (Only allow the singleton?
 //   assert no changes after struct created?).
 // TODO When memory spaces are done properly, merge vars and local buffers.
+//
+// This was more or less the first CLSmith thing created, when I knew almost
+// nothing of how csmith worked, so it largely sucks.
 
 #ifndef _CLSMITH_GLOBALS_H_
 #define _CLSMITH_GLOBALS_H_

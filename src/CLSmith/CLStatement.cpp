@@ -37,15 +37,20 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     }
     // Only generate atomic reductions if they are set.
     if (st == kReduction) {
-      if (!CLOptions::atomic_reductions() || cg_context.get_atomic_context()) return NULL;
+      if (!CLOptions::atomic_reductions() || cg_context.get_atomic_context())
+        return NULL;
     }
     // Fake divergence must also be set.
+    // Not currently used, as fake divergence is handled by ExpressionID, which
+    // will sometimes produce an expression using get_global_id. Would like to
+    // move that functionality here for more control.
     if (st == kFakeDiverge) {
       /*if (!CLOptions::fake_divergence())*/ return NULL;
     }
     // Inter-thread communication must be set.
     if (st == kComm) {
-      if (!CLOptions::inter_thread_comm() || cg_context.get_atomic_context()) return NULL;
+      if (!CLOptions::inter_thread_comm() || cg_context.get_atomic_context())
+        return NULL;
     }
   }
 
@@ -57,8 +62,8 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
       stmt = StatementEMI::make_random(cg_context); break;
     case kReduction:
       stmt = StatementAtomicReduction::make_random(cg_context); break;
-    case kFakeDiverge:
-      stmt = CreateFakeDivergentIf(cg_context); break;
+//    case kFakeDiverge:
+//      stmt = CreateFakeDivergentIf(cg_context); break;
     case kComm:
       stmt = StatementComm::make_random(cg_context); break;
     default: assert(false);
@@ -66,7 +71,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
   return stmt;
 }
 
-CLStatement *CLStatement::CreateFakeDivergentIf(CGContext& cg_context) {
+/*CLStatement *CLStatement::CreateFakeDivergentIf(CGContext& cg_context) {
   const Type& type = Type::get_simple_type(eULongLong);
   StatementIf *st_if = new StatementIf(cg_context.get_current_block(),
       *ExpressionID::CreateFakeDivergentExpression(cg_context, type),
@@ -74,7 +79,7 @@ CLStatement *CLStatement::CreateFakeDivergentIf(CGContext& cg_context) {
   // For now, bundle it in EMI but do not register with the controller.
   StatementEMI *cl_st = new StatementEMI(cg_context.get_current_block(), st_if);
   return cl_st;
-}
+}*/
 
 void CLStatement::InitProbabilityTable() {
   cl_stmt_table = new DistributionTable();

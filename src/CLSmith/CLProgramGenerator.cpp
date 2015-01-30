@@ -26,15 +26,16 @@
 class OutputMgr;
 
 namespace CLSmith {
-
+namespace {
 static const unsigned int min_no_threads = 100;
 static const unsigned int max_no_threads = 10000;
 static const unsigned int max_threads_per_group = 256;
 static const unsigned int no_dims = 3;
 static unsigned int noThreads;
 static unsigned int noGroups = 1;
-static std::vector<unsigned int> globalDim;
-static std::vector<unsigned int> localDim;
+static std::vector<unsigned int> *globalDim;
+static std::vector<unsigned int> *localDim;
+}  // namespace
 
 void CLProgramGenerator::goGenerator() {
   // Initialise probabilies.
@@ -130,13 +131,15 @@ void CLProgramGenerator::goGenerator() {
 
 void CLProgramGenerator::InitRuntimeParameters() {
   noThreads = rnd_upto(max_no_threads - min_no_threads) + min_no_threads;
-  globalDim = std::vector<unsigned int> (no_dims, 1);
-  localDim = std::vector<unsigned int> (no_dims, 1);
+  globalDim = new std::vector<unsigned int>(no_dims, 1);
+  localDim = new std::vector<unsigned int>(no_dims, 1);
+  std::vector<unsigned int>& globalDim = *CLSmith::globalDim;
+  std::vector<unsigned int>& localDim = *CLSmith::localDim;
   std::vector<unsigned int> chosen_div;
   std::vector<unsigned int> divisors;
   int choose, currNo = noThreads, div;
   while (chosen_div.size() < no_dims) {
-    divisors = *get_divisors(currNo);
+    get_divisors(currNo, &divisors);
     div = divisors[rnd_upto(divisors.size())];
     chosen_div.push_back(div);
     currNo /= div;
@@ -147,13 +150,14 @@ void CLProgramGenerator::InitRuntimeParameters() {
     choose = rnd_upto(chosen_div.size());
     globalDim[i] = chosen_div[choose];
     noThreads *= globalDim[i];
-    chosen_div.erase(std::find(chosen_div.begin(), chosen_div.end(), chosen_div[choose]));
+    chosen_div.erase(
+        std::find(chosen_div.begin(), chosen_div.end(), chosen_div[choose]));
   }
   unsigned int curr_thr_p_grp;
   do {
     curr_thr_p_grp = 1;
     for (unsigned int i = 0; i < no_dims; i++) {
-      divisors = *get_divisors(globalDim[i]);
+      get_divisors(globalDim[i], &divisors);
       localDim[i] = divisors[rnd_upto(divisors.size())];
       curr_thr_p_grp *= localDim[i];
     }
@@ -188,11 +192,11 @@ const unsigned int CLProgramGenerator::get_threads_per_group() {
 }
 
 const std::vector<unsigned int>& CLProgramGenerator::get_global_dims() {
-  return globalDim;
+  return *globalDim;
 }
 
 const std::vector<unsigned int>& CLProgramGenerator::get_local_dims() {
-  return localDim;
+  return *localDim;
 }
 
 const unsigned int CLProgramGenerator::get_atomic_blocks_no() {
@@ -202,8 +206,9 @@ const unsigned int CLProgramGenerator::get_atomic_blocks_no() {
 void CLProgramGenerator::initialize() {
 }
 
-std::vector<unsigned int>* CLProgramGenerator::get_divisors(unsigned int val) {
-  std::vector<unsigned int>* divisors = new std::vector<unsigned int>();
+void CLProgramGenerator::get_divisors(
+    unsigned int val, std::vector<unsigned int> *divisors) {
+  divisors->clear();
   divisors->push_back(1); divisors->push_back(val);
   unsigned int i;
   for (i = 2; i < sqrt(val); i++) {
@@ -214,7 +219,6 @@ std::vector<unsigned int>* CLProgramGenerator::get_divisors(unsigned int val) {
   }
   if (i * i == val)
     divisors->push_back(i);
-  return divisors;
 }
 
 }  // namespace CLSmith

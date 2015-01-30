@@ -8,7 +8,6 @@
 
 #include "AbsProgramGenerator.h"
 #include "CLSmith/CLOutputMgr.h"
-//#include "CLSmith/Util.h"
 #include "CommonMacros.h"
 
 #include <memory>
@@ -63,7 +62,7 @@ class CLProgramGenerator : public AbsProgramGenerator {
   
   // Used as a helper function for calculating the dimensions of the global
   // work size; gets a list of the divisors of the given argument
-  std::vector<unsigned int>* get_divisors(unsigned int val);
+  void get_divisors(unsigned int val, std::vector<unsigned int> *divisors);
 
   DISALLOW_COPY_AND_ASSIGN(CLProgramGenerator);
 };
