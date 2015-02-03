@@ -1,20 +1,15 @@
--*- mode: Text -*-
+CLSmith - A random generator of OpenCL C programs.
 
-                  Csmith --- a random generator of C programs
+Christopher Lidbury, Alastair Donaldson, Andrei Lascu, Nathan Chong
+{christopher.lidbury10,alastair.donaldson,andrei.lascu10,n.chong10}@imperial.ac.uk
 
-              Xuejun Yang, Yang Chen, Eric Eide, and John Regehr
-                  {jxyang,chenyang,eeide,regehr}@cs.utah.edu
+Imperial College London, Department of Computing
+http://www3.imperial.ac.uk/computing
 
-                    University of Utah School of Computing
-                            http://www.cs.utah.edu/
-                                       
+More information about discussions and where to post bug reports to come.
 
-Please send bug reports and fixes to <csmith-bugs@flux.utah.edu>.
-
-There is a mailing list, <csmith-dev@flux.utah.edu>, for discussing Csmith.
-Visit <http://www.flux.utah.edu/mailman/listinfo/csmith-dev> to subscribe.
-To post messages to the list, you must first subscribe to the list.
-
-Most Csmith info can be found here:
-
-  http://embed.cs.utah.edu/csmith/
+The OpenCL C part of the generator is largely kept in its own part, leaving
+csmith as intact as possible (with some modifications made to allow CLSmith to
+inject functionctionality into csmith or to pass control to CLSmith). Keeping
+csmith and CLSmith separate turned out to be very tricky and probably not worth
+the effort.
