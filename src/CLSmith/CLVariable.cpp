@@ -1,6 +1,3 @@
-/*TODO Work in progress 
-    * rewrite to see if we can use FunctionWalker */
-
 #include "CLVariable.h"
 
 #include "Block.h"
@@ -33,23 +30,11 @@
 
 namespace CLSmith {
 
-void CLVariable::ParseUnusedVars2() {	
-  Walker::FunctionWalker* wlker = new Walker::FunctionWalker(GetFirstFunction());
-  while (wlker->Advance()) {
-    switch(wlker->GetCurrentStatement()->eType) {
-      case eAssign: std::cout << "ass" << std::endl;
-      case eReturn: std::cout << "ret" << std::endl;
-      default: std::cout << "ceva" << std::endl;
-    }
-  }
-}
-
 void CLVariable::ParseUnusedVars() {
-  // consider changing to set
-  std::vector<Function*> funcs = get_all_functions();
   std::set<const Variable*> accesses;
+  std::set<const Variable*> expr_vars;
 
-  for (Function * f : funcs) {
+  for (Function * f : get_all_functions()) {
     for (Block * b : f->blocks) {
       Helpers::RecordVarInitialisation(&accesses, b);
       for (Statement * s : b->stms) {
@@ -57,10 +42,9 @@ void CLVariable::ParseUnusedVars() {
           case eAssign: 
             { StatementAssign* as = dynamic_cast<StatementAssign*>(s);
               const Variable* lhsv = as->get_lhs()->get_var()->get_collective();
-              std::set<const Variable*>* rhsv = 
-                Helpers::GetVarsFromExpr(as->get_expr());
+              Helpers::GetVarsFromExpr(&expr_vars, as->get_expr());
               Helpers::RecordVar(&accesses, lhsv);
-              Helpers::RecordMultipleVars(&accesses, rhsv);
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eReturn: 
             { StatementReturn* rs = dynamic_cast<StatementReturn*>(s);
@@ -73,58 +57,49 @@ void CLVariable::ParseUnusedVars() {
                 sf->get_init()->get_lhs()->get_var()->get_collective();
               const Variable* incrlhsv = 
                 sf->get_init()->get_lhs()->get_var()->get_collective();
-              std::set<const Variable*>* initrhsv = 
-                Helpers::GetVarsFromExpr(sf->get_init()->get_expr());
-              std::set<const Variable*>* testv = 
-                Helpers::GetVarsFromExpr(sf->get_test());
-              std::set<const Variable*>* incrrhsv = 
-                Helpers::GetVarsFromExpr(sf->get_incr()->get_expr());
+              Helpers::GetVarsFromExpr(&expr_vars, sf->get_init()->get_expr());
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
+              Helpers::GetVarsFromExpr(&expr_vars, sf->get_test());
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
+              Helpers::GetVarsFromExpr(&expr_vars, sf->get_incr()->get_expr());
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               Helpers::RecordVar(&accesses, initlhsv);
               Helpers::RecordVar(&accesses, incrlhsv);
-              Helpers::RecordMultipleVars(&accesses, initrhsv);
-              Helpers::RecordMultipleVars(&accesses, testv);
-              Helpers::RecordMultipleVars(&accesses, incrrhsv);
               break; }
           case eIfElse: 
             { StatementIf* si = dynamic_cast<StatementIf*>(s);
-              std::set<const Variable*>* testv = 
-                Helpers::GetVarsFromExpr(si->get_test());
-              Helpers::RecordMultipleVars(&accesses, testv);
+              Helpers::GetVarsFromExpr(&expr_vars, si->get_test());
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eInvoke: 
             { StatementExpr* se = dynamic_cast<StatementExpr*>(s);
-              std::set<const Variable*>* exprv = 
-                Helpers::GetVarsFromExpr(se->get_call());
-              Helpers::RecordMultipleVars(&accesses, exprv);
+              Helpers::GetVarsFromExpr(&expr_vars, se->get_call());
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eContinue: 
             { StatementContinue* sc = dynamic_cast<StatementContinue*>(s);
-              std::set<const Variable*>* testv = 
-                Helpers::GetVarsFromExpr(&sc->test);
-              Helpers::RecordMultipleVars(&accesses, testv);
+              Helpers::GetVarsFromExpr(&expr_vars, &sc->test);
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eBreak: 
             { StatementBreak* sb = dynamic_cast<StatementBreak*>(s);
-              std::set<const Variable*>* testv = 
-                Helpers::GetVarsFromExpr(&sb->test);
-              Helpers::RecordMultipleVars(&accesses, testv);
+              Helpers::GetVarsFromExpr(&expr_vars, &sb->test);
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eGoto: 
             { StatementGoto* sg = dynamic_cast<StatementGoto*>(s);
-              std::set<const Variable*>* testv = 
-                Helpers::GetVarsFromExpr(&sg->test);
-              Helpers::RecordMultipleVars(&accesses, testv);
+              Helpers::GetVarsFromExpr(&expr_vars, &sg->test);
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               break; }
           case eArrayOp: 
             { StatementArrayOp* sao = dynamic_cast<StatementArrayOp*>(s);
               const Variable* arrv = sao->array_var->get_collective();
               std::set<const Variable*> ctrlv 
                 (sao->ctrl_vars.begin(), sao->ctrl_vars.end());
-              std::set<const Variable*>* initv = 
-                Helpers::GetVarsFromExpr(sao->init_value);
+              Helpers::GetVarsFromExpr(&expr_vars, sao->init_value);
+              Helpers::RecordMultipleVars(&accesses, &expr_vars);
               Helpers::RecordVar(&accesses, arrv);
               Helpers::RecordMultipleVars(&accesses, &ctrlv);
-              Helpers::RecordMultipleVars(&accesses, initv);
               break; }
           case eCLStatement: 
           case eBlock: 
@@ -136,7 +111,7 @@ void CLVariable::ParseUnusedVars() {
     }
   }
   
-  for (Function* f : funcs) {
+  for (Function* f : get_all_functions()) {
     for (Block* b : f->blocks) {
       for (Variable* v : b->local_vars) {
         if (std::find(accesses.begin(), accesses.end(), v) == accesses.end()) {
@@ -147,8 +122,10 @@ void CLVariable::ParseUnusedVars() {
   }
 }
 
-std::set<const Variable*>* CLVariable::Helpers::GetVarsFromExpr(const Expression* expr) {
-  std::set<const Variable*>* expr_vars = new std::set<const Variable*>();
+void CLVariable::Helpers::GetVarsFromExpr(std::set<const Variable*>* expr_vars, const Expression* expr) {
+  assert(expr_vars != NULL);
+  expr_vars->clear();
+  std::set<const Variable*> inner_expr_vars;
   switch (expr->term_type) {
     case eVariable: 
       { const ExpressionVariable* ev = 
@@ -158,15 +135,15 @@ std::set<const Variable*>* CLVariable::Helpers::GetVarsFromExpr(const Expression
       { const ExpressionFuncall* efun = 
           dynamic_cast<const ExpressionFuncall*>(expr); 
         for (const Expression* e : efun->get_invoke()->param_value) {
-          std::set<const Variable*>* inner_expr = GetVarsFromExpr(e);
-          expr_vars->insert(inner_expr->begin(), inner_expr->end());
+          GetVarsFromExpr(&inner_expr_vars, e);
+          expr_vars->insert(inner_expr_vars.begin(), inner_expr_vars.end());
         }
         break; }
     case eAssignment: 
       { const ExpressionAssign* ea = dynamic_cast<const ExpressionAssign*>(expr);
         expr_vars->insert(ea->get_lhs()->get_var()->get_collective());
-        std::set<const Variable*>* inner_expr = GetVarsFromExpr(ea->get_rhs());
-        expr_vars->insert(inner_expr->begin(), inner_expr->end());
+        GetVarsFromExpr(&inner_expr_vars, ea->get_rhs());
+        expr_vars->insert(inner_expr_vars.begin(), inner_expr_vars.end());
         break; }
     case eCLExpression: 
       { const CLExpression* cle = dynamic_cast<const CLExpression*>(expr);
@@ -175,18 +152,16 @@ std::set<const Variable*>* CLVariable::Helpers::GetVarsFromExpr(const Expression
         const ExpressionVector* ev = dynamic_cast<const ExpressionVector*>(expr);
         for (const std::unique_ptr<const Expression>& e : ev->GetExpressions()) {
           const Expression* e_ptr = e.get();
-          std::set<const Variable*>* inner_expr = GetVarsFromExpr(e_ptr);
-          expr_vars->insert(inner_expr->begin(), inner_expr->end());
+          GetVarsFromExpr(&inner_expr_vars, e_ptr);
+          expr_vars->insert(inner_expr_vars.begin(), inner_expr_vars.end());
         }
         break; }
     case eCommaExpr: 
       { const ExpressionComma* ec = dynamic_cast<const ExpressionComma*>(expr);
-        std::set<const Variable*>* inner_expr_lhs = 
-          GetVarsFromExpr(ec->get_lhs());
-        std::set<const Variable*>* inner_expr_rhs = 
-          GetVarsFromExpr(ec->get_rhs());
-        expr_vars->insert(inner_expr_lhs->begin(), inner_expr_lhs->end());
-        expr_vars->insert(inner_expr_rhs->begin(), inner_expr_rhs->end());
+        GetVarsFromExpr(&inner_expr_vars, ec->get_lhs());
+        expr_vars->insert(inner_expr_vars.begin(), inner_expr_vars.end());
+        GetVarsFromExpr(&inner_expr_vars, ec->get_rhs());
+        expr_vars->insert(inner_expr_vars.begin(), inner_expr_vars.end());
         break;
       }
     case eConstant:
@@ -195,14 +170,14 @@ std::set<const Variable*>* CLVariable::Helpers::GetVarsFromExpr(const Expression
     default:
       assert(0);
   }
-  return expr_vars;
 }
 
 void CLVariable::Helpers::RecordVarInitialisation(
 std::set<const Variable*>* accesses, Block* b) {
+  std::set<const Variable*> init_vars;
   for (const Variable* v : b->local_vars) {
-    std::set<const Variable*>* init_vars = GetVarsFromExpr(v->init);
-    RecordMultipleVars(accesses, init_vars);
+    GetVarsFromExpr(&init_vars, v->init);
+    RecordMultipleVars(accesses, &init_vars);
   }
 }
 

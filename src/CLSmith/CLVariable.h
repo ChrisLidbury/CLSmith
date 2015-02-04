@@ -17,7 +17,6 @@ namespace CLVariable {
  * TODO maybe leave in some variables or add a chance of clearing a variable
  ***/
 void ParseUnusedVars(void);
-void ParseUnusedVars2(void);
 
 namespace Helpers {
 /* This contains helper functions for the methods in the main namespace;
@@ -26,7 +25,7 @@ namespace Helpers {
 
 /* Given an Expression, returns all variables referenced in it
  ***/
-std::set<const Variable*>* GetVarsFromExpr(const Expression* expr);
+void GetVarsFromExpr(std::set<const Variable*>* expr_vars, const Expression* expr);
 
 /* Stores var inside accesses, where var is referenced in block b;
  * This performs some additional checks regarding var, such as its scope 
