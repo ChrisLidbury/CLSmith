@@ -78,18 +78,21 @@ nobase_libcsmith_a_include_HEADERS = \
 noinst_HEADERS = \
 	safe_math.m4 \
 	safe_math_macros.m4 \
-	safe_math_macros_notmp.m4
+	safe_math_macros_notmp.m4 \
+	cl_safe_math_macros.m4
 nodist_libcsmith_a_include_HEADERS = \
 	safe_math.h \
 	safe_math_macros.h \
-	safe_math_macros_notmp.h
+	safe_math_macros_notmp.h \
+	cl_safe_math_macros.h
 
 ## XXX should we put `volatile_runtime.c' in _DATA?
 
 BUILT_SOURCES = \
 	safe_math.h \
 	safe_math_macros.h \
-	safe_math_macros_notmp.h
+	safe_math_macros_notmp.h \
+	cl_safe_math_macros.h
 CLEANFILES = \
 	$(BUILT_SOURCES)
 
@@ -100,6 +103,9 @@ safe_math_macros.h: safe_math_macros.m4
 	$(M4) < $< > $@
 
 safe_math_macros_notmp.h: safe_math_macros_notmp.m4
+	$(M4) < $< > $@
+
+cl_safe_math_macros.h: cl_safe_math_macros.m4
 	$(M4) < $< > $@
 
 # We distribute, but do not build, the following Windows support files.

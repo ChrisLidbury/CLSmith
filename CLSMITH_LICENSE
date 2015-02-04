@@ -1,5 +1,5 @@
 The following copyright and license applies to the following files:
-- runtime/CLSmith.h, runtime/CLSmith_embedded.h
+- runtime/CLSmith.h, runtime/CLSmith_embedded.h, runtime/cl_safe_math_macros.m4
 - scripts/cl_check_results.py, scripts/cl_get_and_gen.py,
   scripts/cl_get_and_test.py, scripts/cl_setup_test.py, scripts/cl_test.py,
   scripts/cl_test_div.py, scripts/processTimeout.py, scripts/run_emi_windows.py,

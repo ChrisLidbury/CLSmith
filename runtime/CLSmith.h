@@ -1,6 +1,7 @@
 #ifndef RANDOM_RUNTIME_H
 #define RANDOM_RUNTIME_H
 
+#include "cl_safe_math_macros.h"
 #include "safe_math_macros.h"
 
 inline __attribute__((always_inline)) void 

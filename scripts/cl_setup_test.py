@@ -26,6 +26,9 @@ elif not os.path.exists(srcCLSmith + clLauncherExecutable):
 elif not os.path.exists(runtime + "CLSmith.h"):
     print("Cannot find CLSmith.h in " + runtime)
     sys.exit()
+elif not os.path.exists(runtime + "cl_safe_math_macros.h"):
+    print("Cannot find cl_safe_math_macros.h in " + runtime)
+    sys.exit()
 elif not os.path.exists(runtime + "safe_math_macros.h"):
     print("Cannot find safe_math_macros.h in " + runtime)
     sys.exit()
@@ -59,6 +62,7 @@ if makeGen:
   shutil.copy(srcCLSmith + "CLSmith", dir)
 shutil.copy(srcCLSmith + clLauncherExecutable, dir)
 shutil.copy(runtime + "CLSmith.h", dir)
+shutil.copy(runtime + "cl_safe_math_macros.h", dir)
 shutil.copy(runtime + "safe_math_macros.h", dir)
 shutil.copy("cl_test.py", dir)
 shutil.copy("cl_get_and_test.py", dir)
