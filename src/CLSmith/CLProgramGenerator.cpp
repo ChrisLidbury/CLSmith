@@ -117,10 +117,10 @@ void CLProgramGenerator::goGenerator() {
     if (CLOptions::divergence()) GenerateBarriers(div.get(), globals);
     else { /*TODO Non-div barriers*/ }
   }
-/*
+
   if (CLOptions::small())
     CLSmith::CLVariable::ParseUnusedVars();
-*/
+
   // Output the whole program.
   output_mgr_->Output();
 

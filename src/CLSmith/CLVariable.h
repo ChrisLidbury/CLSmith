@@ -17,6 +17,7 @@ namespace CLVariable {
  * TODO maybe leave in some variables or add a chance of clearing a variable
  ***/
 void ParseUnusedVars(void);
+void ParseUnusedVars2(void);
 
 namespace Helpers {
 /* This contains helper functions for the methods in the main namespace;
@@ -33,16 +34,15 @@ std::set<const Variable*>* GetVarsFromExpr(const Expression* expr);
  * decision about globals); the int key of the map refers to the block id
  * (stm_id) where the given variable is declared, not where it is referenced
  ***/
-void RecordVar(std::map<int, std::set<const Variable*>*>* accesses, const Variable* var, Block* b);
+void RecordVar(std::set<const Variable*>* accesses, const Variable* var);
+
+/* Records any pointer variables used for initialising variables
+ ***/
+void RecordVarInitialisation(std::set<const Variable*>* accesses, Block* b);
 
 /* Records all the variables in vars by calling RecordVar() multiple times
  ***/
-void RecordMultipleVars(std::map<int, std::set<const Variable*>*>* accesses, std::set<const Variable*>* vars, Block* b);
-
-/* Method for printing the contents of the map that retains variable reference
- * information
- ***/
-void PrintMap(std::map<int, std::set<const Variable*>*>* accesses);
+void RecordMultipleVars(std::set<const Variable*>* accesses, std::set<const Variable*>* vars);
 
 } // namespace Helpers
 } // namespace CLVariable
