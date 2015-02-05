@@ -1,6 +1,11 @@
 #! python
 #! /usr/bin/python
 
+""" Script that copies over all the files required in order to run CLSmith
+for random program generation and execution. It takes one argument, a path 
+relative to $HOME, where all the files should be copied. The script must be
+executed from within the "scripts" folder of CLSmith """
+
 import sys
 import os
 import shutil

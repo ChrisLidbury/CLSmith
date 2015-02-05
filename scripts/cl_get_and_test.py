@@ -41,16 +41,10 @@ parser.add_argument('flags', nargs='*')
 
 args = parser.parse_args()
 
-""" ProcessTimeout testing 
-tst = WorkerThread(1, "sleep 2")
-result = tst.start()
-print(result)
-"""
-
 if os.path.isfile(args.output):
     print("Overwriting file %s." % args.output)
-#"""
-if not os.path.isdir(os.path.dirname(args.output)):
+
+if os.path.dirname(args.output) and not os.path.isdir(os.path.dirname(args.output)):
     print("Creating directory %s." % os.path.dirname(args.output))
     os.makedirs(os.path.dirname(args.output))
 
