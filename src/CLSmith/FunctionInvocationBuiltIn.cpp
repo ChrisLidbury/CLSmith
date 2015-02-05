@@ -4,6 +4,7 @@
 #include <ostream>
 #include <vector>
 
+#include "CLSmith/CLOptions.h"
 #include "CLSmith/Vector.h"
 #include "ProbabilityTable.h"
 #include "Type.h"
@@ -33,8 +34,11 @@ const Type& ConvertParameterType(
     const Type& type, enum TypeConversion conversion) {
   // Only convert scalar and vector types. Other types should never get here.
   assert(type.eType == eSimple || type.eType == eVector);
+  // For kFlipSignChance2.
+  static int flip_next = 0;
   // For kDemoteChance2.
   static int demote_next = 0;
+
   const Type *t = NULL;
   switch (conversion) {
     case kExact: return type;
@@ -44,6 +48,16 @@ const Type& ConvertParameterType(
       t = type.to_unsigned(); break;
     case kFlipSign:
       t = type.is_signed() ? type.to_unsigned() : type.to_signed(); break;
+    case kFlipSignChance:
+      t = rnd_flipcoin(50) ? &ConvertParameterType(type, kFlipSign) : &type;
+      break;
+    case kFlipSignChance2: {
+      bool reset_flip_next = flip_next != 0;
+      if (flip_next == 0) flip_next = rnd_flipcoin(50) ? 1 : -1;
+      t = flip_next == 1 ? &ConvertParameterType(type, kFlipSign) : &type;
+      if (reset_flip_next) flip_next = 0;
+      break;
+    }
     case kDemote:
       return Vector::DemoteVectorTypeToType(&type);
     case kDemoteChance:
@@ -100,8 +114,12 @@ void FunctionInvocationBuiltIn::InitTables() {
 }
 
 void FunctionInvocationBuiltIn::Output(std::ostream& out) const {
-  OutputFuncName(out);
-  out << '(';
+  if (CLOptions::safe_math()) {
+    OutputSafeMacro(out);
+  } else {
+    OutputFuncName(out);
+    out << '(';
+  }
   for (size_t idx = 0; idx < param_value.size(); ++idx) {
     // To prevent ambiguities for functions that take both vector and scalars,
     // output a cast for scalar parameters. To prevent ambiguity, the type must
@@ -151,15 +169,9 @@ enum FunctionInvocationIntegerBuiltIn::BuiltIn
   VectorFilter filter(integer_func_table);
   // Not available in OpenCL 1.0.
   filter.add(kCtz).add(kPopCount);
-  // Unsafe for any type.
-  filter.add(kRotate);
-  // Does not make sense to do Abs on an unsigned value.
+  // Abs will not return a signed value.
   if (type.is_signed())
-    filter.add(kAbs);
-  // Vulnerable to overflow
-  if (type.is_signed())
-    filter.add(kAbsDiff).add(kHAdd).add(kRHAdd).add(kMadHi).add(kMulHi)
-        .add(kMad24).add(kMul24);
+    filter.add(kAbs).add(kAbsDiff);
   // Cannot upsample to a char.
   if (type.simple_type == eChar || type.simple_type == eUChar)
     filter.add(kUpSample);
@@ -187,14 +199,15 @@ void FunctionInvocationIntegerBuiltIn::InitTables() {
   integer_param_map = new std::map<
       enum BuiltIn, std::vector<Internal::ParameterType::TypeConversion>>();
   using Internal::ParameterType::kExact;
-  using Internal::ParameterType::kUnsignToSign;
+  using Internal::ParameterType::kFlipSignChance;
+  using Internal::ParameterType::kFlipSignChance2;
   using Internal::ParameterType::kDemoteChance;
   using Internal::ParameterType::kDemoteChance2;
   using Internal::ParameterType::kNarrow;
   using Internal::ParameterType::kToUnsignNarrow;
   (*integer_param_map)[kIdentity] = { kExact };
-  (*integer_param_map)[kAbs]      = { kUnsignToSign };
-  (*integer_param_map)[kAbsDiff]  = { kUnsignToSign, kUnsignToSign };
+  (*integer_param_map)[kAbs]      = { kFlipSignChance };
+  (*integer_param_map)[kAbsDiff]  = { kFlipSignChance2, kFlipSignChance2 };
   (*integer_param_map)[kAddSat]   = { kExact, kExact };
   (*integer_param_map)[kHAdd]     = { kExact, kExact };
   (*integer_param_map)[kRHAdd]    = { kExact, kExact };
@@ -233,6 +246,38 @@ const Type& FunctionInvocationIntegerBuiltIn::GetParameterType(size_t idx)
   assert(it != integer_param_map->end());
   assert(it->second.size() > idx);
   return Internal::ParameterType::ConvertParameterType(type_, it->second[idx]);
+}
+
+void FunctionInvocationIntegerBuiltIn::OutputSafeMacro(std::ostream& out)
+    const {
+  bool requires_macro = (built_in_ == kMadHi && type_.is_signed()) ||
+      built_in_ == kMul24 || built_in_ == kMad24 || built_in_ == kClamp;
+  if (requires_macro) {
+    out << "safe_";
+  }
+  OutputFuncName(out);
+  if (requires_macro) {
+    out << "_func";
+    if (built_in_ != kClamp) {
+      out << '_';
+      Vector::DemoteVectorTypeToType(&type_).Output(out);
+      for (const Expression *expr : param_value)
+        out << '_' << (expr->get_type().is_signed() ? 's' : 'u');
+    }
+  }
+  out << '(';
+  if (requires_macro) {
+    // Conveniently, the first type for all of these macros is the same as the
+    // return type. For clamp, it may be a vector or scalar of the return type.
+    type_.Output(out);
+    out << ',';
+    if (built_in_ == kClamp) {
+      const Type& param_type = param_value[1]->get_type();
+      if (param_type.eType == eVector) type_.Output(out);
+      else Vector::DemoteVectorTypeToType(&type_).Output(out);
+      out << ',';
+    }
+  }
 }
 
 }  // namespace CLSmith

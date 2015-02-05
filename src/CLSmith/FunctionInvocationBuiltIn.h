@@ -29,18 +29,21 @@ namespace ParameterType {
 // List of all required type conversions.
 // These indicate how the return type of the function needs to be transformed
 // to give the type of a given parameter.
+// Possible improvement, remove compund conversions, and allow us to chain them.
 enum TypeConversion {
-  kExact = 0,       // No conversion.
-  kUnsignToSign,    // Convert to unsigned iff a signed type.
-  kSignToUnsign,    // Convert to signed iff a unsigned type.
-  kFlipSign,        // Flip from signed to unsigned and vice versa.
-  kDemote,          // Demote from vector to scalar.
-  kDemoteChance,    // Demote from vector to scalar with 50% probability.
-  kDemoteChance2,   // Demote chance, where the next depends on the previous.
-  kPromote,         // Promote from scalar to vector.
-  kNarrow,          // Reduce the size of the type (e.g. int -> short).
-  kFlipNarrow,      // FlipSign and Narrow.
-  kToUnsignNarrow,  // SignToUnsign and Narrow.
+  kExact = 0,        // No conversion.
+  kUnsignToSign,     // Convert to unsigned iff a signed type.
+  kSignToUnsign,     // Convert to signed iff a unsigned type.
+  kFlipSign,         // Flip from signed to unsigned and vice versa.
+  kFlipSignChance,   // Flip signedness with 50% probability.
+  kFlipSignChance2,  // Flip chance, where the next depends on the previous.
+  kDemote,           // Demote from vector to scalar.
+  kDemoteChance,     // Demote from vector to scalar with 50% probability.
+  kDemoteChance2,    // Demote chance, where the next depends on the previous.
+  kPromote,          // Promote from scalar to vector.
+  kNarrow,           // Reduce the size of the type (e.g. int -> short).
+  kFlipNarrow,       // FlipSign and Narrow.
+  kToUnsignNarrow,   // SignToUnsign and Narrow.
 };
 
 // Useful typedefs for handling parameters. Need GCC 4.7
@@ -93,6 +96,9 @@ class FunctionInvocationBuiltIn : public FunctionInvocation {
 
   enum BuiltInType GetBuiltInType() const { return built_in_type_; }
  protected:
+  // Outputs the function wrapped in a safe math macro.
+  virtual void OutputSafeMacro(std::ostream& out) const = 0;
+
   const Type& type_;
  private:
   enum BuiltInType built_in_type_;
@@ -141,8 +147,11 @@ class FunctionInvocationIntegerBuiltIn : public FunctionInvocationBuiltIn {
   const Type& GetParameterType(size_t idx) const;
 
   enum BuiltIn GetBuiltIn() const { return built_in_; }
+ protected:
+  void OutputSafeMacro(std::ostream& out) const;
  private:
   enum BuiltIn built_in_;
+
   DISALLOW_COPY_AND_ASSIGN(FunctionInvocationIntegerBuiltIn);
 };
 

@@ -30,6 +30,7 @@ class CLOptions {
   DEFINE_CLFLAG(group_divergence, bool)
   DEFINE_CLFLAG(inter_thread_comm, bool)
   DEFINE_CLFLAG(output, const char*)
+  DEFINE_CLFLAG(safe_math, bool)
   DEFINE_CLFLAG(small, bool)
   DEFINE_CLFLAG(track_divergence, bool)
   DEFINE_CLFLAG(vectors, bool)

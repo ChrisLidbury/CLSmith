@@ -122,6 +122,11 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--no-safe_math")) {
+      CLSmith::CLOptions::safe_math(false);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--small")) {
       CLSmith::CLOptions::small(true);
       continue;
