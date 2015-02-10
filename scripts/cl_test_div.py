@@ -1,5 +1,4 @@
-#! python
-#! /usr/bin/python
+#!/usr/bin/python
 
 import sys
 import os
@@ -38,11 +37,11 @@ args = parser.parse_args()
 
 if os.path.isfile(args.output):
     print("Overwriting file %s." % args.output)
-    
+
 # test = Command("echo hi")
 # rtest = test.run(timeout=2)
 # print(rtest[1])
-    
+
 output = open(args.output, 'w')
 for seed in range(args.seed_min, args.seed_max, args.seed_step):
     print(seed)
@@ -56,15 +55,15 @@ for seed in range(args.seed_min, args.seed_max, args.seed_step):
     if not os.path.isfile(args.cl_filename) or not gen_prog_res[0] == 0:
         output.write("gen_error")
         continue
-    run_prog = Command("%s %s %d %d" % (args.cl_launcher, args.cl_filename, args.cl_platform_idx, args.cl_device_idx)) 
+    run_prog = Command("%s %s %d %d" % (args.cl_launcher, args.cl_filename, args.cl_platform_idx, args.cl_device_idx))
     run_prog_res = run_prog.run(timeout = 180)
     if not run_prog_res[0] == 0:
         output.write("run_error")
         continue
-    
+
     run_prog_out = run_prog_res[1].split('\n')[1]
     run_prog_out = run_prog_out.split(',')
-    
+
     total = 0
     for val in run_prog_out:
         total += int(val, 16)

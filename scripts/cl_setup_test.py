@@ -1,8 +1,7 @@
-#! python
-#! /usr/bin/python
+#!/usr/bin/python
 
 """ Script that copies over all the files required in order to run CLSmith
-for random program generation and execution. It takes one argument, a path 
+for random program generation and execution. It takes one argument, a path
 relative to $HOME, where all the files should be copied. The script must be
 executed from within the "scripts" folder of CLSmith """
 
@@ -11,7 +10,7 @@ import os
 import shutil
 
 srcCLSmith = ".." + os.sep + "src" + os.sep + "CLSmith" + os.sep
-runtime      = ".." + os.sep + "runtime" + os.sep   
+runtime      = ".." + os.sep + "runtime" + os.sep
 
 clLauncherExecutable = "cl_launcher"
 if sys.platform == "win32":
@@ -49,8 +48,8 @@ elif not os.path.exists("cl_test_div.py"):
 elif not os.path.exists("processTimeout.py"):
     print("Cannot find processTimeout.py")
     sys.exit()
-    
-    
+
+
 dir = os.path.expanduser("~") + os.sep + sys.argv[1]
 
 if os.path.exists(dir):
@@ -61,7 +60,7 @@ if os.path.exists(dir):
     else:
       print("Aborting test setup.")
       sys.exit()
- 
+
 os.mkdir(dir)
 if makeGen:
   shutil.copy(srcCLSmith + "CLSmith", dir)

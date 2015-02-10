@@ -1,5 +1,4 @@
-#! python
-#! /usr/bin/python
+#!/usr/bin/python
 
 import sys
 import os
@@ -36,7 +35,7 @@ parser.add_argument('flags', nargs='*')
 
 args = parser.parse_args()
 
-""" ProcessTimeout testing 
+""" ProcessTimeout testing
 tst = WorkerThread(1, "sleep 2")
 result = tst.start()
 print(result)
@@ -61,18 +60,18 @@ for seed in range(args.seed_min, args.seed_max, args.seed_step):
     cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, args.cl_filename, args.cl_platform_idx, args.cl_device_idx)
     run_prog = WorkerThread(150, cmd)
     run_prog_res = run_prog.start()
-    
+
     if not run_prog_res[1] == 0:
         output.write("run_error")
         continue
     elif run_prog_res[0] == "Process timeout":
 	output.write("timeout")
 	continue
-   
+
     run_prog_out = run_prog_res[0]
     run_prog_out = run_prog_out.split(',')
     run_prog_out = filter(None, set(run_prog_out))
-    
+
     if len(run_prog_out) > 1:
         output.write("Different.\n")
     else:

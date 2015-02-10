@@ -17,7 +17,7 @@ for result in contents:
     seed = [p for p in result.split(" ") if "." in p]
     seed = seed[0].split(".")[0]
     program_names.append(seed)
-      
+
 for p in program_names:
   print p
   subprocess.Popen("./CLSmith_Altera -s %s -o %s --fake_divergence --group_divergence %s" % (p, p, flags), shell=True)

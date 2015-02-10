@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # TODO ignore fully coherent rows
 
 import subprocess
@@ -14,6 +15,9 @@ if len(sys.argv) > 1:
     exit(1)
   print("Using %s as target directory." % (sys.argv[1]))
   os.chdir(sys.argv[1])
+else:
+  print("Expected one argument, target directory.")
+  exit(1)
 
 files = glob.glob("*.csv")
 sample_file_name = "sample_results.csv"
@@ -49,7 +53,7 @@ for platform_name, full_results in contents.items():
       if program_name in results[platform_name]:
         results[platform_name][program_name].append(result)
         continue
-      else: 
+      else:
         results[platform_name][program_name] = filter(None, result.split(','))
       temp_results = []
       for r in results[platform_name][program_name]:
@@ -73,7 +77,7 @@ for platform_name, full_results in contents.items():
       else:
         vote[program_name] = {temp_results:1}
         sample[program_name] = []
-    
+
 for program_name in vote.keys():
   curr_max = -1
   curr_res = []
@@ -90,16 +94,16 @@ for program_name in vote.keys():
   else:
     curr_res = curr_res[0].split(",")
   sample[program_name] = curr_res
-  
+
 sample = collections.OrderedDict(sorted(sample.items()))
 contents = collections.OrderedDict(sorted(contents.items()))
 results = collections.OrderedDict(sorted(results.items()))
 
-samplefile = open(sample_file_name, 'w')    
+samplefile = open(sample_file_name, 'w')
 for program_name, result in sample.items():
     samplefile.write("SAMPLE RESULT FOR %s\n%s\n" % (program_name, result))
-samplefile.close() 
-        
+samplefile.close()
+
 output = open(output_file_name, 'w')
 
 cell_width = 200
@@ -110,19 +114,19 @@ output.write("""
   <head>
     <title>Compiler testing results</title>
     <style type="text/css">
-  
+
     .fixed-table-container {
       height: 100%;
       position: absolute; /* could be absolute or relative */
       padding-top: 75px; /* height of header */
     }
-  
+
     .fixed-table-container-inner {
       overflow-x: hidden;
       overflow-y: auto;
       height: 100%;
     }
-  
+
     .header-background {
       background-color: #D5ECFF;
       height: 75px; /* height of header */
@@ -131,7 +135,7 @@ output.write("""
       right: 0;
       left: 0;
     }
-    
+
     .th-inner {
       position: absolute;
       top: 0;
@@ -140,11 +144,11 @@ output.write("""
       width: 200px;
       height: 75px;
     }
-    
+
     body {
       overflow-y: hidden;
     }
-    
+
     table {
       table-layout: fixed;
       word-wrap: break-word;
@@ -156,7 +160,7 @@ output.write("      padding-bottom: " + `max_count * 30` + "px;")
 output.write("""
      padding-right: 35px;
     }
-    
+
     td {
       text-align: center;\n""")
 output.write("      width: " + `cell_width` + "px;")
@@ -166,9 +170,9 @@ output.write("""
     tr:nth-child(even) {
       background-color: #BBB;
     }
-    
+
     </style>
-    
+
     </head>
     <body>
   """)
