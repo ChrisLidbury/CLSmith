@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import sys
 import os
@@ -87,7 +87,7 @@ for curr_file in file_list:
   output.flush()
   print("Executing kernel %s (%d/%d)..." % (curr_file, file_index, len(file_list)))
   sys.stdout.flush()
-  
+
   file_path = args.path + pathSeparator + curr_file
   cmd = "%s -f %s -p %d -d %d" % (args.cl_launcher, file_path, args.cl_platform_idx, args.cl_device_idx)
   if (args.device_name_contains):
@@ -113,7 +113,7 @@ for curr_file in file_list:
           print("Removing temporary directory [%s]" % args.path)
           shutil.rmtree(args.path)
       sys.exit(1)
-  
+
   if not run_prog_res[1] == 0:
       output.write("run_error: %s\n" % (run_prog_out))
       output.flush()
@@ -125,12 +125,11 @@ for curr_file in file_list:
 
   run_prog_out = run_prog_out.split(',')
   run_prog_out = filter(None, set(run_prog_out))
-  
+
   for result in run_prog_out:
       output.write(result + ", ")
       output.flush()
   output.write("\n")
-#"""
 
 if args.zipfile:
   print("Removing temporary directory [%s]" % args.path)
