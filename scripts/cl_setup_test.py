@@ -36,14 +36,8 @@ elif not os.path.exists(runtime + "cl_safe_math_macros.h"):
 elif not os.path.exists(runtime + "safe_math_macros.h"):
     print("Cannot find safe_math_macros.h in " + runtime)
     sys.exit()
-elif not os.path.exists("cl_test.py"):
-    print("Cannot find cl_test.py")
-    sys.exit()
 elif not os.path.exists("cl_get_and_test.py"):
     print("Cannot find cl_get_and_test.py")
-    sys.exit()
-elif not os.path.exists("cl_test_div.py"):
-    print("Cannot find cl_test_div.py")
     sys.exit()
 elif not os.path.exists("processTimeout.py"):
     print("Cannot find processTimeout.py")
@@ -68,8 +62,6 @@ shutil.copy(srcCLSmith + clLauncherExecutable, dir)
 shutil.copy(runtime + "CLSmith.h", dir)
 shutil.copy(runtime + "cl_safe_math_macros.h", dir)
 shutil.copy(runtime + "safe_math_macros.h", dir)
-shutil.copy("cl_test.py", dir)
 shutil.copy("cl_get_and_test.py", dir)
-shutil.copy("cl_test_div.py", dir)
 shutil.copy("processTimeout.py", dir)
 
