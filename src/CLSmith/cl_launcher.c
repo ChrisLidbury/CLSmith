@@ -15,9 +15,22 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #include <rtcapi.h>
+
+bool build_in_progress = false;
+bool execution_in_progress = false;
+
 int exception_handler(LPEXCEPTION_POINTERS p)
 {
-    printf("Exception detected during test execution!");
+    printf("Exception detected during test execution!\n");
+    if(build_in_progress) {
+        printf("Exception occurred during build\n");
+    }
+    if(execution_in_progress) {
+        printf("Exception occurred during kernel execution\n");
+    }
+    if(!build_in_progress && !execution_in_progress) {
+        printf("Unknown source of exception\n");
+    }
     exit(1);
 }
 int runtime_check_handler(int errorType, const char *filename, int linenumber, const char *moduleName, const char *format, ...)
@@ -474,8 +487,14 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     sprintf(options, "%s -D NO_GROUP_DIVERGENCE", options);
   if (disable_fake)
     sprintf(options, "%s -D NO_FAKE_DIVERGENCE", options);
-  
+
+#ifdef _MSC_VER  
+  build_in_progress = true;
+#endif  
   err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
+#ifdef _MSC_VER  
+  build_in_progress = false;
+#endif  
   if (cl_error_check(err, "Error building program")) {
     if (debug_build) {      
       size_t err_size;
@@ -650,6 +669,9 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   
 
   // Create command to launch the kernel.
+#ifdef _MSC_VER  
+  execution_in_progress = true;
+#endif  
   err = clEnqueueNDRangeKernel(
       com_queue, kernel, work_dim, NULL, global_size, local_size, 0, NULL, NULL);
   if (cl_error_check(err, "Error enqueueing kernel"))
@@ -659,6 +681,9 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   err = clFinish(com_queue);
   if (cl_error_check(err, "Error sending finish command"))
     return 1;
+#ifdef _MSC_VER  
+  execution_in_progress = false;
+#endif  
 
   // Read back the reults of each thread.
   RES_TYPE * c = (RES_TYPE*)malloc(sizeof(RES_TYPE)*total_threads);
