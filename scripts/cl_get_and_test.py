@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import atexit
 import sys
 import os
 import argparse
@@ -50,8 +51,16 @@ if os.path.dirname(args.output) and not os.path.isdir(os.path.dirname(args.outpu
 output = open(args.output, 'w')
 
 if args.zipfile:
-  args.path = tempfile.mkdtemp(dir=os.getcwd())
   print("Creating temporary directory [%s]" % args.path)
+  args.path = tempfile.mkdtemp(dir=os.getcwd())
+  def exit_handler():
+    print("Removing temporary directory [%s]" % args.path)
+    shutil.rmtree(args.path)
+  atexit.register(exit_handler)
+  with open(os.path.join(args.path, 'args.txt'), 'w') as f:
+    d = args.__dict__
+    for x in d:
+      f.write(x + ":" + str(d[x]) + "\n")
   unzip(args.path, args.zipfile)
 
 if not os.path.exists(args.path):
@@ -109,9 +118,6 @@ for curr_file in file_list:
           os.remove(args.output)
       except IOError:
           pass
-      if args.zipfile:
-          print("Removing temporary directory [%s]" % args.path)
-          shutil.rmtree(args.path)
       sys.exit(1)
 
   if not run_prog_res[1] == 0:
@@ -130,7 +136,3 @@ for curr_file in file_list:
       output.write(result + ", ")
       output.flush()
   output.write("\n")
-
-if args.zipfile:
-  print("Removing temporary directory [%s]" % args.path)
-  shutil.rmtree(args.path)
