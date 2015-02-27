@@ -1,6 +1,7 @@
 // Runs a randomly generated program on a device via OpenCL.
 // Usage: cl_launcher <cl_program> <platform_id> <device_id> [flags...]
 
+#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #include <CL/cl.h>
 
 #include <assert.h>
@@ -721,9 +722,8 @@ int parse_file_args(const char* filename) {
 
   char arg_buf[128];
   fgets(arg_buf, 128, source);
-  int buf_len = strlen(arg_buf);
   char* new_line;
-  if (new_line = strchr(arg_buf, '\n'))
+  if ((new_line = strchr(arg_buf, '\n')))
     arg_buf[(int) (new_line - arg_buf)] = '\0';
   
   if (!strncmp(arg_buf, "//", 2)) {
