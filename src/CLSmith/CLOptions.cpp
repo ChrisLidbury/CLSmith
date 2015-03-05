@@ -104,6 +104,7 @@ void CLOptions::ResolveCGOptions() {
   if (embedded_) {
     CGOptions::longlong(false);
     CGOptions::use_struct(false);
+    CGOptions::ccomp(true);
   }
 }
 
