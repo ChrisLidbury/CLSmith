@@ -106,7 +106,7 @@ static string
 GenerateRandomCharConstant(void)
 {
 	string ch;
-	if (CGOptions::ccomp())
+	if (CGOptions::ccomp() || !CGOptions::longlong())
 		ch = string("0x") + RandomHexDigits(2);
 	else
 		ch = string("0x") + RandomHexDigits(2) + "L";
@@ -119,7 +119,7 @@ GenerateRandomIntConstant(void)
 {
 	string val;
 	// Int constant - Max 8 Hex digits on 32-bit platforms
-	if (CGOptions::ccomp())
+	if (CGOptions::ccomp() || !CGOptions::longlong())
 		val = "0x" + RandomHexDigits( 8 );
 	else
 		val = "0x" + RandomHexDigits( 8 ) + "L";
@@ -133,7 +133,7 @@ GenerateRandomShortConstant(void)
 {
 	string val;
 	// Short constant - Max 4 Hex digits on 32-bit platforms
-	if (CGOptions::ccomp())
+	if (CGOptions::ccomp() || !CGOptions::longlong())
 		val = "0x" + RandomHexDigits( 4 );
 	else
 		val = "0x" + RandomHexDigits( 4 ) + "L";
@@ -145,8 +145,12 @@ GenerateRandomShortConstant(void)
 static string
 GenerateRandomLongConstant(void)
 {
+	string val;
 	// Long constant - Max 8 Hex digits on 32-bit platforms
-	string val = "0x" + RandomHexDigits( 8 ) + "L";
+	if (!CGOptions::longlong())
+		val = "0x" + RandomHexDigits( 8 );
+	else
+		val = "0x" + RandomHexDigits( 8 ) + "L";
 	return val;
 }
 
@@ -303,7 +307,7 @@ GenerateRandomConstant(const Type* type)
 					break; 
 				default:		 oss << num; break;
 			} 
-			if (CGOptions::ccomp())
+			if (CGOptions::ccomp() || !CGOptions::longlong())
 				v = oss.str() + (type->is_signed() ? "" : "U");
 			else
 				v = oss.str() + (type->is_signed() ? "L" : "UL");
