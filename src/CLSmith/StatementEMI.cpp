@@ -127,6 +127,10 @@ void StatementEMI::PruneBlock(Block *block) {
 
   // Remove all the selected statements from the block.
   for (Statement *st : del_stms) block->remove_stmt(st);
+  // First check if we are in a for loop before any lifting.
+  bool in_loop = false;
+  for (Block *nest = block; nest != NULL && !in_loop; nest = nest->parent)
+    if (nest->looping) in_loop = true;
   // Lift marked statements.
   std::vector<Statement *>::iterator position = block->stms.begin();
   for (Statement *st : lift_stms) {
@@ -143,6 +147,7 @@ void StatementEMI::PruneBlock(Block *block) {
     } else {
       StatementFor *st_for = dynamic_cast<StatementFor *>(st);
       assert(st_for != NULL);
+      if (!in_loop) RemoveBreakContinue(const_cast<Block *>(st_for->get_body()));
       position = MergeBlock(position, block,
           const_cast<Block *>(st_for->get_body()));
     }
@@ -173,6 +178,22 @@ std::vector<Statement *>::iterator StatementEMI::MergeBlock(
   merger->deleted_stms.clear();
   merger->stms.clear();
   return position;
+}
+
+void StatementEMI::RemoveBreakContinue(Block *block) {
+  std::vector<Statement *> del_stms;
+  for (Statement *st : block->stms) {
+    eStatementType st_type = st->eType;
+    if (st_type == eContinue || st_type == eBreak) del_stms.push_back(st);
+    if (st_type == eIfElse) {
+      // This is why we need the walker >:(
+      StatementIf *st_if = dynamic_cast<StatementIf *>(st);
+      assert(st_if != NULL);
+      RemoveBreakContinue(const_cast<Block *>(st_if->get_true_branch()));
+      RemoveBreakContinue(const_cast<Block *>(st_if->get_false_branch()));
+    }
+  }
+  for (Statement *st : del_stms) block->remove_stmt(st);
 }
 
 EMIController *EMIController::GetEMIController() {

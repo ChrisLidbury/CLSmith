@@ -72,6 +72,9 @@ class StatementEMI : public CLStatement {
   // returns an iterator to the last statement.
   std::vector<Statement *>::iterator MergeBlock(
       std::vector<Statement *>::iterator position, Block *former, Block *merger);
+  // TEMP helper for prune that removes conts and breaks from nested blocks.
+  // Will remove when I get around to fixing the walker.
+  void RemoveBreakContinue(Block *block);
 
   // If statement being wrapped.
   std::unique_ptr<StatementIf> if_block_;
