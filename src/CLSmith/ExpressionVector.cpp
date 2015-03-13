@@ -90,7 +90,7 @@ ExpressionVector *ExpressionVector::make_random(CGContext &cg_context,
     // borrow from csmith's expression generation where possible.
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
     exprs.emplace_back(Expression::make_random(
-        cg_context, vec_type, qfer, false, false, eFunction));
+        cg_context, vec_type, qfer));
     assert(exprs.back()->get_type().eType == eVector);
   } else /*kBuiltIn*/ {
     const Type *vec_type = Vector::PromoteTypeToVectorType(type, size);
