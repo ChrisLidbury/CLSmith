@@ -44,8 +44,16 @@ void StatementAtomicResult::GenSpecialVals() {
               while (true) {
                 while (curr_index[index] >= 0) {
                   itemized = av->itemize(curr_index);
-                  StatementAtomicResult* sar_res = new StatementAtomicResult(itemized, b);
-                  b->stms.push_back(sar_res);
+                  if (!itemized->field_vars.empty()) {
+                    for (Variable * fv : itemized->field_vars) {
+                        StatementAtomicResult* sar_res = new StatementAtomicResult(fv, b);
+                        b->stms.push_back(sar_res);
+                    }
+                  }
+                  else {
+                    StatementAtomicResult* sar_res = new StatementAtomicResult(itemized, b);
+                    b->stms.push_back(sar_res);
+                  }
                   curr_index[index]--;
                 }
                 do {
@@ -116,6 +124,10 @@ void StatementAtomicResult::Output(std::ostream& out, FactMgr* fm, int indent) c
         curr_idx_name = av_->name + "_i" + std::to_string(i);
         out << "[" << curr_idx_name << "]";
         indent--;
+      }
+      if (!av_->field_vars.empty()) {
+        for (Variable * v : av_->field_vars)
+          out << v->name.substr(v->name.find("."), v->name.length());
       }
       out << ";";
       break;
