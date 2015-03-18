@@ -57,7 +57,7 @@ private:
   
   AtomicResultType result_type_;
   const Type& type_;    
-  
+
   DISALLOW_COPY_AND_ASSIGN(StatementAtomicResult);
   
 }; 

@@ -10,6 +10,7 @@
 #include "Variable.h"
 
 #include <map>
+#include <sstream>
 
 namespace CLSmith {
   
@@ -114,22 +115,35 @@ void StatementAtomicResult::Output(std::ostream& out, FactMgr* fm, int indent) c
         curr_idx_name = av_->name + "_i" + std::to_string(i);
         out << "for (" << curr_idx_name << " = 0;"; 
         out << " " << curr_idx_name << " < " << accesses[i] << ";";
-        out << " " << curr_idx_name << "++)";
+        out << " " << curr_idx_name << "++) {";
         out << std::endl;
         indent++;
       }
       output_tab(out, indent);
-      out << "result += " << av_->name;
+      std::stringstream add_stream;
+      add_stream << "result += " << av_->name;
       for (unsigned int i = 0; i < accesses.size(); i++) {
         curr_idx_name = av_->name + "_i" + std::to_string(i);
-        out << "[" << curr_idx_name << "]";
-        indent--;
+        add_stream << "[" << curr_idx_name << "]";
+        if (av_->field_vars.empty()) {
+          out << add_stream.str() << ";";
+        } else {
+          for (std::vector<Variable*>::iterator it = av_->field_vars.begin(); it != av_->field_vars.end(); it++) {
+            if (!(*it)->field_vars.empty())
+              continue;
+            out << add_stream.str() << (*it)->name.substr((*it)->name.find("."), (*it)->name.length()) << ";";
+            if (it + 1 != av_->field_vars.end()) {
+              out << std::endl;
+              output_tab(out, indent);
+            }
+          }
+        }
+        out << std::endl;
       }
-      if (!av_->field_vars.empty()) {
-        for (Variable * v : av_->field_vars)
-          out << v->name.substr(v->name.find("."), v->name.length());
+      for (unsigned int i = 0; i < accesses.size(); i++) {
+        output_tab(out, --indent);
+        out << "}";
       }
-      out << ";";
       break;
     }
     case kSetSpVal: { 
