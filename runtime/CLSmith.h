@@ -4,6 +4,17 @@
 #include "cl_safe_math_macros.h"
 #include "safe_math_macros.h"
 
+#ifdef NO_ATOMICS
+#define atomic_inc(x) -1
+#define atomic_add(x,y) (1+1)
+#define atomic_sub(x,y) (1+1)
+#define atomic_min(x,y) (1+1)
+#define atomic_max(x,y) (1+1)
+#define atomic_and(x,y) (1+1)
+#define atomic_or(x,y)  (1+1)
+#define atomic_xor(x,y) (1+1)
+#endif
+
 inline __attribute__((always_inline)) void 
 transparent_crc_no_string (uint64_t *crc64_context, uint64_t val)
 {
