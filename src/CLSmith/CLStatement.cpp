@@ -7,6 +7,7 @@
 #include "CLSmith/StatementComm.h"
 #include "CLSmith/StatementAtomicReduction.h"
 #include "CLSmith/StatementEMI.h"
+#include "CLSmith/StatementMessage.h"
 #include "ProbabilityTable.h"
 #include "Type.h"
 #include "VectorFilter.h"
@@ -25,7 +26,7 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
     // is that if NULL is returned to Statement::make_random(), it will
     // recursively call itself, instead of specifying a non CLStatement.
     assert (cl_stmt_table != NULL);
-    int num = rnd_upto(25);
+    int num = rnd_upto(35);
     st = (CLStatementType)VectorFilter(cl_stmt_table).lookup(num);
     // Must only include barriers if they are enabled and no divergence.
     if (st == kBarrier) {
@@ -52,6 +53,11 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
       if (!CLOptions::inter_thread_comm() || cg_context.get_atomic_context())
         return NULL;
     }
+    // MP must be set. // TODO check some context.
+    if (st == kMessage) {
+      if (!CLOptions::message_passing())
+        return NULL;
+    }
   }
 
   CLStatement *stmt = NULL;
@@ -66,6 +72,8 @@ CLStatement *CLStatement::make_random(CGContext& cg_context,
 //      stmt = CreateFakeDivergentIf(cg_context); break;
     case kComm:
       stmt = StatementComm::make_random(cg_context); break;
+    case kMessage:
+      stmt = StatementMessage::make_random(cg_context); break;
     default: assert(false);
   }
   return stmt;
@@ -88,6 +96,7 @@ void CLStatement::InitProbabilityTable() {
   cl_stmt_table->add_entry(kReduction, 5);
   cl_stmt_table->add_entry(kFakeDiverge, 5);
   cl_stmt_table->add_entry(kComm, 5);
+  cl_stmt_table->add_entry(kMessage, 10);
 }
 
 Statement *make_random_st(CGContext& cg_context) {

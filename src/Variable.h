@@ -161,7 +161,7 @@ public:
 
 	static const char sink_var_name[];
 
-private:
+protected:
 	Variable(const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer);
 	Variable(const std::string &name, const Type *type, const Expression* init, const CVQualifiers* qfer, const Variable* isFieldVarOf, bool isArray);
 	Variable(const std::string &name, const Type *type,

@@ -114,6 +114,11 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--message_passing")) {
+      CLSmith::CLOptions::message_passing(true);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--output_file") ||
         !strcmp(argv[idx], "-o")) {
       ++idx;

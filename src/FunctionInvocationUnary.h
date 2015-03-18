@@ -50,6 +50,8 @@ public:
 				eUnaryOps op, 
 				SafeOpFlags *flags);
 
+	FunctionInvocationUnary(eUnaryOps op, const Expression *exp, const SafeOpFlags *flags);
+
 	virtual ~FunctionInvocationUnary(void);
 
 	virtual FunctionInvocation* clone() const;

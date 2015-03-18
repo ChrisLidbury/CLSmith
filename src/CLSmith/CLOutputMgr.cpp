@@ -11,6 +11,7 @@
 #include "CLSmith/Globals.h"
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/StatementComm.h"
+#include "CLSmith/StatementMessage.h"
 #include "Function.h"
 #include "OutputMgr.h"
 #include "Type.h"
@@ -121,6 +122,10 @@ void CLOutputMgr::Output() {
   std::ostream &out = get_main_out();
   OutputStructUnionDeclarations(out);
 
+  // Type of message_t, for message passing.
+  if (CLOptions::message_passing())
+    MessagePassing::OutputMessageType(out);
+
   Globals *globals = Globals::GetGlobals();
   globals->OutputStructDefinition(out);
   globals->ModifyGlobalVariableReferences();
@@ -168,6 +173,10 @@ void CLOutputMgr::OutputEntryFunction(Globals& globals) {
   out << "func_1(";
   globals.GetGlobalStructVar().Output(out);
   out << ");" << std::endl;
+
+  // If using message passing, check and update constraints to prevent deadlock.
+  if (CLOptions::message_passing())
+    MessagePassing::OutputMessageEndChecks(out);
 
   // Block all threads after, to prevent hashing stale values.
   output_tab(out, 1);

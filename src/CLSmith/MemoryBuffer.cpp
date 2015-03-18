@@ -9,6 +9,7 @@
 #include "CLSmith/ExpressionID.h"
 #include "Constant.h"
 #include "CVQualifiers.h"
+#include "StatementArrayOp.h"
 #include "util.h"
 #include "Variable.h"
 #include "VariableSelector.h"
@@ -35,6 +36,7 @@ MemoryBuffer* MemoryBuffer::itemize(const std::vector<int>& const_indices)
     mb->add_index(new Constant(get_int_type(), StringUtils::int2str(index)));
   }
   mb->collective = this;
+  if (type->is_aggregate()) mb->create_field_vars(type);
   return mb;
 }
 
@@ -47,6 +49,7 @@ MemoryBuffer *MemoryBuffer::itemize(
   for (const Expression *expr : expr_indices) mb->add_index(expr);
   mb->collective = this;
   mb->parent = blk;
+  if (type->is_aggregate()) mb->create_field_vars(type);
   blk->local_vars.push_back(mb);
   return mb;
 }
@@ -99,7 +102,13 @@ void MemoryBuffer::OutputDef(std::ostream& out, int indent) const {
     ExpressionID(ExpressionID::kLinearLocal).Output(out);
     out << " == 0)" << std::endl;
     std::vector<const Variable *>& ctrl_vars = Variable::get_new_ctrl_vars();
-    output_init(out, init, ctrl_vars, indent + 1);
+    // TODO Vector params need to match the buffer indices, use init.
+    if (type->is_aggregate())
+      StatementArrayOp(NULL, this, ctrl_vars, std::vector<int>({0}),
+      std::vector<int>({1}), Constant::make_int(0))
+      .Output(out, NULL, indent + 1);
+    else
+      output_init(out, init, ctrl_vars, indent + 1);
     return;
   }
   output_tab(out, indent);

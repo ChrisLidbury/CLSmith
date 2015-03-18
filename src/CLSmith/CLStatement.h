@@ -24,7 +24,8 @@ class CLStatement : public Statement {
     kReduction,
     kFakeDiverge,  // Gross hack alert
     kAtomic,
-    kComm
+    kComm,
+    kMessage
   };
 
   CLStatement(CLStatementType type, Block *block)

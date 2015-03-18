@@ -175,9 +175,11 @@ void Globals::ModifyGlobalVariableReferences() {
   }
 
   // Now add to the buffers.
-  for (MemoryBuffer *buffer : buffers_)
+  for (MemoryBuffer *buffer : buffers_) {
     *const_cast<std::string *>(&buffer->name) =
-        struct_var_->name + "->" + buffer->name;    
+        struct_var_->name + "->" + buffer->name;
+    if (buffer->is_aggregate()) ModifyGlobalAggregateVariableReferences(buffer);
+  }
 }
 
 void Globals::OutputArrayControlVars(std::ostream& out) const {

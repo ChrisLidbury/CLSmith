@@ -19,6 +19,7 @@
 #include "CLSmith/StatementBarrier.h"
 #include "CLSmith/StatementComm.h"
 #include "CLSmith/StatementEMI.h"
+#include "CLSmith/StatementMessage.h"
 #include "CLSmith/Vector.h"
 #include "Function.h"
 #include "Type.h"
@@ -54,6 +55,8 @@ void CLProgramGenerator::goGenerator() {
     ExpressionAtomic::InitAtomics();
   // Initialise buffers used for inter-thread communication.
   StatementComm::InitBuffers();
+  // Initialise Message Passing data.
+  MessagePassing::Initialise();
 
   // Expects argc, argv and seed. These vars should really be in the output_mgr.
   output_mgr_->OutputHeader(0, NULL, seed_);
@@ -81,6 +84,10 @@ void CLProgramGenerator::goGenerator() {
   // If atomic reductions are generated, add the hash buffer
   if (CLOptions::atomic_reductions())
     StatementAtomicReduction::RecordBuffer();
+
+  // If Message Passing is enabled, create orderings and message updates.
+  if (CLOptions::message_passing())
+    MessagePassing::CreateMessageOrderings();
 
   // At this point, all the global variables that have been created throughout
   // program generation should have been created. Any global variables added to
@@ -111,6 +118,10 @@ void CLProgramGenerator::goGenerator() {
   // Add buffers used for inter-thread comm.
   if (CLOptions::inter_thread_comm())
     StatementComm::AddVarsToGlobals(globals);
+
+  // Add messages for message passing.
+  if (CLOptions::message_passing())
+    MessagePassing::AddMessageVarsToGlobals(globals);
 
   // If barriers have been set, use the divergence information to place them.
   if (CLOptions::barriers()) {

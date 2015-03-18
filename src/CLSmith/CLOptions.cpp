@@ -23,6 +23,7 @@ DEFINE_CLFLAG(emi_p_lift, int, 10)
 DEFINE_CLFLAG(fake_divergence, bool, false)
 DEFINE_CLFLAG(group_divergence, bool, false)
 DEFINE_CLFLAG(inter_thread_comm, bool, false)
+DEFINE_CLFLAG(message_passing, bool, false)
 DEFINE_CLFLAG(output, const char*, "CLProg.c")
 DEFINE_CLFLAG(safe_math, bool, true)
 DEFINE_CLFLAG(small, bool, false)
@@ -43,6 +44,7 @@ void CLOptions::set_default_settings() {
   fake_divergence_ = false;
   group_divergence_ = false;
   inter_thread_comm_ = false;
+  message_passing_ = false;
   output_ = "CLProg.c";
   safe_math_ = true;
   small_ = false;

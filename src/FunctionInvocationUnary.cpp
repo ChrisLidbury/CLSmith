@@ -73,6 +73,14 @@ FunctionInvocationUnary::CreateFunctionInvocationUnary(
 	return fi;
 }
 
+FunctionInvocationUnary::FunctionInvocationUnary(eUnaryOps op, const Expression *exp, const SafeOpFlags *flags)
+	: FunctionInvocation(eUnaryPrim, flags),
+	  eFunc(op)
+{
+	param_value.clear();
+	add_operand(exp);
+}
+
 FunctionInvocationUnary::FunctionInvocationUnary(eUnaryOps op, SafeOpFlags *flags)
 	: FunctionInvocation(eUnaryPrim, flags),
 	  eFunc(op),
