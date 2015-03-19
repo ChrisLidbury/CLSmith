@@ -99,6 +99,18 @@ void StatementAtomicResult::RecordIfID(int id, Expression* expr) {
   atomic_blocks->insert(std::pair<int, const ExpressionAtomicAccess*>(id, ea->get_access()));
 }
 
+void StatementAtomicResult::PrintStructArrayVars(std::ostream& out, int indent, Variable* av, std::stringstream& ss) const {
+  for (std::vector<Variable*>::iterator it = av->field_vars.begin(); it != av->field_vars.end(); it++) {
+    if (!(*it)->field_vars.empty())
+      PrintStructArrayVars(out, indent, (*it), ss);
+    out << ss.str() << (*it)->name.substr((*it)->name.find("."), (*it)->name.length()) << ";";
+    if (it + 1 != av_->field_vars.end()) {
+      out << std::endl;
+      output_tab(out, indent);
+    }
+  }
+}
+
 void StatementAtomicResult::Output(std::ostream& out, FactMgr* fm, int indent) const {
   output_tab(out, indent);
   switch(result_type_) {
@@ -125,24 +137,18 @@ void StatementAtomicResult::Output(std::ostream& out, FactMgr* fm, int indent) c
       for (unsigned int i = 0; i < accesses.size(); i++) {
         curr_idx_name = av_->name + "_i" + std::to_string(i);
         add_stream << "[" << curr_idx_name << "]";
-        if (av_->field_vars.empty()) {
-          out << add_stream.str() << ";";
-        } else {
-          for (std::vector<Variable*>::iterator it = av_->field_vars.begin(); it != av_->field_vars.end(); it++) {
-            if (!(*it)->field_vars.empty())
-              continue;
-            out << add_stream.str() << (*it)->name.substr((*it)->name.find("."), (*it)->name.length()) << ";";
-            if (it + 1 != av_->field_vars.end()) {
-              out << std::endl;
-              output_tab(out, indent);
-            }
-          }
-        }
-        out << std::endl;
       }
+      if (av_->field_vars.empty()) {
+        out << add_stream.str() << ";";
+      } else {
+        PrintStructArrayVars(out, indent, av_, add_stream);
+      }
+      out << std::endl;
       for (unsigned int i = 0; i < accesses.size(); i++) {
         output_tab(out, --indent);
         out << "}";
+        if ((i + 1) != accesses.size())
+            out << std::endl;
       }
       break;
     }

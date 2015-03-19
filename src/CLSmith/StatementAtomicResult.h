@@ -58,6 +58,8 @@ private:
   AtomicResultType result_type_;
   const Type& type_;    
 
+  void PrintStructArrayVars(std::ostream& out, int indent, Variable* av, std::stringstream& ss) const; 
+
   DISALLOW_COPY_AND_ASSIGN(StatementAtomicResult);
   
 }; 
