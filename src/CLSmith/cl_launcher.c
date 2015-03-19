@@ -61,6 +61,7 @@ bool debug_build = false;
 bool disable_opts = false;
 bool disable_fake = false;
 bool disable_group = false;
+bool disable_atomics = false;
 bool output_binary = false;
 bool set_device_from_name = false;
 
@@ -127,6 +128,7 @@ void print_help() {
   printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
   printf("                      ---disable_group      Disable group divergence feature\n");
   printf("                      ---disable_fake       Disable fake divergence feature\n");
+  printf("                      ---disable_atomics    Disable atomic sections and reductions\n");
   printf("                      ---set_device_from_name\n");
   printf("                                            Ignore target platform -p and device -d\n");
   printf("                                            Instead try to find a matching platform/device based on the device name\n"); 
@@ -406,7 +408,7 @@ int main(int argc, char **argv) {
   if (atomic_reductions) {
     free(global_reduction_target);
   }
-  if (emi) {
+  if (fake_divergence) {
     free(sequence_input);
   }
   if (inter_thread_comm) {
@@ -488,6 +490,8 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     sprintf(options, "%s -D NO_GROUP_DIVERGENCE", options);
   if (disable_fake)
     sprintf(options, "%s -D NO_FAKE_DIVERGENCE", options);
+  if (disable_atomics)
+    sprintf(options, "%s -D NO_ATOMICS", options);
 
 #ifdef _MSC_VER  
   build_in_progress = true;
@@ -818,6 +822,10 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "---disable_group")) {
     disable_group = true;
+    return 1;
+  }
+  if (!strcmp(arg, "---disable_atomics")) {
+    disable_atomics = true;
     return 1;
   }
   printf("Failed parsing arg %s.", arg);
