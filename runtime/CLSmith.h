@@ -13,6 +13,7 @@
 #define atomic_and(x,y) (1+1)
 #define atomic_or(x,y)  (1+1)
 #define atomic_xor(x,y) (1+1)
+#define atomic_noop() /* for sanity checking */
 #endif
 
 inline __attribute__((always_inline)) void 
