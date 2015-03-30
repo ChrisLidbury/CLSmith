@@ -586,14 +586,14 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     }
     
     cl_mem atomic_input = clCreateBuffer(
-        context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
         init_atomic_vals, &err);
     if (cl_error_check(err, "Error creating atomic input buffer"))
       return 1;
     
     // Create buffer to store special values for the atomic blocks
     cl_mem special_values = clCreateBuffer(
-        context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
         init_special_vals, &err);
     if (cl_error_check(err, "Error creating special values input buffer"))
       return 1;
