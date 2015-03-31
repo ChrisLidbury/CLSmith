@@ -11,6 +11,7 @@
 
 #include <map>
 #include <sstream>
+#include <iterator>
 
 namespace CLSmith {
   
@@ -71,12 +72,6 @@ void StatementAtomicResult::GenSpecialVals() {
               b->stms.push_back(sar_res);
             }
           }
-          else if (!v->field_vars.empty()) {
-            for (Variable* fv : v->field_vars) {
-              StatementAtomicResult* sar_res = new StatementAtomicResult(fv, b);
-              b->stms.push_back(sar_res);
-            }
-          }
           else {
             StatementAtomicResult* sar_res = new StatementAtomicResult(v, b);
             b->stms.push_back(sar_res);
@@ -99,12 +94,18 @@ void StatementAtomicResult::RecordIfID(int id, Expression* expr) {
   atomic_blocks->insert(std::pair<int, const ExpressionAtomicAccess*>(id, ea->get_access()));
 }
 
-void StatementAtomicResult::PrintStructArrayVars(std::ostream& out, int indent, Variable* av, std::stringstream& ss) const {
-  for (std::vector<Variable*>::iterator it = av->field_vars.begin(); it != av->field_vars.end(); it++) {
-    if (!(*it)->field_vars.empty())
+void StatementAtomicResult::PrintStructArrayVars(std::ostream& out, int indent, Variable* v, std::stringstream& ss) const {
+  for (std::vector<Variable*>::iterator it = v->field_vars.begin(); it != v->field_vars.end(); it++) {
+    if (!(*it)->field_vars.empty()) {
       PrintStructArrayVars(out, indent, (*it), ss);
+      if (std::next(it,1) != v->field_vars.end()) {
+        out << std::endl;
+        output_tab(out, indent);
+      }
+      continue;
+    }
     out << ss.str() << (*it)->name.substr((*it)->name.find("."), (*it)->name.length()) << ";";
-    if (it + 1 != av_->field_vars.end()) {
+    if (std::next(it,1) != v->field_vars.end()) {
       out << std::endl;
       output_tab(out, indent);
     }
@@ -114,7 +115,17 @@ void StatementAtomicResult::PrintStructArrayVars(std::ostream& out, int indent, 
 void StatementAtomicResult::Output(std::ostream& out, FactMgr* fm, int indent) const {
   output_tab(out, indent);
   switch(result_type_) {
-    case kAddVar  : { out << "result += " << var_->to_string() << ";"; break; }
+    case kAddVar  : { 
+      if (!var_->field_vars.empty()) {
+        std::stringstream res_str;
+        res_str << "result += " << var_->name;
+        PrintStructArrayVars(out, indent, var_, res_str);
+      }
+      else {
+        out << "result += " << var_->to_string() << ";"; 
+      }
+      break;
+    }
     case kAddArrVar : {
       std::vector<unsigned int> accesses = av_->get_sizes();
       out << "int " << av_->name << "_i0";
