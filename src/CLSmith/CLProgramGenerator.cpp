@@ -148,7 +148,7 @@ void CLProgramGenerator::InitRuntimeParameters() {
   std::vector<unsigned int> chosen_div;
   std::vector<unsigned int> divisors;
   for (unsigned int i = 0; i < no_dims; i++) {
-    globalDim[i] = rnd_upto(std::min(max_thr_per_dim, max_threads / noThreads));
+    globalDim[i] = rnd_upto(std::min(max_thr_per_dim, max_threads / noThreads)) + 1;
     noThreads *= globalDim[i];
   }
   unsigned int curr_thr_p_grp;
