@@ -32,7 +32,7 @@ namespace CLSmith {
 namespace {
 // Max number of atomic blocks that the generated program should contains
 static int no_atomic_blocks = 0;
-  
+
 // Corresponds to the global array parameter passed to the kernel
 static MemoryBuffer* global_in_buf = NULL;
 static MemoryBuffer* local_in_buf = NULL;
@@ -52,7 +52,7 @@ static std::vector<MemoryBuffer*>* local_in = NULL;
 static std::vector<MemoryBuffer*>* global_sv = NULL;
 static std::vector<MemoryBuffer*>* local_sv = NULL;
 
-// To be used during code generation; holds the variables generated in an 
+// To be used during code generation; holds the variables generated in an
 // atomic block and uses them to compute a special value used for checking
 static std::stack<std::map<int, std::vector<Variable *>*>*>* block_vars = NULL;
 static std::stack<Block*>* atomic_parent = NULL;
@@ -68,7 +68,7 @@ void ExpressionAtomic::InitAtomics() {
   std::iota(free_counters->begin(), free_counters->end(), 0);
   StatementAtomicResult::InitResults();
 }
-  
+
 // TODO make if from switch (+ other functions too)
 ExpressionAtomic* ExpressionAtomic::make_random(CGContext &cg_context, const Type *type) {
   assert(type->eType == eSimple && type->simple_type == eInt);
@@ -105,7 +105,7 @@ Expression *ExpressionAtomic::make_condition(CGContext &cg_context, const Type *
   if (!expr_atomic)
     return NULL;
   FunctionInvocationBinary *fi = new FunctionInvocationBinary(eCmpEq, expr_atomic,
-                                  Constant::make_int(rnd_upto(10)), 
+                                  Constant::make_int(rnd_upto(10)),
                                   SafeOpFlags::make_dummy_flags());
   MakeBlockVars(cg_context.get_current_block());
   return new ExpressionFuncall(*fi);
@@ -133,7 +133,7 @@ void ExpressionAtomic::AddVarsToGlobals(Globals* globals) {
 MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
   if (global_in_buf == NULL)  {
     global_in_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
-      "g_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0), 
+      "g_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0),
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetGlobalMems()->push_back(global_in_buf);
@@ -145,7 +145,7 @@ MemoryBuffer* ExpressionAtomic::GetGlobalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
   if (global_sv_buf == NULL) {
     global_sv_buf = new MemoryBuffer(MemoryBuffer::kGlobal,
-      "g_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0), 
+      "g_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0),
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {CLProgramGenerator::get_groups() * no_atomic_blocks});
     GetSVMems()->push_back(global_sv_buf);
@@ -156,7 +156,7 @@ MemoryBuffer* ExpressionAtomic::GetSVBuffer() {
 MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
   if (local_in_buf == NULL)  {
     local_in_buf = new MemoryBuffer(MemoryBuffer::kLocal,
-      "l_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0), 
+      "l_atomic_input", &Type::get_simple_type(eUInt), Constant::make_int(0),
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
     GetLocalMems()->push_back(local_in_buf);
@@ -168,10 +168,10 @@ MemoryBuffer* ExpressionAtomic::GetLocalBuffer() {
 MemoryBuffer* ExpressionAtomic::GetLocalSVBuffer() {
   if (local_sv_buf == NULL) {
     local_sv_buf = new MemoryBuffer(MemoryBuffer::kLocal,
-      "l_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0), 
+      "l_special_values", &Type::get_simple_type(eUInt), Constant::make_int(0),
       new CVQualifiers(std::vector<bool> ({false}), std::vector<bool> ({true})),
       {(unsigned)no_atomic_blocks});
-    
+
     GetLocalSVMems()->push_back(local_sv_buf);
   }
   return local_sv_buf;
@@ -226,7 +226,7 @@ void ExpressionAtomic::MakeBlockVars(Block* parent) {
 //     block_vars->clear();
 //   } else {
 //     delete(block_vars);
-//     block_vars = new std::map<int, std::vector<Variable*>*>(); 
+//     block_vars = new std::map<int, std::vector<Variable*>*>();
 //   }
 //   atomic_parent = parent;
 }
@@ -309,7 +309,7 @@ void ExpressionAtomic::Output(std::ostream& out) const {
     case kAnd:
     case kOr:
     case kXor: { out << ", " << val_; break; }
-    case kCmpxchg: { out << ", " << cmp_ << ", " << val_; break; }  
+    case kCmpxchg: { out << ", " << cmp_ << ", " << val_; break; }
     default: assert(0); // should never get here.
   }
   out << ")";
@@ -326,7 +326,7 @@ void ExpressionAtomic::OutputHashing(std::ostream& out) {
     eid_g->Output(out);
     out << ")" << std::endl;
     output_tab(out, 2);
-    out << "for (i = 0 ; i < " << CLProgramGenerator::get_atomic_blocks_no() 
+    out << "for (i = 0 ; i < " << CLProgramGenerator::get_atomic_blocks_no()
         << "; i++)" << std::endl;
     output_tab(out, 3);
     out << "transparent_crc(";
@@ -350,7 +350,7 @@ void ExpressionAtomic::OutputHashing(std::ostream& out) {
     eid_l->Output(out);
     out << ")" << std::endl;
     output_tab(out, 2);
-    out << "for (i = 0; i < " << CLProgramGenerator::get_atomic_blocks_no() << 
+    out << "for (i = 0; i < " << CLProgramGenerator::get_atomic_blocks_no() <<
         "; i++)" << std::endl;
     output_tab(out, 3);
     out << "transparent_crc(";

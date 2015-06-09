@@ -28,11 +28,11 @@ class OutputMgr;
 
 namespace CLSmith {
 namespace {
-static const unsigned int min_no_threads = 100;
-static const unsigned int max_no_threads = 10000;
+static const unsigned int max_threads = 10000;
+static const unsigned int max_thr_per_dim = 100;
 static const unsigned int max_threads_per_group = 256;
 static const unsigned int no_dims = 3;
-static unsigned int noThreads;
+static unsigned int noThreads = 1;
 static unsigned int noGroups = 1;
 static std::vector<unsigned int> *globalDim;
 static std::vector<unsigned int> *localDim;
@@ -76,11 +76,11 @@ void CLProgramGenerator::goGenerator() {
   // If EMI block generation is set, prune them.
   if (CLOptions::emi())
     EMIController::GetEMIController()->PruneEMISections();
-  
+
   // If atomic blocks are generated, add operations for the special values
   if (CLOptions::atomics())
     StatementAtomicResult::GenSpecialVals();
-  
+
   // If atomic reductions are generated, add the hash buffer
   if (CLOptions::atomic_reductions())
     StatementAtomicReduction::RecordBuffer();
@@ -100,7 +100,7 @@ void CLProgramGenerator::goGenerator() {
   if (CLOptions::atomics()) {
     ExpressionAtomic::AddVarsToGlobals(globals);
   }
-  
+
   // Add the reduction variables for atomic reductions to the global struct
   if (CLOptions::atomic_reductions())
     StatementAtomicReduction::AddVarsToGlobals(globals);
@@ -141,28 +141,15 @@ void CLProgramGenerator::goGenerator() {
 }
 
 void CLProgramGenerator::InitRuntimeParameters() {
-  noThreads = rnd_upto(max_no_threads - min_no_threads) + min_no_threads;
   globalDim = new std::vector<unsigned int>(no_dims, 1);
   localDim = new std::vector<unsigned int>(no_dims, 1);
   std::vector<unsigned int>& globalDim = *CLSmith::globalDim;
   std::vector<unsigned int>& localDim = *CLSmith::localDim;
   std::vector<unsigned int> chosen_div;
   std::vector<unsigned int> divisors;
-  int choose, currNo = noThreads, div;
-  while (chosen_div.size() < no_dims) {
-    get_divisors(currNo, &divisors);
-    div = divisors[rnd_upto(divisors.size())];
-    chosen_div.push_back(div);
-    currNo /= div;
-  }
-  assert(chosen_div.size() == no_dims);
-  noThreads = 1;
   for (unsigned int i = 0; i < no_dims; i++) {
-    choose = rnd_upto(chosen_div.size());
-    globalDim[i] = chosen_div[choose];
+    globalDim[i] = rnd_upto(std::min(max_thr_per_dim, max_threads / noThreads));
     noThreads *= globalDim[i];
-    chosen_div.erase(
-        std::find(chosen_div.begin(), chosen_div.end(), chosen_div[choose]));
   }
   unsigned int curr_thr_p_grp;
   do {
