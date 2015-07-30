@@ -49,8 +49,10 @@ class StatementComm : public CLStatement {
   static void AddVarsToGlobals(Globals *globals);
 
   // Hash the comm_values array. This must be done manually, as global arrays
-  // are not typically hashed.
+  // are not typically hashed. Special hashing method required for the global 
+  // buffer.
   static void HashCommValues(std::ostream& out);
+  static void HashCommValuesGlobalBuffer(std::ostream& out);
 
   // Pure virtual in Statement. Not really needed.
   void get_blocks(std::vector<const Block *>& blks) const {}

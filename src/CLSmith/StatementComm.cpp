@@ -147,7 +147,18 @@ void StatementComm::AddVarsToGlobals(Globals *globals) {
 void StatementComm::HashCommValues(std::ostream& out) {
   assert(global_values != NULL && local_values != NULL);
   local_values->hash(out);
-  global_values->hash(out);
+  HashCommValuesGlobalBuffer(out);
+}
+
+void StatementComm::HashCommValuesGlobalBuffer(std::ostream& out) {
+  output_tab(out, 1);
+  out << "transparent_crc(";
+  global_values->Output(out);
+  out << "[get_linear_group_id() * " << CLProgramGenerator::get_threads_per_group() << " + get_linear_local_id()]"; 
+  out << ", \"";
+  global_values->Output(out);
+  out << "[get_linear_group_id() * " << CLProgramGenerator::get_threads_per_group() << " + get_linear_local_id()]"; 
+  out << "\", print_hash_value);" << std::endl;
 }
 
 void StatementComm::Output(std::ostream& out, FactMgr *fm, int indent) const {
