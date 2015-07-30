@@ -936,7 +936,7 @@ VariableSelector::GenerateNewParentLocal(Block &block,
 	ERROR_GUARD(NULL);
 	assert(t);
 	// if this is for a struct/union with volatile field(s), create a global variable instead
-	if (t->is_aggregate() && t->is_volatile_struct_union()) {
+	if (t->is_aggregate() && t->is_volatile_struct_union() && !cg_context.get_atomic_context()) {
 		return GenerateNewGlobal(access, cg_context, t, qfer);  
 	}
 	// if there are "goto" in block (and sub-blocks), find the jump source statement,
