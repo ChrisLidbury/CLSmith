@@ -9,13 +9,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
 #include <stdbool.h>
-#endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(WINDOWS)
 #include <windows.h>
 #include <rtcapi.h>
+
+#ifdef XOPENME
+#include <xopenme.h>
+#endif
 
 bool build_in_progress = false;
 bool execution_in_progress = false;
@@ -57,6 +59,7 @@ size_t binary_size = 0;
 int device_index = 0;
 int platform_index = 0;
 char* device_name_given = "";
+char* include_path = ".";
 bool debug_build = false;
 bool disable_opts = false;
 bool disable_fake = false;
@@ -76,6 +79,7 @@ bool inter_thread_comm = false;
 // Data to free.
 char *source_text = NULL;
 char *buf = NULL;
+cl_uint * init_result = NULL;
 cl_uint *init_atomic_vals = NULL;
 cl_uint *init_special_vals = NULL;
 cl_int *global_reduction_target = NULL;
@@ -94,10 +98,14 @@ int no_groups = 1;
 int l_dim = 1;
 int g_dim = 1;
 
+char platformName[256];
+char deviceName[256];
+int compute_units=0;
+
 int run_on_platform_device(cl_platform_id *, cl_device_id *, cl_uint);
-void 
+void
 #ifdef _MSC_VER
-  __stdcall 
+  __stdcall
 #endif
   error_callback(const char *, const void *, size_t, void *);
 int cl_error_check(cl_int, const char *);
@@ -113,6 +121,7 @@ void print_help() {
   printf("  -d IDX  --device_idx IDX                  Target device\n");
   printf("\n");
   printf("Optional flags are:\n");
+  printf("  -i PATH --include_path PATH               Include path for kernels (. by default)\n"); //FGG
   printf("  -b N    --binary N                        Compiles the kernel to binary, allocating N bytes\n");
   printf("  -l N    --locals N                        A string with comma-separated values representing the number of work-units per group per dimension\n");
   printf("  -g N    --groups N                        Same as -l, but representing the total number of work-units per dimension\n");
@@ -131,7 +140,7 @@ void print_help() {
   printf("                      ---disable_atomics    Disable atomic sections and reductions\n");
   printf("                      ---set_device_from_name\n");
   printf("                                            Ignore target platform -p and device -d\n");
-  printf("                                            Instead try to find a matching platform/device based on the device name\n"); 
+  printf("                                            Instead try to find a matching platform/device based on the device name\n");
 }
 
 /*
@@ -192,10 +201,14 @@ bool setPlatformDeviceFromDeviceName() {
 
 int main(int argc, char **argv) {
 
+#ifdef XOPENME
+  xopenme_init(1,5);
+#endif
+
 #ifdef _MSC_VER
   DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
   SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
-  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)&exception_handler); 
+  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)&exception_handler);
   _RTC_SetErrorFunc(&runtime_check_handler);
 #endif
 
@@ -205,9 +218,9 @@ int main(int argc, char **argv) {
     print_help();
     return 1;
   }
-  
+
   int req_arg = 0;
-  
+
   // Parsing arguments
   int arg_no = 0;
   int parse_ret;
@@ -226,12 +239,12 @@ int main(int argc, char **argv) {
       args_file = argv[++arg_no];
     }
   }
-  
+
   if (!file) {
     printf("Require file (-f) argument!\n");
     return 1;
   }
-  
+
   // Parse arguments found in the given source file
   if (args_file == NULL) {
     if (!parse_file_args(file)) {
@@ -246,7 +259,7 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  
+
   arg_no = 0;
   while (++arg_no < argc) {
     curr_arg = argv[arg_no];
@@ -262,12 +275,12 @@ int main(int argc, char **argv) {
       return 1;
     req_arg += parse_ret - 1;
   }
-  
+
   if (req_arg < 2) {
     printf("Require device index (-d) and platform index (-p) arguments, or device name (-n)!\n");
     return 1;
   }
-  
+
   // TODO function this
   // Parsing thread and group dimension information
   if (strcmp(local_dims, "") == 0) {
@@ -304,7 +317,7 @@ int main(int argc, char **argv) {
       tok = strtok(NULL, ",");
     }
   }
-  
+
   if (g_dim != l_dim) {
     printf("Local and global sizes must have same number of dimensions!\n");
     return 1;
@@ -319,14 +332,14 @@ int main(int argc, char **argv) {
       printf("Local dimension %d greater than global dimension!\n", d);
       return 1;
     }
-  
+
   // Calculating total number of work-units for future use
   int i;
   for (i = 0; i < l_dim; i++) {
     total_threads *= global_size[i];
     no_groups *= global_size[i] / local_size[i];
   }
-  
+
   // Platform ID, the index in the array of platforms.
   if (platform_index < 0) {
     printf("Could not parse platform id \"%s\"\n", argv[2]);
@@ -363,6 +376,13 @@ int main(int argc, char **argv) {
   }
   platform = &platforms[platform_index];
 
+#ifdef XOPENME
+  err = clGetPlatformInfo(*platform, CL_PLATFORM_VENDOR, sizeof(platformName), platformName, NULL);
+  if (cl_error_check(err, "Get Platform Info error")) return 1;
+
+  xopenme_add_var_s(0, (char*) "  \"opencl_platform\":\"%s\"", platformName);
+#endif
+
   // Find all the GPU devices for the platform.
   cl_device_id * devices = (cl_device_id*)malloc(sizeof(cl_device_id)*(device_index + 1));
   cl_uint device_count;
@@ -375,7 +395,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   device = &devices[device_index];
-  
+
   // Check to see if name of device corresponds to given name, if any
   if (device_name_given) {
     size_t name_size = 128, actual_size;
@@ -387,11 +407,22 @@ int main(int argc, char **argv) {
     char* device_name = (char*)malloc(actual_size*sizeof(char));
     strncpy(device_name, device_name_get, actual_size);
     if (!strstr(device_name, device_name_given)) {
-      printf("Given name, %s, not found in device name, %s.\n", 
+      printf("Given name, %s, not found in device name, %s.\n",
           device_name_given, device_name);
       return 1;
     }
   }
+
+#ifdef XOPENME
+  err = clGetDeviceInfo(*device, CL_DEVICE_NAME, sizeof(deviceName), deviceName, NULL);
+  if (cl_error_check(err, "Get Device Info error")) return 1;
+
+  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(cl_uint), &compute_units, NULL);
+  if (cl_error_check(err, "Get Device compute units error")) return 1;
+
+  xopenme_add_var_s(1, (char*) "  \"opencl_device\":\"%s\"", deviceName);
+  xopenme_add_var_i(2, (char*) "  \"opencl_device_units\":%u", compute_units);
+#endif
 
   int run_err = run_on_platform_device(platform, device, (cl_uint) l_dim);
   free(source_text);
@@ -400,7 +431,8 @@ int main(int argc, char **argv) {
   free(global_size);
   free(platforms);
   free(devices);
-  
+  free(init_result);
+
   if (atomics) {
     free(init_atomic_vals);
     free(init_special_vals);
@@ -414,12 +446,17 @@ int main(int argc, char **argv) {
   if (inter_thread_comm) {
     free(comm_vals);
   }
-  
+
+#ifdef XOPENME
+  xopenme_dump_state();
+  xopenme_finish();
+#endif
+
   return run_err;
 }
 
 int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_uint work_dim) {
-  
+
   // Try to read source file into a binary buffer
   FILE *source = fopen(file, "rb");
   if (source == NULL) {
@@ -475,7 +512,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   }
   else {
     program =
-        clCreateProgramWithBinary(context, 1, device, (const size_t *)&source_size, 
+        clCreateProgramWithBinary(context, 1, device, (const size_t *)&source_size,
                                   (const unsigned char **)&buf, NULL, &err);
   }
   if (cl_error_check(err, "Error creating program"))
@@ -483,7 +520,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
   // Add optimisation to options later.
   char* options = (char*)malloc(sizeof(char)*256);
-  sprintf(options, "-w -I.");
+  sprintf(options, "-w -I%s", include_path);
   if (disable_opts)
     sprintf(options, "%s -cl-opt-disable", options);
   if (disable_group)
@@ -493,15 +530,20 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   if (disable_atomics)
     sprintf(options, "%s -D NO_ATOMICS", options);
 
-#ifdef _MSC_VER  
+#ifdef _MSC_VER
   build_in_progress = true;
-#endif  
+#endif
   err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
-#ifdef _MSC_VER  
+
+#ifdef XOPENME
+  xopenme_add_var_s(3, (char*) "  \"opencl_options\":\"%s\"", options);
+#endif
+
+#ifdef _MSC_VER
   build_in_progress = false;
-#endif  
+#endif
   if (cl_error_check(err, "Error building program")) {
-    if (debug_build) {      
+    if (debug_build) {
       size_t err_size;
       err = clGetProgramBuildInfo(
           program, *device, CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);
@@ -521,7 +563,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
   }
   free(options);
-  
+
   cl_build_status status;
   err = clGetProgramBuildInfo(
       program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
@@ -554,50 +596,54 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     free(bin);
     return 0;
   }
- 
-  // Create the kernel 
+
+  // Create the kernel
   cl_kernel kernel = clCreateKernel(program, "entry", &err);
   if (cl_error_check(err, "Error creating kernel"))
     return 1;
 
   // Create the buffer that will have the results.
+  init_result = (cl_uint*)malloc(sizeof(RES_TYPE) * total_threads);
+  int counter;
+  for (counter = 0; counter < total_threads; counter++)
+    init_result[counter] = 0;
   cl_mem result = clCreateBuffer(
-      context, CL_MEM_WRITE_ONLY, total_threads * sizeof(RES_TYPE), NULL, &err);
+      context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, total_threads * sizeof(RES_TYPE), init_result, &err);
   if (cl_error_check(err, "Error creating output buffer"))
     return 1;
-  
+
   // Set the buffers as arguments
   unsigned kernel_arg = 0;
   err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &result);
   if (cl_error_check(err, "Error setting kernel argument 0"))
     return 1;
-  
+
   if (atomics) {
     // Create buffer to store counters for the atomic blocks
     int total_counters = atomic_counter_no * no_groups;
     init_atomic_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
     init_special_vals = (cl_uint*)malloc(sizeof(cl_uint) * total_counters);
-    
+
     // Fill the created buffers in host memory
     int i;
     for (i = 0; i < total_counters; i++) {
       init_atomic_vals[i] = 0;
       init_special_vals[i] = 0;
     }
-    
+
     cl_mem atomic_input = clCreateBuffer(
-        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint),
         init_atomic_vals, &err);
     if (cl_error_check(err, "Error creating atomic input buffer"))
       return 1;
-    
+
     // Create buffer to store special values for the atomic blocks
     cl_mem special_values = clCreateBuffer(
-        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint), 
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, total_counters * sizeof(cl_uint),
         init_special_vals, &err);
     if (cl_error_check(err, "Error creating special values input buffer"))
       return 1;
-    
+
     err = clSetKernelArg(kernel, kernel_arg++, sizeof(cl_mem), &atomic_input);
     if (cl_error_check(err, "Error setting atomic input array argument"))
       return 1;
@@ -605,13 +651,13 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     if (cl_error_check(err, "Error setting special values array argument"))
       return 1;
   }
-  
+
   if (atomic_reductions) {
     global_reduction_target = (cl_int*)malloc(sizeof(cl_int) * no_groups);
     int i;
-    for (i = 0; i < no_groups; i++) 
+    for (i = 0; i < no_groups; i++)
       global_reduction_target[i] = 0;
-    
+
     cl_mem atomic_reduction_vars = clCreateBuffer(
         context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, no_groups * sizeof(cl_int),
         global_reduction_target, &err);
@@ -671,12 +717,12 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     if (cl_error_check(err, "Error setting kernel argument for inter thread comm"))
       return 1;
   }
-  
+
 
   // Create command to launch the kernel.
-#ifdef _MSC_VER  
+#ifdef _MSC_VER
   execution_in_progress = true;
-#endif  
+#endif
   err = clEnqueueNDRangeKernel(
       com_queue, kernel, work_dim, NULL, global_size, local_size, 0, NULL, NULL);
   if (cl_error_check(err, "Error enqueueing kernel"))
@@ -686,9 +732,9 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   err = clFinish(com_queue);
   if (cl_error_check(err, "Error sending finish command"))
     return 1;
-#ifdef _MSC_VER  
+#ifdef _MSC_VER
   execution_in_progress = false;
-#endif  
+#endif
 
   // Read back the reults of each thread.
   RES_TYPE * c = (RES_TYPE*)malloc(sizeof(RES_TYPE)*total_threads);
@@ -707,17 +753,17 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     "%#"PRIx32","
 #else
     "%#"PRIx64","
-#endif  
+#endif
     , c[i]);
 ////
 
   free(c);
-  
+
   return 0;
 }
 
 int parse_file_args(const char* filename) {
-  
+
   FILE* source = fopen(filename, "r");
   if (source == NULL) {
     printf("Could not open file %s for argument parsing.\n", filename);
@@ -729,7 +775,7 @@ int parse_file_args(const char* filename) {
   char* new_line;
   if ((new_line = strchr(arg_buf, '\n')))
     arg_buf[(int) (new_line - arg_buf)] = '\0';
-  
+
   if (!strncmp(arg_buf, "//", 2)) {
     char* tok = strtok(arg_buf, " ");
     while (tok) {
@@ -742,7 +788,7 @@ int parse_file_args(const char* filename) {
   }
 
   fclose(source);
-  
+
   return 1;
 }
 
@@ -777,6 +823,14 @@ int parse_arg(char* arg, char* val) {
   }
   if (!strcmp(arg, "-n") || !strcmp(arg, "--name")) {
     device_name_given = val;
+    return 3;
+  }
+  if (!strcmp(arg, "-i") || !strcmp(arg, "--include_path")) {
+    int ii;
+    include_path = val;
+    for (ii=0; ii<strlen(include_path); ii++)
+      if (include_path[ii]=='\\') include_path[ii]='/';
+
     return 3;
   }
   if (!strcmp(arg, "--atomics")) {
@@ -836,8 +890,8 @@ int parse_arg(char* arg, char* val) {
 // This can be called many time asynchronously, so it must be thread safe.
 void
 #ifdef _MSC_VER
-__stdcall 
-#endif 
+__stdcall
+#endif
 error_callback(
     const char *errinfo, const void *private_info, size_t cb, void *user_data) {
   printf("Error found (callback):\n%s\n", errinfo);
