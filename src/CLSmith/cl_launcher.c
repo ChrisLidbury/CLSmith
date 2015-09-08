@@ -602,6 +602,9 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   }
   free(options);
 
+  printf("Compilation terminated successfully...\n");
+  fflush(stdout);
+
   cl_build_status status;
   err = clGetProgramBuildInfo(
       program, *device, CL_PROGRAM_BUILD_STATUS, sizeof(cl_build_status), &status, NULL);
