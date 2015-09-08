@@ -284,7 +284,6 @@ int main(int argc, char **argv) {
   // TODO function this
   // Parsing thread and group dimension information
   if (strcmp(local_dims, "") == 0) {
-//     printf("No local dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_LOCAL_SIZE);
     local_size = (size_t*)malloc(sizeof(size_t));
     local_size[0] = DEF_LOCAL_SIZE;
   } else {
@@ -301,7 +300,6 @@ int main(int argc, char **argv) {
     }
   }
   if (strcmp(global_dims, "") == 0) {
-//     printf("No global dimension information found; defaulting to uni-dimensional %d threads.\n", DEF_GLOBAL_SIZE);
     global_size = (size_t*)malloc(sizeof(size_t));
     global_size[0] = DEF_GLOBAL_SIZE;
   } else {
@@ -317,6 +315,9 @@ int main(int argc, char **argv) {
       tok = strtok(NULL, ",");
     }
   }
+
+  free(global_dims);
+  free(local_dims);
 
   if (g_dim != l_dim) {
     printf("Local and global sizes must have same number of dimensions!\n");
@@ -383,7 +384,7 @@ int main(int argc, char **argv) {
   xopenme_add_var_s(0, (char*) "  \"opencl_platform\":\"%s\"", platformName);
 #endif
 
-  // Find all the GPU devices for the platform.
+  // Find all the devices for the platform.
   cl_device_id * devices = (cl_device_id*)malloc(sizeof(cl_device_id)*(device_index + 1));
   cl_uint device_count;
   err = clGetDeviceIDs(
@@ -411,6 +412,43 @@ int main(int argc, char **argv) {
           device_name_given, device_name);
       return 1;
     }
+  }
+
+  // Checking device supports given number of dimensions
+  cl_int max_dimensions;
+  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_int), &max_dimensions, NULL);
+  if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS"))
+    return 1;
+  if(max_dimensions < g_dim) {
+    printf("Kernel uses %d dimensions, exceeds the maximum of %d dimensions for this device\n", g_dim, max_dimensions);
+    return 1;
+  }
+
+  size_t curr_dim;
+
+  // Checking that number of work items in each dimension is OK
+  size_t * max_work_items = (size_t*)malloc(sizeof(size_t) * max_dimensions);
+  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * max_dimensions, max_work_items, NULL);
+  if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_SIZES"))
+    return 1;
+  for (curr_dim = 0; curr_dim <= max_dimensions; curr_dim++) {
+    if(max_work_items[curr_dim] < global_size[curr_dim]) {
+      printf("Local works size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
+      return 1;
+    }
+  }
+  free(max_work_items);
+
+  // Checking that work group size is not too large
+  size_t max_work_group_size, given_work_group_size = 1;
+  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);
+  if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_GROUP_SIZE"))
+    return 1;
+  for (curr_dim = 0; curr_dim < l_dim; curr_dim++)
+    given_work_group_size *= local_size[curr_dim];
+  if(max_work_group_size < given_work_group_size) {
+    printf("Kernel work group size is %zd, which exceeds the maximum work group size of %zd for this device\n", given_work_group_size, max_work_group_size);
+    return 1;
   }
 
 #ifdef XOPENME
