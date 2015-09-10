@@ -51,6 +51,7 @@ int runtime_check_handler(int errorType, const char *filename, int linenumber, c
 
 #define DEF_LOCAL_SIZE 32
 #define DEF_GLOBAL_SIZE 1024
+#define REQ_ARG_COUNT 2
 
 // User input.
 const char *file;
@@ -276,7 +277,7 @@ int main(int argc, char **argv) {
     req_arg += parse_ret - 1;
   }
 
-  if (req_arg < 2) {
+  if (req_arg < REQ_ARG_COUNT) {
     printf("Require device index (-d) and platform index (-p) arguments, or device name (-n)!\n");
     return 1;
   }
@@ -833,6 +834,11 @@ int parse_file_args(const char* filename) {
   return 1;
 }
 
+
+/* Function used to parse given arguments. All optional arguments must have a
+ * return value of 1. The total return value of required arguments must be
+ * equal to the value of REQ_ARG_COUNT.
+ */
 int parse_arg(char* arg, char* val) {
   if (!strcmp(arg, "-f") || !strcmp(arg, "--filename")) {
     return 1;
@@ -872,7 +878,7 @@ int parse_arg(char* arg, char* val) {
     for (ii=0; ii<strlen(include_path); ii++)
       if (include_path[ii]=='\\') include_path[ii]='/';
 
-    return 3;
+    return 1;
   }
   if (!strcmp(arg, "--atomics")) {
     atomics = true;
