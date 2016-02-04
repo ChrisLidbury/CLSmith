@@ -416,8 +416,8 @@ int main(int argc, char **argv) {
   }
 
   // Checking device supports given number of dimensions
-  cl_int max_dimensions;
-  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_int), &max_dimensions, NULL);
+  cl_uint max_dimensions;
+  err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_uint), &max_dimensions, NULL);
   if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS"))
     return 1;
   if(max_dimensions < g_dim) {
@@ -432,9 +432,9 @@ int main(int argc, char **argv) {
   err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * max_dimensions, max_work_items, NULL);
   if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_SIZES"))
     return 1;
-  for (curr_dim = 0; curr_dim <= max_dimensions; curr_dim++) {
+  for (curr_dim = 0; curr_dim < max_dimensions; curr_dim++) {
     if(max_work_items[curr_dim] < global_size[curr_dim]) {
-      printf("Local works size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
+      printf("Local work size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
       return 1;
     }
   }
