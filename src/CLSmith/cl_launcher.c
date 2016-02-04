@@ -80,7 +80,7 @@ bool inter_thread_comm = false;
 // Data to free.
 char *source_text = NULL;
 char *buf = NULL;
-cl_uint * init_result = NULL;
+RES_TYPE * init_result = NULL;
 cl_uint *init_atomic_vals = NULL;
 cl_uint *init_special_vals = NULL;
 cl_int *global_reduction_target = NULL;
@@ -463,6 +463,7 @@ int main(int argc, char **argv) {
   xopenme_add_var_i(2, (char*) "  \"opencl_device_units\":%u", compute_units);
 #endif
 
+
   int run_err = run_on_platform_device(platform, device, (cl_uint) l_dim);
   free(source_text);
   free(buf);
@@ -645,7 +646,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
     return 1;
 
   // Create the buffer that will have the results.
-  init_result = (cl_uint*)malloc(sizeof(RES_TYPE) * total_threads);
+  init_result = (RES_TYPE*)malloc(sizeof(RES_TYPE) * total_threads);
   int counter;
   for (counter = 0; counter < total_threads; counter++)
     init_result[counter] = 0;
