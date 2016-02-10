@@ -860,12 +860,12 @@ int parse_arg(char* arg, char* val) {
     return 1;
   }
   if (!strcmp(arg, "-l") || !strcmp(arg, "--locals")) {
-    local_dims = (char*)malloc(strlen(val)*sizeof(char));
+    local_dims = (char*)malloc((strlen(val)+1)*sizeof(char));
     strcpy(local_dims, val);
     return 1;
   }
   if (!strcmp(arg, "-g") || !strcmp(arg, "--groups")) {
-    global_dims = (char*)malloc(strlen(val)*sizeof(char));
+    global_dims = (char*)malloc((strlen(val)+1)*sizeof(char));
     strcpy(global_dims, val);
     return 1;
   }
