@@ -45,6 +45,11 @@
 #include "DepthSpec.h"
 #include "util.h"
 
+#include "CLSmith\ExpressionAtomic.h"
+#include "CLSmith\StatementAtomicResult.h"
+#include "CLSmith\CLOptions.h"
+
+#if 0
 namespace CLSmith {
 namespace ExpressionAtomic {
 Expression* make_condition(CGContext& cg_context, const Type* type);
@@ -60,6 +65,7 @@ namespace CLOptions {
 bool atomics();
 }  // namespace CLOptions
 }  // namespace CLSmith
+#endif
 
 using namespace std;
 

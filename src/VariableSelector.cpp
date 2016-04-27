@@ -62,20 +62,27 @@
 #include "ProbabilityTable.h"
 #include "StringUtils.h"
 
+#include "CLSmith/Vector.h"
+#include "CLSmith/CLOptions.h"
+
 // TODO Add ability to disable CLSmith, and prevent link failing on this function.
 // Maybe move to ArrayVariable, and call from CreateArrayVariable. Although this
 // would force us to always use vectors where we may not want them.
 namespace CLSmith {
+#if 0
 namespace Vector {
 ArrayVariable *CreateVectorVariable(const CGContext& cg_context, Block *blk,
     const std::string& name, const Type *type, const Expression *init,
     const CVQualifiers *qfer, const Variable *isFieldVarOf);  // Hook
 const Type& DemoteVectorTypeToType(const Type *type);  // Hook
 }  // namespace Vector
+#endif
 ArrayVariable *itemize_simd_hook(const ArrayVariable *av, int access_count);  // Hook
+#if 0
 namespace CLOptions {
 bool vectors(); // Hook
 }  // namespace CLOptions
+#endif
 }  // namespace CLSmith
 
 using namespace std;

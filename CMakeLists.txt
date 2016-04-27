@@ -21,7 +21,10 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-long-long -std=c++11")
+if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wno-long-long -Wall -std=c++11")
+endif()
+
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -g")
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -49,10 +52,20 @@ check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sys/types.h" HAVE_SYS_TYPES_H)
 check_include_file("unistd.h" HAVE_UNISTD_H)
 
+if(WIN32)
+    set(CLSmith_WINDOWS_SOURCES
+        runtime/windows/rand48.h
+        runtime/windows/_rand48.c
+        runtime/windows/lrand48.c
+        runtime/windows/srand48.c
+    )
+endif()
+
 include_directories(src)
 
 add_executable(CLSmith
     #CSmith files
+    ${CLSmith_WINDOWS_SOURCES}
     src/AbsExtension.cpp
     src/AbsExtension.h
     src/AbsProgramGenerator.cpp
