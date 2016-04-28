@@ -45,27 +45,9 @@
 #include "DepthSpec.h"
 #include "util.h"
 
-#include "CLSmith\ExpressionAtomic.h"
-#include "CLSmith\StatementAtomicResult.h"
-#include "CLSmith\CLOptions.h"
-
-#if 0
-namespace CLSmith {
-namespace ExpressionAtomic {
-Expression* make_condition(CGContext& cg_context, const Type* type);
-void DelBlockVars();
-}  // namespace ExpressionAtomic
-
-namespace StatementAtomicResult {
-void RecordIfID(int id, Expression* expr);
-}  // namespace StatementAtomicResult
-
-namespace CLOptions {
-// Checks whether the "--atomics" argument was given
-bool atomics();
-}  // namespace CLOptions
-}  // namespace CLSmith
-#endif
+#include "CLSmith/ExpressionAtomic.h"
+#include "CLSmith/StatementAtomicResult.h"
+#include "CLSmith/CLOptions.h"
 
 using namespace std;
 

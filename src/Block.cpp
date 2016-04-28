@@ -63,15 +63,6 @@
 
 #include "CLSmith/ExpressionAtomic.h"
 
-#if 0
-namespace CLSmith {
-namespace ExpressionAtomic {
-void RemoveBlockVars(Block* b);
-void GenBlockVars(Block* curr);
-}
-}
-#endif
-
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////

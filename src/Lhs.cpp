@@ -50,15 +50,7 @@
 #include <vector>
 #include "Block.h"
 
-#include "CLSmith\ExpressionAtomic.h"
-
-#if 0
-namespace CLSmith {
-namespace ExpressionAtomic {
-std::vector<Variable *>* GetBlockVars(Block* b);
-}
-}
-#endif
+#include "CLSmith/ExpressionAtomic.h"
 
 using namespace std;
 

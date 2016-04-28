@@ -41,16 +41,7 @@
 #include "Block.h"
 #include "random.h"
 
-#include "CLSmith\Vector.h"
-
-#if 0
-// Required for get_type() to promote simple types.
-namespace CLSmith {
-namespace Vector {
-const Type *PromoteTypeToVectorType(const Type *type, int size);
-}  // namespace Vector
-}  // namespace CLSmith
-#endif
+#include "CLSmith/Vector.h"
 
 using namespace std;
 

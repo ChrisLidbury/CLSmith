@@ -51,15 +51,7 @@
 #include "DepthSpec.h"
 #include "Enumerator.h"
 
-#include "CLSmith\Vector.h"
-
-#if 0
-namespace CLSmith {
-namespace Vector {
-void OutputVectorType(std::ostream& out, const Type *type, int vector_size);
-}  // namespace Vector
-}  // namespace CLSmith
-#endif
+#include "CLSmith/Vector.h"
 
 using namespace std;
 

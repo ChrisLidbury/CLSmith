@@ -68,14 +68,6 @@
 
 #include "CLSmith/ExpressionVector.h"
 
-#if 0
-namespace CLSmith {
-namespace ExpressionVector {
-Expression *make_constant(const Type *type, int value);
-}  // namespace ExpressionVector
-}  // namespace CLSmith
-#endif
-
 using namespace std; 
 
 ///////////////////////////////////////////////////////////////////////////////
