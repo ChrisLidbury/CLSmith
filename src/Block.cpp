@@ -61,12 +61,7 @@
 #include "Expression.h"
 #include "VectorFilter.h"
 
-namespace CLSmith {
-namespace ExpressionAtomic {
-void RemoveBlockVars(Block* b);
-void GenBlockVars(Block* curr);
-}
-}
+#include "CLSmith/ExpressionAtomic.h"
 
 using namespace std;
 

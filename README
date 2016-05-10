@@ -13,3 +13,12 @@ csmith as intact as possible (with some modifications made to allow CLSmith to
 inject functionctionality into csmith or to pass control to CLSmith). Keeping
 csmith and CLSmith separate turned out to be very tricky and probably not worth
 the effort.
+
+Both CLSmith and cl_launcher can be built with the included CMake files:
+
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build . --config Release -- -j 8
+
+This generates the CLSmith and cl_launcher executables inside the build directory.

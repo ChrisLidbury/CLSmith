@@ -85,7 +85,7 @@ void StatementComm::InitBuffers() {
   }
   permutations = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kConst,
       "permutations", &Type::get_simple_type(eUInt), NULL,
-      {kPermCount, perm_size});
+      {static_cast<unsigned>(kPermCount), perm_size});
   local_values = MemoryBuffer::CreateMemoryBuffer(MemoryBuffer::kLocal,
       "l_comm_values", &Type::get_simple_type(eLongLong), Constant::make_int(1),
       {CLProgramGenerator::get_threads_per_group()});

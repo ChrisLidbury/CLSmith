@@ -39,12 +39,7 @@
 #include "CGContext.h"
 #include "random.h"
 
-// Required for get_type() to promote simple types.
-namespace CLSmith {
-namespace Vector {
-const Type *PromoteTypeToVectorType(const Type *type, int size);
-}  // namespace Vector
-}  // namespace CLSmith
+#include "CLSmith/Vector.h"
 
 using namespace std;
 

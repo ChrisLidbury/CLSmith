@@ -2,7 +2,12 @@
 // Usage: cl_launcher <cl_program> <platform_id> <device_id> [flags...]
 
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
 #include <CL/cl.h>
+#endif
 
 #include <assert.h>
 #include <inttypes.h>
