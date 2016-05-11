@@ -270,9 +270,46 @@ add_executable(CLSmith
     src/CLSmith/StatementMessage.h
 )
 
-install(TARGETS CLSmith
+find_program(M4_EXECUTABLE m4 DOC "The M4 macro processor")
+
+if(M4_EXECUTABLE)
+    set(SAFE_MATH_HEADERS
+        ${CMAKE_BINARY_DIR}/safe_math_macros.h
+        ${CMAKE_BINARY_DIR}/cl_safe_math_macros.h
+    )
+
+    add_custom_target(SAFE_MATH_HEADERS ALL
+        DEPENDS ${SAFE_MATH_HEADERS}
+    )
+
+    add_custom_command(
+        OUTPUT safe_math_macros.h
+        COMMAND ${M4_EXECUTABLE} -P -s ${CMAKE_SOURCE_DIR}/runtime/safe_math_macros.m4 > safe_math_macros.h
+        DEPENDS ${CMAKE_SOURCE_DIR}/runtime/safe_math_macros.m4
+        VERBATIM
+    )
+
+    add_custom_command(
+        OUTPUT cl_safe_math_macros.h
+        COMMAND ${M4_EXECUTABLE} -P -s ${CMAKE_SOURCE_DIR}/runtime/cl_safe_math_macros.m4 > cl_safe_math_macros.h
+        DEPENDS ${CMAKE_SOURCE_DIR}/runtime/cl_safe_math_macros.m4
+        VERBATIM
+    )
+
+    install(TARGETS CLSmith
         RUNTIME DESTINATION bin
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+
+    install(FILES ${SAFE_MATH_HEADERS}
+        DESTINATION include/CLSmith
+    )
+else()
+    message(WARNING "Cannot build the safe math runtime header files because m4 was not found")
+endif()
+
+install(FILES ${CMAKE_SOURCE_DIR}/runtime/CLSmith.h
+    DESTINATION include/CLSmith
 )
 
 find_package(OpenCL)
