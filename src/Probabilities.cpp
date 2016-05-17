@@ -776,7 +776,12 @@ Probabilities::set_default_statement_prob()
 	// never generate stand-alone blocks
 	SET_SINGLE_NAME("statement_block_prob", Block, 0);
 	SET_SINGLE_NAME("statement_ifelse_prob", IfElse, 15);
-	SET_SINGLE_NAME("statement_for_prob", For, 30);
+	if (CGOptions::loops()) {
+		SET_SINGLE_NAME("statement_for_prob", For, 30);
+	} else {
+		SET_SINGLE_NAME("statement_for_prob", For, 0);
+		CGOptions::arrays(false);
+	}
 	SET_SINGLE_NAME("statement_return_prob", Return, 35);
 	SET_SINGLE_NAME("statement_continue_prob", Continue, 40);
 	SET_SINGLE_NAME("statement_break_prob", Break, 45);

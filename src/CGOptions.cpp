@@ -137,6 +137,7 @@ DEFINE_GETTER_SETTER_BOOL(int8)
 DEFINE_GETTER_SETTER_BOOL(uint8)
 DEFINE_GETTER_SETTER_BOOL(pointers)
 DEFINE_GETTER_SETTER_BOOL(arrays)
+DEFINE_GETTER_SETTER_BOOL(loops)
 DEFINE_GETTER_SETTER_BOOL(strict_const_arrays)
 DEFINE_GETTER_SETTER_BOOL(jumps)
 DEFINE_GETTER_SETTER_BOOL(return_structs)
@@ -256,6 +257,7 @@ CGOptions::set_default_settings(void)
 	uint8(true);
 	pointers(true);
 	arrays(true);
+	loops(true);
 	strict_const_arrays(false);
 	jumps(true);
 	return_structs(true);
