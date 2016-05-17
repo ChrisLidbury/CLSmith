@@ -304,6 +304,7 @@ int main(int argc, char **argv) {
       local_size[i++] = (size_t) atoi(tok);
       tok = strtok(NULL, ",");
     }
+  	free(local_dims);
   }
   if (strcmp(global_dims, "") == 0) {
     global_size = (size_t*)malloc(sizeof(size_t));
@@ -320,10 +321,11 @@ int main(int argc, char **argv) {
       global_size[i++] = atoi(tok);
       tok = strtok(NULL, ",");
     }
+  	free(global_dims);
   }
 
-  free(global_dims);
-  free(local_dims);
+
+
 
   if (g_dim != l_dim) {
     printf("Local and global sizes must have same number of dimensions!\n");
