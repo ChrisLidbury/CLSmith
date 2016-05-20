@@ -42,18 +42,8 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    if (!strcmp(argv[idx], "--arrays")) {
-      CGOptions::arrays(true);
-      continue;
-    }
-
     if (!strcmp(argv[idx], "--no-arrays")) {
       CGOptions::arrays(false);
-      continue;
-    }
-
-    if (!strcmp(argv[idx], "--loops")) {
-      CGOptions::loops(true);
       continue;
     }
 
