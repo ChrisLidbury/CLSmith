@@ -42,6 +42,17 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[idx], "--no-arrays")) {
+      CGOptions::arrays(false);
+      continue;
+    }
+
+    if (!strcmp(argv[idx], "--no-loops")) {
+      CGOptions::loops(false);
+      CGOptions::arrays(false);
+      continue;
+    }
+
     if (!strcmp(argv[idx], "--atomic_reductions")) {
       CLSmith::CLOptions::atomic_reductions(true);
       continue;

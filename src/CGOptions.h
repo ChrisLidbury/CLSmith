@@ -259,6 +259,9 @@ public:
 	static bool arrays(void);
 	static bool arrays(bool p);
 
+	static bool loops(void);
+	static bool loops(bool p);
+
 	static bool strict_const_arrays(void);
 	static bool strict_const_arrays(bool p);
 
@@ -543,6 +546,7 @@ private:
 	static bool	uint8_;
 	static bool	pointers_;
 	static bool	arrays_;
+	static bool loops_;
 	static bool	strict_const_arrays_;
 	static bool	jumps_;
 	static bool	return_structs_;
