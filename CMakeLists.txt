@@ -284,14 +284,14 @@ if(M4_EXECUTABLE)
 
     add_custom_command(
         OUTPUT safe_math_macros.h
-        COMMAND ${M4_EXECUTABLE} -P -s ${CMAKE_SOURCE_DIR}/runtime/safe_math_macros.m4 > safe_math_macros.h
+        COMMAND ${M4_EXECUTABLE} ${CMAKE_SOURCE_DIR}/runtime/safe_math_macros.m4 > safe_math_macros.h
         DEPENDS ${CMAKE_SOURCE_DIR}/runtime/safe_math_macros.m4
         VERBATIM
     )
 
     add_custom_command(
         OUTPUT cl_safe_math_macros.h
-        COMMAND ${M4_EXECUTABLE} -P -s ${CMAKE_SOURCE_DIR}/runtime/cl_safe_math_macros.m4 > cl_safe_math_macros.h
+        COMMAND ${M4_EXECUTABLE} ${CMAKE_SOURCE_DIR}/runtime/cl_safe_math_macros.m4 > cl_safe_math_macros.h
         DEPENDS ${CMAKE_SOURCE_DIR}/runtime/cl_safe_math_macros.m4
         VERBATIM
     )
