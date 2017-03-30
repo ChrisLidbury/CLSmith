@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
   err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * max_dimensions, max_work_items, NULL);
   if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_SIZES"))
     return 1;
-  for (curr_dim = 0; curr_dim < max_dimensions; curr_dim++) {
+  for (curr_dim = 0; curr_dim < l_dim; curr_dim++) {
     if(max_work_items[curr_dim] < global_size[curr_dim]) {
       fprintf(stderr, "Local work size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
       return 1;
