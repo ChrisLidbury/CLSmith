@@ -324,8 +324,29 @@ int main(int argc, char **argv) {
   	free(global_dims);
   }
 
+  // print global and local sizes in debug mode
+  if (debug_build) {
+    int i;
+    size_t global_size_total = 1;
+    for (i = 0; i < g_dim; i++)
+      global_size_total *= global_size[i];
 
+    fprintf(stderr, "%d-D global size %zu = [%zu",
+            g_dim, global_size_total, global_size[0]);
+    for (i = 1; i < g_dim; i++)
+      fprintf(stderr, ", %zu", global_size[i]);
+    fprintf(stderr, "]\n");
 
+    size_t local_size_total = 1;
+    for (i = 0; i < l_dim; i++)
+      local_size_total *= local_size[i];
+
+    fprintf(stderr, "%d-D local size %zu = [%zu",
+            l_dim, local_size_total, local_size[0]);
+    for (i = 1; i < l_dim; i++)
+      fprintf(stderr, ", %zu", local_size[i]);
+    fprintf(stderr, "]\n");
+  }
 
   if (g_dim != l_dim) {
     fprintf(stderr, "Local and global sizes must have same number of dimensions!\n");
