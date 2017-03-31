@@ -406,6 +406,12 @@ int main(int argc, char **argv) {
   }
   platform = &platforms[platform_index];
 
+  if (debug_build) {
+    err = clGetPlatformInfo(*platform, CL_PLATFORM_NAME, sizeof(platformName), platformName, NULL);
+    if (cl_error_check(err, "Get Platform Info error")) return 1;
+    fprintf(stderr, "Platform: %s\n", platformName);
+  }
+
 #ifdef XOPENME
   err = clGetPlatformInfo(*platform, CL_PLATFORM_VENDOR, sizeof(platformName), platformName, NULL);
   if (cl_error_check(err, "Get Platform Info error")) return 1;
@@ -478,6 +484,12 @@ int main(int argc, char **argv) {
   if(max_work_group_size < given_work_group_size) {
     fprintf(stderr, "Kernel work group size is %zd, which exceeds the maximum work group size of %zd for this device\n", given_work_group_size, max_work_group_size);
     return 1;
+  }
+
+  if (debug_build) {
+    err = clGetDeviceInfo(*device, CL_DEVICE_NAME, sizeof(deviceName), deviceName, NULL);
+    if (cl_error_check(err, "Get Device Info error")) return 1;
+    fprintf(stderr, "Device: %s\n", deviceName);
   }
 
 #ifdef XOPENME
