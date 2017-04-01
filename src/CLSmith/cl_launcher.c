@@ -407,6 +407,11 @@ int main(int argc, char **argv) {
   platform = &platforms[platform_index];
 
   if (debug_build) {
+    if (disable_opts)
+      fprintf(stderr, "OpenCL optimizations: off\n");
+    else
+      fprintf(stderr, "OpenCL optimizations: on\n");
+
     err = clGetPlatformInfo(*platform, CL_PLATFORM_NAME, sizeof(platformName), platformName, NULL);
     if (cl_error_check(err, "Get Platform Info error")) return 1;
     fprintf(stderr, "Platform: %s\n", platformName);
