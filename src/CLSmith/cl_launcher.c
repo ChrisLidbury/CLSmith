@@ -29,21 +29,21 @@ bool execution_in_progress = false;
 
 int exception_handler(LPEXCEPTION_POINTERS p)
 {
-    printf("Exception detected during test execution!\n");
+    fprintf(stderr, "Exception detected during test execution!\n");
     if(build_in_progress) {
-        printf("Exception occurred during build\n");
+        fprintf(stderr, "Exception occurred during build\n");
     }
     if(execution_in_progress) {
-        printf("Exception occurred during kernel execution\n");
+        fprintf(stderr, "Exception occurred during kernel execution\n");
     }
     if(!build_in_progress && !execution_in_progress) {
-        printf("Unknown source of exception\n");
+        fprintf(stderr, "Unknown source of exception\n");
     }
     exit(1);
 }
 int runtime_check_handler(int errorType, const char *filename, int linenumber, const char *moduleName, const char *format, ...)
 {
-    printf("Error type %d at %s line %d in %s", errorType, filename, linenumber, moduleName);
+    fprintf(stderr, "Error type %d at %s line %d in %s", errorType, filename, linenumber, moduleName);
     exit(1);
 }
 #endif
@@ -119,34 +119,34 @@ int parse_arg(char* arg, char* val);
 int parse_file_args(const char* filename);
 
 void print_help() {
-  printf("Usage: ./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\n");
-  printf("\n");
-  printf("Required flags are:\n");
-  printf("  -f FILE --filename FILE                   Test file\n");
-  printf("  -p IDX  --platform_idx IDX                Target platform\n");
-  printf("  -d IDX  --device_idx IDX                  Target device\n");
-  printf("\n");
-  printf("Optional flags are:\n");
-  printf("  -i PATH --include_path PATH               Include path for kernels (. by default)\n"); //FGG
-  printf("  -b N    --binary N                        Compiles the kernel to binary, allocating N bytes\n");
-  printf("  -l N    --locals N                        A string with comma-separated values representing the number of work-units per group per dimension\n");
-  printf("  -g N    --groups N                        Same as -l, but representing the total number of work-units per dimension\n");
-  printf("  -n NAME --name NAME                       Ensure the device name contains this string\n");
-  printf("  -a FILE --args FILE                       Look for file-defined arguments in this file, rather than the test file\n");
-  printf("          --atomics                         Test uses atomic sections\n");
-  printf("                      ---atomic_reductions  Test uses atomic reductions\n");
-  printf("                      ---emi                Test uses EMI\n");
-  printf("                      ---fake_divergence    Test uses fake divergence\n");
-  printf("                      ---inter_thread_comm  Test uses inter-thread communication\n");
-  printf("                      ---debug              Print debug info\n");
-  printf("                      ---bin                Output disassembly of kernel in out.bin\n");
-  printf("                      ---disable_opts       Disable OpenCL compile optimisations\n");
-  printf("                      ---disable_group      Disable group divergence feature\n");
-  printf("                      ---disable_fake       Disable fake divergence feature\n");
-  printf("                      ---disable_atomics    Disable atomic sections and reductions\n");
-  printf("                      ---set_device_from_name\n");
-  printf("                                            Ignore target platform -p and device -d\n");
-  printf("                                            Instead try to find a matching platform/device based on the device name\n");
+  fprintf(stderr, "Usage: ./cl_launcher -f <cl_program> -p <platform_idx> -d <device_idx> [flags...]\n");
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Required flags are:\n");
+  fprintf(stderr, "  -f FILE --filename FILE                   Test file\n");
+  fprintf(stderr, "  -p IDX  --platform_idx IDX                Target platform\n");
+  fprintf(stderr, "  -d IDX  --device_idx IDX                  Target device\n");
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Optional flags are:\n");
+  fprintf(stderr, "  -i PATH --include_path PATH               Include path for kernels (. by default)\n"); //FGG
+  fprintf(stderr, "  -b N    --binary N                        Compiles the kernel to binary, allocating N bytes\n");
+  fprintf(stderr, "  -l N    --locals N                        A string with comma-separated values representing the number of work-units per group per dimension\n");
+  fprintf(stderr, "  -g N    --groups N                        Same as -l, but representing the total number of work-units per dimension\n");
+  fprintf(stderr, "  -n NAME --name NAME                       Ensure the device name contains this string\n");
+  fprintf(stderr, "  -a FILE --args FILE                       Look for file-defined arguments in this file, rather than the test file\n");
+  fprintf(stderr, "          --atomics                         Test uses atomic sections\n");
+  fprintf(stderr, "                      ---atomic_reductions  Test uses atomic reductions\n");
+  fprintf(stderr, "                      ---emi                Test uses EMI\n");
+  fprintf(stderr, "                      ---fake_divergence    Test uses fake divergence\n");
+  fprintf(stderr, "                      ---inter_thread_comm  Test uses inter-thread communication\n");
+  fprintf(stderr, "                      ---debug              Print debug info\n");
+  fprintf(stderr, "                      ---bin                Output disassembly of kernel in out.bin\n");
+  fprintf(stderr, "                      ---disable_opts       Disable OpenCL compile optimisations\n");
+  fprintf(stderr, "                      ---disable_group      Disable group divergence feature\n");
+  fprintf(stderr, "                      ---disable_fake       Disable fake divergence feature\n");
+  fprintf(stderr, "                      ---disable_atomics    Disable atomic sections and reductions\n");
+  fprintf(stderr, "                      ---set_device_from_name\n");
+  fprintf(stderr, "                                            Ignore target platform -p and device -d\n");
+  fprintf(stderr, "                                            Instead try to find a matching platform/device based on the device name\n");
 }
 
 /*
@@ -186,13 +186,13 @@ bool setPlatformDeviceFromDeviceName() {
         exit(1);
       assert(size < sizeof(name));
       if (debug_build) {
-        printf("At platform %d and device %d with name [%s]]\n", p, d, name);
+        fprintf(stderr, "At platform %d and device %d with name [%s]]\n", p, d, name);
       }
       if (strstr(name, device_name_given) != NULL) {
         match = true;
         if ((platform_index != p) || (device_index != d)) {
           if (debug_build) {
-            printf("Set platform %d and device %d to match %s\n", p, d, device_name_given);
+            fprintf(stderr, "Set platform %d and device %d to match %s\n", p, d, device_name_given);
           }
           platform_index = p;
           device_index = d;
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
 
   // Parse the input. Expect three parameters.
   if (argc < 4) {
-    printf("Expected at least three arguments\n");
+    fprintf(stderr, "Expected at least three arguments\n");
     print_help();
     return 1;
   }
@@ -247,21 +247,21 @@ int main(int argc, char **argv) {
   }
 
   if (!file) {
-    printf("Require file (-f) argument!\n");
+    fprintf(stderr, "Require file (-f) argument!\n");
     return 1;
   }
 
   // Parse arguments found in the given source file
   if (args_file == NULL) {
     if (!parse_file_args(file)) {
-      printf("Failed parsing file for arguments.\n");
+      fprintf(stderr, "Failed parsing file for arguments.\n");
       return 1;
     }
   }
   // Parse arguments in defined args file
   else {
     if (!parse_file_args(args_file)) {
-      printf("Failed parsing given arguments file.\n");
+      fprintf(stderr, "Failed parsing given arguments file.\n");
       return 1;
     }
   }
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
     curr_arg = argv[arg_no];
     if (strncmp(curr_arg, "---", 3)) {
       if (++arg_no >= argc) {
-        printf("Found option %s with no value.\n", curr_arg);
+        fprintf(stderr, "Found option %s with no value.\n", curr_arg);
         return 1;
       }
       next_arg = argv[arg_no];
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
   }
 
   if (req_arg < REQ_ARG_COUNT) {
-    printf("Require device index (-d) and platform index (-p) arguments, or device name (-n)!\n");
+    fprintf(stderr, "Require device index (-d) and platform index (-p) arguments, or device name (-n)!\n");
     return 1;
   }
 
@@ -324,21 +324,42 @@ int main(int argc, char **argv) {
   	free(global_dims);
   }
 
+  // print global and local sizes in debug mode
+  if (debug_build) {
+    int i;
+    size_t global_size_total = 1;
+    for (i = 0; i < g_dim; i++)
+      global_size_total *= global_size[i];
 
+    fprintf(stderr, "%d-D global size %zu = [%zu",
+            g_dim, global_size_total, global_size[0]);
+    for (i = 1; i < g_dim; i++)
+      fprintf(stderr, ", %zu", global_size[i]);
+    fprintf(stderr, "]\n");
 
+    size_t local_size_total = 1;
+    for (i = 0; i < l_dim; i++)
+      local_size_total *= local_size[i];
+
+    fprintf(stderr, "%d-D local size %zu = [%zu",
+            l_dim, local_size_total, local_size[0]);
+    for (i = 1; i < l_dim; i++)
+      fprintf(stderr, ", %zu", local_size[i]);
+    fprintf(stderr, "]\n");
+  }
 
   if (g_dim != l_dim) {
-    printf("Local and global sizes must have same number of dimensions!\n");
+    fprintf(stderr, "Local and global sizes must have same number of dimensions!\n");
     return 1;
   }
   if (l_dim > 3) {
-    printf("Cannot have more than 3 dimensions!\n");
+    fprintf(stderr, "Cannot have more than 3 dimensions!\n");
     return 1;
   }
   int d;
   for (d = 1; d < l_dim; d++)
     if (local_size[d] > global_size[d]) {
-      printf("Local dimension %d greater than global dimension!\n", d);
+      fprintf(stderr, "Local dimension %d greater than global dimension!\n", d);
       return 1;
     }
 
@@ -351,23 +372,23 @@ int main(int argc, char **argv) {
 
   // Platform ID, the index in the array of platforms.
   if (platform_index < 0) {
-    printf("Could not parse platform id \"%s\"\n", argv[2]);
+    fprintf(stderr, "Could not parse platform id \"%s\"\n", argv[2]);
     return 1;
   }
 
   // Device ID, not used atm.
   if (device_index < 0) {
-    printf("Could not parse device id \"%s\"\n", argv[3]);
+    fprintf(stderr, "Could not parse device id \"%s\"\n", argv[3]);
     return 1;
   }
 
   if (set_device_from_name) {
     if (strcmp(device_name_given, "") == 0) {
-      printf("Must give '-n NAME' to use --set_device_from_name\n");
+      fprintf(stderr, "Must give '-n NAME' to use --set_device_from_name\n");
       return 1;
     }
     if (!setPlatformDeviceFromDeviceName()) {
-      printf("No matching platform or device found for name %s\n", device_name_given);
+      fprintf(stderr, "No matching platform or device found for name %s\n", device_name_given);
       return 1;
     }
   }
@@ -380,10 +401,21 @@ int main(int argc, char **argv) {
   if (cl_error_check(err, "clGetPlatformIDs error"))
     return 1;
   if (platform_count <= platform_index) {
-    printf("No platform for id %d\n", platform_index);
+    fprintf(stderr, "No platform for id %d\n", platform_index);
     return 1;
   }
   platform = &platforms[platform_index];
+
+  if (debug_build) {
+    if (disable_opts)
+      fprintf(stderr, "OpenCL optimizations: off\n");
+    else
+      fprintf(stderr, "OpenCL optimizations: on\n");
+
+    err = clGetPlatformInfo(*platform, CL_PLATFORM_NAME, sizeof(platformName), platformName, NULL);
+    if (cl_error_check(err, "Get Platform Info error")) return 1;
+    fprintf(stderr, "Platform: %s\n", platformName);
+  }
 
 #ifdef XOPENME
   err = clGetPlatformInfo(*platform, CL_PLATFORM_VENDOR, sizeof(platformName), platformName, NULL);
@@ -400,7 +432,7 @@ int main(int argc, char **argv) {
   if (cl_error_check(err, "clGetDeviceIDs error"))
     return 1;
   if (device_count <= device_index) {
-    printf("No device for id %d\n", device_index);
+    fprintf(stderr, "No device for id %d\n", device_index);
     return 1;
   }
   device = &devices[device_index];
@@ -416,7 +448,7 @@ int main(int argc, char **argv) {
     char* device_name = (char*)malloc(actual_size*sizeof(char));
     strncpy(device_name, device_name_get, actual_size);
     if (!strstr(device_name, device_name_given)) {
-      printf("Given name, %s, not found in device name, %s.\n",
+      fprintf(stderr, "Given name, %s, not found in device name, %s.\n",
           device_name_given, device_name);
       return 1;
     }
@@ -428,7 +460,7 @@ int main(int argc, char **argv) {
   if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS"))
     return 1;
   if(max_dimensions < g_dim) {
-    printf("Kernel uses %d dimensions, exceeds the maximum of %d dimensions for this device\n", g_dim, max_dimensions);
+    fprintf(stderr, "Kernel uses %d dimensions, exceeds the maximum of %d dimensions for this device\n", g_dim, max_dimensions);
     return 1;
   }
 
@@ -439,9 +471,9 @@ int main(int argc, char **argv) {
   err = clGetDeviceInfo(*device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t) * max_dimensions, max_work_items, NULL);
   if (cl_error_check(err, "Error querying CL_DEVICE_MAX_WORK_ITEM_SIZES"))
     return 1;
-  for (curr_dim = 0; curr_dim < max_dimensions; curr_dim++) {
+  for (curr_dim = 0; curr_dim < l_dim; curr_dim++) {
     if(max_work_items[curr_dim] < global_size[curr_dim]) {
-      printf("Local work size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
+      fprintf(stderr, "Local work size in dimension %zd is %zd, which exceeds maximum of %zd for this device\n", curr_dim, global_size[curr_dim], max_work_items[curr_dim]);
       return 1;
     }
   }
@@ -455,8 +487,14 @@ int main(int argc, char **argv) {
   for (curr_dim = 0; curr_dim < l_dim; curr_dim++)
     given_work_group_size *= local_size[curr_dim];
   if(max_work_group_size < given_work_group_size) {
-    printf("Kernel work group size is %zd, which exceeds the maximum work group size of %zd for this device\n", given_work_group_size, max_work_group_size);
+    fprintf(stderr, "Kernel work group size is %zd, which exceeds the maximum work group size of %zd for this device\n", given_work_group_size, max_work_group_size);
     return 1;
+  }
+
+  if (debug_build) {
+    err = clGetDeviceInfo(*device, CL_DEVICE_NAME, sizeof(deviceName), deviceName, NULL);
+    if (cl_error_check(err, "Get Device Info error")) return 1;
+    fprintf(stderr, "Device: %s\n", deviceName);
   }
 
 #ifdef XOPENME
@@ -507,7 +545,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
   // Try to read source file into a binary buffer
   FILE *source = fopen(file, "rb");
   if (source == NULL) {
-    printf("Could not open %s.\n", file);
+    fprintf(stderr, "Could not open %s.\n", file);
     return 1;
   }
 
@@ -520,7 +558,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
 
     source_text = (char*)calloc(1, source_size + 1);
     if (source_text == NULL) {
-      printf("Failed to calloc %ld bytes.\n", source_size);
+      fprintf(stderr, "Failed to calloc %ld bytes.\n", source_size);
       return 1;
     }
     fread(source_text, 1, source_size, source);
@@ -598,20 +636,20 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
         return 1;
       char *err_code = (char*)malloc(err_size);
       if (err_code == NULL) {
-        printf("Failed to malloc %ld bytes\n", err_size);
+        fprintf(stderr, "Failed to malloc %ld bytes\n", err_size);
         return 1;
       }
       err = clGetProgramBuildInfo(
           program, *device, CL_PROGRAM_BUILD_LOG, err_size, err_code, &err_size);
       if (!cl_error_check(err, "Error getting build info"))
-        printf("%s", err_code);
+        fprintf(stderr, "%s", err_code);
       free(err_code);
     }
     return 1;
   }
   free(options);
 
-  printf("Compilation terminated successfully...\n");
+  fprintf(stderr, "Compilation terminated successfully...\n");
   fflush(stdout);
 
   cl_build_status status;
@@ -629,7 +667,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
       return 1;
     unsigned char *bin = (unsigned char*)malloc(bin_size);
     if (bin == NULL) {
-      printf("Failed to malloc %ld bytes\n", bin_size);
+      fprintf(stderr, "Failed to malloc %ld bytes\n", bin_size);
       return 1;
     }
     err = clGetProgramInfo(
@@ -638,7 +676,7 @@ int run_on_platform_device(cl_platform_id *platform, cl_device_id *device, cl_ui
       return 1;
     FILE *bin_out = fopen("out.bin", "wb");
     if (bin_out == NULL) {
-      printf("Could not open output file \"out.bin\"");
+      fprintf(stderr, "Could not open output file \"out.bin\"");
       return 1;
     }
     fwrite(bin, sizeof(unsigned char *), bin_size, bin_out);
@@ -816,7 +854,7 @@ int parse_file_args(const char* filename) {
 
   FILE* source = fopen(filename, "r");
   if (source == NULL) {
-    printf("Could not open file %s for argument parsing.\n", filename);
+    fprintf(stderr, "Could not open file %s for argument parsing.\n", filename);
     return 0;
   }
 
@@ -937,7 +975,7 @@ int parse_arg(char* arg, char* val) {
     disable_atomics = true;
     return 1;
   }
-  printf("Failed parsing arg %s.", arg);
+  fprintf(stderr, "Failed parsing arg %s.", arg);
   return 0;
 }
 
@@ -949,7 +987,7 @@ __stdcall
 #endif
 error_callback(
     const char *errinfo, const void *private_info, size_t cb, void *user_data) {
-  printf("Error found (callback):\n%s\n", errinfo);
+  fprintf(stderr, "Error found (callback):\n%s\n", errinfo);
 }
 
 // Error checker, useful to help remove some of the boiler plate.
@@ -957,6 +995,6 @@ error_callback(
 int cl_error_check(cl_int err, const char *err_string) {
   if (err == CL_SUCCESS)
     return 0;
-  printf("%s: %d\n", err_string, err);
+  fprintf(stderr, "%s: %d\n", err_string, err);
   return 1;
 }
