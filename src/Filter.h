@@ -38,8 +38,6 @@ enum FilterKind {
 	MAX_FILTER_KIND_SIZE,
 };
 
-#define MAX_FILTER_KIND_SIZE ((FilterKind) (fDFS + 1))
-
 // Filter base class
 class Filter
 {
